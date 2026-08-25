@@ -34,3 +34,28 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Phase 3 setup
+
+**PDF upload** needs the Python pipeline's dependencies:
+
+```bash
+# from the repo root
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+`resolvePython()` looks for `.venv/bin/python3`, or `TARJETAS_PYTHON` for a different interpreter.
+Without either, `/upload` reports the setup command instead of failing obscurely. A superseded
+statement's PDF is kept in `pdfs/.superseded/`.
+
+**Merchant categorization** needs an Anthropic API key:
+
+```bash
+echo 'ANTHROPIC_API_KEY=sk-ant-...' >> web/.env.local
+```
+
+Only merchant name strings are ever sent (spec §1, §7) — never amounts, dates, account numbers or
+the cardholder name. Voucher and policy digit tails are stripped, and any merchant name that still
+looks like money (the payment lines carry amounts and exchange rates in the description) is not
+sent at all. Without a key, `/review` says so and everything else keeps working.
