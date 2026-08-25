@@ -568,7 +568,7 @@ git commit -m "feat: statement integrity checks and shared StatementJson type"
   - `ingestFile(db, json, rules): void` — delete+reinsert by `file` (idempotent), writes alerts.
   - CLI `npm run ingest` loops `../json/*.json`, names the offending file on parse errors, exits non-zero on failure.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/ingest.test.ts`:
 ```ts
@@ -646,11 +646,11 @@ describe("ingestFile", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/ingest.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/ingest.ts`:
 ```ts
@@ -750,12 +750,12 @@ async function main() {
 main().catch(e => { console.error(e); process.exit(1); });
 ```
 
-- [ ] **Step 4: Run tests, then real ingest**
+- [x] **Step 4: Run tests, then real ingest**
 
 Run: `cd web && npx vitest run src/lib/ingest.test.ts` — Expected: PASS.
 Run: `cd web && npm run ingest` — Expected: `done: 27 statements, 0 integrity alerts` (review verified 0 mismatches on real data). Sanity: `sqlite3 ../data/app.db "SELECT COUNT(*) FROM transactions"` ≈ 1341; `sqlite3 ../data/app.db "SELECT DISTINCT cycle_month FROM statements ORDER BY 1"` — no doubled months: the four calendar-July-2026 closers land in 2026-06 and 2026-07.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/ingest.ts web/src/lib/ingest.test.ts web/scripts/ingest.ts
