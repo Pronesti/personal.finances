@@ -6,6 +6,7 @@ import { detectAnomalies, type Anomaly } from "@/lib/anomalies";
 import { project, type ProjectionMonth } from "@/lib/projection";
 import { trailingMonthlyInflation } from "@/lib/cpi";
 import { addMonth } from "@/lib/months";
+import { personalInflationIndex, type BasketPoint } from "@/lib/inflation";
 
 export type SpendMode = "cash" | "accrual";
 export type ValueMode = "nominal" | "real" | "usd";
@@ -324,4 +325,32 @@ export function cuotaProjection(
     inflation: trailingMonthlyInflation(opts.cpi),
     mode: opts.value,
   });
+}
+
+// Chart 8. The basket is the user's own detected ARS recurring charges — not a survey basket.
+// Restricted to merchants billed once in a month, for the same reason the jump detector is:
+// a busier month at the supermarket is volume, not a price rise.
+export function personalInflation(
+  db: Database.Database, cpi: CpiTable
+): { points: BasketPoint[]; basket: string[] } {
+  const rows = baseRows(db);
+  const names = new Set(
+    detectRecurring(rows).filter(r => r.currency === "ARS").map(r => r.merchant)
+  );
+  const charges = new Map<string, number>();
+  for (const r of rows) {
+    if (!names.has(r.merchant) || r.ars == null || r.installment_count != null) continue;
+    const key = `${r.merchant}|${r.month}`;
+    charges.set(key, (charges.get(key) ?? 0) + 1);
+  }
+  const basketRows: { merchant: string; month: string; ars: number }[] = [];
+  for (const r of rows) {
+    if (!names.has(r.merchant) || r.ars == null || r.ars <= 0 || r.installment_count != null) continue;
+    if (charges.get(`${r.merchant}|${r.month}`) !== 1) continue;
+    basketRows.push({ merchant: r.merchant, month: r.month, ars: r.ars });
+  }
+  return {
+    points: personalInflationIndex(basketRows, cpi),
+    basket: [...new Set(basketRows.map(r => r.merchant))].sort(),
+  };
 }

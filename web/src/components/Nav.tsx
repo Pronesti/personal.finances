@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 const links = [
   ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/categories", "Categories"],
-  ["/recurring", "Recurring"], ["/anomalies", "Anomalies"], ["/compare", "Compare"],
+  ["/recurring", "Recurring"], ["/anomalies", "Anomalies"], ["/inflation", "Inflation"], ["/compare", "Compare"],
 ] as const;
 
 export function Nav() {
