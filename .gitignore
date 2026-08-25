@@ -14,3 +14,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+node_modules/
+web/.next/
+data/app.db

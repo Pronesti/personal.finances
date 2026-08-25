@@ -50,7 +50,7 @@ This revision incorporates a 3-lens pre-execution review (standards / simplicity
 **Interfaces:**
 - Produces: working `npm run dev`, `npm test` (vitest), path alias `@/` → `web/src/`.
 
-- [ ] **Step 1: Scaffold**
+- [x] **Step 1: Scaffold**
 
 ```bash
 cd /Users/user/Desktop/Tarjetas
@@ -58,7 +58,7 @@ npx create-next-app@latest web --ts --tailwind --app --src-dir --import-alias "@
 cd web && npm i better-sqlite3 recharts && npm i -D vitest tsx @types/better-sqlite3
 ```
 
-- [ ] **Step 2: Configure**
+- [x] **Step 2: Configure**
 
 `web/next.config.ts`:
 ```ts
@@ -86,11 +86,11 @@ web/.next/
 data/app.db
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `cd web && npm test` → exit 0 (passWithNoTests); `npm run build` → succeeds.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A && git commit -m "feat: scaffold Next.js app with vitest"
