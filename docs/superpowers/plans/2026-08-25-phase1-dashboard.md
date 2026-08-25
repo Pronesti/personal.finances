@@ -432,7 +432,7 @@ git commit -m "feat: merchant normalization and ordered rule categorization"
 - Produces: `type Alert = { kind: "math_mismatch" | "balance_mismatch"; message: string; expected: number; actual: number }`; `checkStatement(json: StatementJson): Alert[]`; and the **shared** `type StatementJson` (single source of truth for the raw-JSON shape — Task 5's ingest imports it from here). Tolerance: `|diff| <= 1` peso.
 - Validated against all 27 real files during review: declared `TOTAL CONSUMOS…` per-block totals match summed purchases *including negatives* — 0 false positives. Keep negatives in the sum.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/integrity.test.ts`:
 ```ts
@@ -473,11 +473,11 @@ describe("checkStatement", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/integrity.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/integrity.ts`:
 ```ts
@@ -541,11 +541,11 @@ export function checkStatement(json: StatementJson): Alert[] {
 
 Note: duplicate-charge and amount-jump anomalies are Phase 2 (spec §3); Phase 1 alerts are these integrity checks only, computed **at ingest** (Task 5) and stored in the `alerts` table.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cd web && npx vitest run src/lib/integrity.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/integrity.ts web/src/lib/integrity.test.ts
