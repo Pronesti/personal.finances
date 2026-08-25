@@ -573,3 +573,9 @@ if __name__ == "__main__":
         print("The PDF does not match the expected layout. Check it before continuing.",
               file=sys.stderr)
         sys.exit(1)
+    except Exception as e:
+        # Exit 1 means "this is a statement I cannot read"; exit 2 means "this is not a
+        # statement at all" - encrypted, corrupt, zero pages, or not there. Without this the
+        # caller only ever sees a traceback, and a zero-page PDF looks like a missing file.
+        print(f"\nREAD ERROR: {type(e).__name__}: {e}\n", file=sys.stderr)
+        sys.exit(2)

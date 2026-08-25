@@ -46,6 +46,13 @@ export function migrate(db: Database.Database): void {
       expected REAL,
       actual REAL
     );
+    -- Review state is keyed by stable alert IDENTITY, not by alerts.id, and carries no foreign
+    -- key: re-ingesting a statement cascades its alerts rows away, and anomalies have no rows at
+    -- all. 'open' is storable so an explicit reopen beats a computed default.
+    CREATE TABLE IF NOT EXISTS alert_reviews (
+      key TEXT PRIMARY KEY,
+      state TEXT NOT NULL CHECK (state IN ('open','reviewed','dismissed'))
+    );
   `);
 }
 

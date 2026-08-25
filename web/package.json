@@ -12,6 +12,7 @@
     "fetch-mep": "tsx scripts/fetch-mep.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "better-sqlite3": "^11.10.0",
     "next": "16.3.3",
     "react": "19.2.8",

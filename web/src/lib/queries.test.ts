@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -35,6 +35,80 @@ function seed(db: Database.Database) {
 describe("queries", () => {
   let db: Database.Database;
   beforeEach(() => { db = openDb(":memory:"); seed(db); });
+
+  it("reviewableAlerts merges integrity alerts and anomalies, all open by default", () => {
+    const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };
+    db.prepare("INSERT INTO alerts (statement_id, kind, message, expected, actual) VALUES (?,?,?,?,?)")
+      .run(sid.id, "math_mismatch", "v_2026_07.json block 1: declared 10 vs summed 20.00", 10, 20);
+    const rows = reviewableAlerts(db, cpi);
+    const integrity = rows.filter(r => r.source === "integrity");
+    expect(integrity).toHaveLength(1);
+    expect(integrity[0]).toMatchObject({ kind: "math_mismatch", state: "open", month: "2026-07" });
+    // Identity, not prose: no filename, no cents.
+    expect(integrity[0].key).toBe("integrity|visa|2026-07-30|math_mismatch|10");
+  });
+
+  it("keeps a dismissal when the statement is re-ingested under a new filename", () => {
+    const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };
+    db.prepare("INSERT INTO alerts (statement_id, kind, message, expected, actual) VALUES (?,?,?,?,?)")
+      .run(sid.id, "math_mismatch", "v_2026_07.json block 1: declared 10 vs summed 20.00", 10, 20);
+    const key = reviewableAlerts(db, cpi).find(r => r.source === "integrity")!.key;
+    setAlertReview(db, key, "dismissed");
+    // Same cycle, different filename and one cent of drift in the message.
+    db.prepare("UPDATE statements SET file = 'visa_july.json' WHERE id = ?").run(sid.id);
+    db.prepare("UPDATE alerts SET message = 'visa_july.json block 1: declared 10 vs summed 20.01' WHERE statement_id = ?").run(sid.id);
+    expect(reviewableAlerts(db, cpi).find(r => r.key === key)!.state).toBe("dismissed");
+  });
+
+  it("stores an explicit reopen so it beats a computed default", () => {
+    setAlertReview(db, "anomaly|duplicate|X|2026-07|2026-07-01|100", "open");
+    expect(db.prepare("SELECT state FROM alert_reviews WHERE key = ?")
+      .get("anomaly|duplicate|X|2026-07|2026-07-01|100")).toEqual({ state: "open" });
+  });
+
+  it("staleReviews clears reviews no live alert claims", () => {
+    setAlertReview(db, "anomaly|duplicate|GONE|2020-01|2020-01-01|1", "dismissed");
+    expect(staleReviews(db, reviewableAlerts(db, cpi))).toBe(1);
+    expect(db.prepare("SELECT COUNT(*) n FROM alert_reviews").get()).toEqual({ n: 0 });
+  });
+
+  it("categoryDrill narrows to a single merchant", () => {
+    const { rows } = categoryDrill(db, o("cash", "nominal"), { merchant: "COTO" });
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every(r => r.merchant === "COTO")).toBe(true);
+  });
+
+  it("unknownMerchants lists uncategorized purchase merchants, biggest spender first, netting refunds", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','DIA','DIA','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-21','DIA DEVOL','DIA','other',NULL,-1000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-22','SOMMIERLANDIA','SOMMIERLANDIA','other',NULL,5000,NULL,NULL,NULL)`).run();
+    const rows = unknownMerchants(db);
+    expect(rows.map(r => r.merchant)).toEqual(["SOMMIERLANDIA", "DIA"]);
+    expect(rows.find(r => r.merchant === "DIA")!.total).toBe(2000); // 3000 - 1000, not 4000
+  });
+
+  it("rulePreview shows every other merchant a substring rule would also claim", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','DIA','DIA','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-22','SOMMIERLANDIA','SOMMIERLANDIA','other',NULL,5000,NULL,NULL,NULL)`).run();
+    expect(rulePreview(db, "DIA").map(r => r.merchant)).toEqual(["DIA", "SOMMIERLANDIA"]);
+  });
+
+  it("recategorize covers the same rows a full ingest would, payments included", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','XENEIZE','CUOTA XENEIZE','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'payments','2026-07-21','BONIF PROMO CUOTA XENEIZE','BONIF PROMO CUOTA XENEIZE','other',NULL,-500,NULL,NULL,NULL),
+                       (2,'taxes_and_charges',NULL,'IVA','IVA CUOTA XENEIZE','taxes_fees',NULL,100,NULL,NULL,NULL)`).run();
+    expect(recategorize(db, "CUOTA XENEIZE", "entertainment", "sports")).toBe(2);
+    expect(db.prepare("SELECT COUNT(*) n FROM transactions WHERE category='taxes_fees'").get()).toEqual({ n: 1 });
+  });
+
+  it("statementList reports each statement newest first with its counts", () => {
+    const rows = statementList(db);
+    expect(rows.map(r => r.file)).toEqual(["m_2026_07.json", "v_2026_07.json", "v_2026_06.json"]);
+    expect(rows[0]).toMatchObject({ brand: "mastercard", month: "2026-07", transactions: 1, alerts: 0 });
+  });
 
   it("accrual counts remaining principal at first-observed cuota, nets refunds, skips USD-only in sums", () => {
     const r = monthlySpendByCategory(db, o("accrual", "nominal"));

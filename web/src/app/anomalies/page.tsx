@@ -1,55 +1,92 @@
+import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
-import { anomalies, monthlyTotals } from "@/lib/queries";
-import { parseModes, valueOpts } from "@/lib/params";
+import { reviewableAlerts, staleReviews, monthlyTotals } from "@/lib/queries";
+import { parseModes, valueOpts, withModes } from "@/lib/params";
 import { fmtArs } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { AnomalyTimeline } from "@/components/AnomalyTimeline";
+import { reviewAlert } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const KIND_LABEL = {
+const KIND_LABEL: Record<string, string> = {
   duplicate: "Duplicate", amount_jump: "Price jump", new_merchant: "New merchant",
-} as const;
+  math_mismatch: "Statement math", balance_mismatch: "Balance mismatch",
+};
 
 export default async function Anomalies({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const modes = parseModes(await searchParams);
   const db = getDb();
   const opts = valueOpts(modes);
-  const found = anomalies(db, opts.cpi);
+  const alerts = reviewableAlerts(db, opts.cpi);
+  const cleared = staleReviews(db, alerts);
   const totals = monthlyTotals(db, opts);
-  const flaggedMonths = found.filter(a => !a.resolved).map(a => a.month);
+  const open = alerts.filter(a => a.state === "open");
   return (
     <main>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Anomalies</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Alerts</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
-      <AnomalyTimeline totals={totals} flaggedMonths={flaggedMonths} value={modes.value} />
-      <table className="w-full text-sm mt-6">
+      <p className="mb-4 text-sm text-zinc-500">
+        {open.length} open of {alerts.length} — statement-integrity checks (computed at ingest) and
+        anomalies (recomputed every load).
+        {cleared > 0 && ` Cleared ${cleared} review${cleared === 1 ? "" : "s"} whose alert no longer exists.`}
+      </p>
+      <AnomalyTimeline totals={totals} flaggedMonths={open.map(a => a.month)} value={modes.value} />
+      <table className="mt-6 w-full text-sm">
         <thead><tr className="text-left text-zinc-500">
           <th className="py-1">When</th><th>Kind</th><th>Merchant</th>
-          <th className="text-right">Amount</th><th>What happened</th>
+          <th className="text-right">Amount</th><th>What happened</th><th className="text-right">Review</th>
         </tr></thead>
         <tbody>
-          {found.map((a, i) => (
-            <tr key={i} className={`border-t border-zinc-100 dark:border-zinc-800 ${a.resolved ? "text-zinc-400" : ""}`}>
-              <td className="py-1 whitespace-nowrap">{a.date ?? a.month}</td>
-              <td>{KIND_LABEL[a.kind]}</td>
-              <td>{a.merchant}</td>
-              <td className="text-right">{fmtArs(a.amount)}</td>
+          {alerts.map(a => (
+            <tr key={a.key} className={`border-t border-zinc-100 dark:border-zinc-800 ${a.state === "open" ? "" : "text-zinc-400"}`}>
+              <td className="whitespace-nowrap py-1">{a.date ?? a.month}</td>
+              <td>{KIND_LABEL[a.kind] ?? a.kind}</td>
+              <td>
+                {a.merchant
+                  ? <Link className="hover:underline" href={withModes("/categories", modes, { merchant: a.merchant })}>{a.merchant}</Link>
+                  : "—"}
+              </td>
+              <td className="text-right">{a.amount != null ? fmtArs(a.amount) : "—"}</td>
               <td>{a.message}</td>
+              <td className="whitespace-nowrap text-right">
+                {a.state === "open" ? (
+                  <>
+                    <form action={reviewAlert} className="inline">
+                      <input type="hidden" name="key" value={a.key} />
+                      <input type="hidden" name="state" value="reviewed" />
+                      <button className="hover:underline" type="submit">reviewed</button>
+                    </form>
+                    <span className="px-1">·</span>
+                    <form action={reviewAlert} className="inline">
+                      <input type="hidden" name="key" value={a.key} />
+                      <input type="hidden" name="state" value="dismissed" />
+                      <button className="hover:underline" type="submit">dismiss</button>
+                    </form>
+                  </>
+                ) : (
+                  <form action={reviewAlert} className="inline">
+                    <input type="hidden" name="key" value={a.key} />
+                    <input type="hidden" name="state" value="open" />
+                    <button className="hover:underline" type="submit">{a.state} — reopen</button>
+                  </form>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-zinc-500 mt-3">
-        Amounts in this table are always the nominal pesos the card billed — that is what you would
-        dispute. Greyed rows already resolved themselves on the statement. Price jumps are measured
-        in real terms, and only for merchants billed exactly once a month, so a busier month at the
-        supermarket is not mistaken for a price rise. Duplicate matching uses the ±2-day window
-        Actual Budget uses for schedules, stays within one statement, and ignores installment rows,
-        which every statement re-lists at their original purchase date.
+      <p className="mt-3 text-xs text-zinc-500">
+        Amounts are always the nominal pesos the card billed — that is what you would dispute. Review
+        state is keyed to the statement and the alert&apos;s shape, not to a row id or its wording, so it
+        survives re-uploading the statement under any name. Duplicates the statement already reversed
+        start out reviewed; reopening one sticks. Price jumps are measured in real terms, and only for
+        merchants billed exactly once a month, so a busier month at the supermarket is not mistaken for
+        a price rise. Duplicate matching uses the ±2-day window Actual Budget uses for schedules, stays
+        within one statement, and ignores installment rows.
       </p>
     </main>
   );

@@ -127,7 +127,7 @@ export type DrillRow = {
 
 export function categoryDrill(
   db: Database.Database, opts: ValueOpts,
-  filter: { category?: string; subcategory?: string; month?: string }
+  filter: { category?: string; subcategory?: string; month?: string; merchant?: string }
 ) {
   const level: "category" | "subcategory" | "merchant" =
     !filter.category ? "category" : !filter.subcategory ? "subcategory" : "merchant";
@@ -138,6 +138,7 @@ export function categoryDrill(
   for (const r of all) {
     if (filter.category && r.category !== filter.category) continue;
     if (filter.subcategory && (r.subcategory ?? "(none)") !== filter.subcategory) continue;
+    if (filter.merchant && r.merchant !== filter.merchant) continue;
     if (filter.month && r.month !== filter.month) continue;
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null && r.usd == null) continue; // dropped by mode (non-first cuota in accrual)
@@ -434,4 +435,127 @@ export function dailySpend(db: Database.Database, opts: ValueOpts) {
   }
   return [...acc.entries()].map(([date, amount]) => ({ date, amount }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export type StatementSummary = {
+  file: string; brand: string; month: string; closing_date: string;
+  transactions: number; alerts: number;
+};
+
+export function statementList(db: Database.Database): StatementSummary[] {
+  return db.prepare(`
+    SELECT s.file, s.brand, s.cycle_month AS month, s.closing_date,
+           (SELECT COUNT(*) FROM transactions t WHERE t.statement_id = s.id) AS transactions,
+           (SELECT COUNT(*) FROM alerts a WHERE a.statement_id = s.id) AS alerts
+    FROM statements s
+    ORDER BY s.closing_date DESC, s.brand
+  `).all() as StatementSummary[];
+}
+
+export type ReviewState = "open" | "reviewed" | "dismissed";
+
+export type ReviewableAlert = {
+  key: string;
+  source: "integrity" | "anomaly";
+  kind: string;
+  month: string;
+  date: string | null;
+  merchant: string | null;
+  amount: number | null;
+  message: string;
+  state: ReviewState;
+};
+
+// One list, two sources: persisted integrity alerts (ingest-time) and anomalies recomputed per
+// request. Keys are stable identity, never a row id and never the alert's prose — checkStatement
+// builds its message from the filename and a two-decimal amount, so a rename (which is exactly
+// what superseding does) or a one-cent re-parse would orphan the review.
+export function reviewableAlerts(db: Database.Database, cpi: CpiTable): ReviewableAlert[] {
+  const states = new Map<string, ReviewState>(
+    (db.prepare("SELECT key, state FROM alert_reviews").all() as { key: string; state: ReviewState }[])
+      .map(r => [r.key, r.state])
+  );
+  const integrity: ReviewableAlert[] = (db.prepare(`
+    SELECT s.brand, s.closing_date, s.cycle_month AS month, a.kind, a.message, a.expected, a.actual
+    FROM alerts a JOIN statements s ON s.id = a.statement_id
+  `).all() as { brand: string; closing_date: string; month: string; kind: string; message: string; expected: number | null; actual: number | null }[])
+    .map(r => {
+      const key = `integrity|${r.brand}|${r.closing_date}|${r.kind}|${Math.round(r.expected ?? 0)}`;
+      return {
+        key, source: "integrity" as const, kind: r.kind, month: r.month, date: null,
+        merchant: null, amount: r.actual, message: r.message, state: states.get(key) ?? "open",
+      };
+    });
+  const found: ReviewableAlert[] = anomalies(db, cpi).map(a => {
+    // Amounts rounded to whole pesos so a re-parse that shifts a cent does not orphan the review.
+    const key = `anomaly|${a.kind}|${a.merchant}|${a.month}|${a.date ?? ""}|${Math.round(a.amount)}`;
+    return {
+      key, source: "anomaly" as const, kind: a.kind, month: a.month, date: a.date,
+      merchant: a.merchant, amount: a.amount,
+      // detectAnomalies already spells out "already reversed on the same statement" for a
+      // resolved duplicate; repeating it here just doubled the sentence in the table.
+      message: a.message,
+      // A duplicate the statement already reversed is closed by the data — until a human says
+      // otherwise, which is why an explicit 'open' row is stored rather than the row deleted.
+      state: states.get(key) ?? (a.resolved ? "reviewed" : "open"),
+    };
+  });
+  return [...integrity, ...found].sort((a, b) => (b.date ?? b.month).localeCompare(a.date ?? a.month));
+}
+
+export function setAlertReview(db: Database.Database, key: string, state: ReviewState): void {
+  db.prepare(
+    `INSERT INTO alert_reviews (key, state) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET state = excluded.state`
+  ).run(key, state);
+}
+
+// Alerts legitimately disappear — a new statement moves the new_merchant window, a CPI refresh
+// pushes a jump under the threshold, an alias edit renames a merchant. Without this the table
+// only ever grows and a stale dismissal is invisible.
+export function staleReviews(db: Database.Database, live: ReviewableAlert[]): number {
+  const alive = new Set(live.map(a => a.key));
+  const keys = (db.prepare("SELECT key FROM alert_reviews").all() as { key: string }[])
+    .map(r => r.key).filter(k => !alive.has(k));
+  const del = db.prepare("DELETE FROM alert_reviews WHERE key = ?");
+  for (const k of keys) del.run(k);
+  return keys.length;
+}
+
+export type UnknownMerchant = { merchant: string; total: number; count: number };
+
+// Nominal pesos, and negatives NET (inherited decision 2) — ABS() would make a refund increase a
+// merchant's queue weight. This is a work queue ordered by "worth naming", not an analysis.
+export function unknownMerchants(db: Database.Database): UnknownMerchant[] {
+  return db.prepare(`
+    SELECT merchant, SUM(COALESCE(ars, 0)) AS total, COUNT(*) AS count
+    FROM transactions
+    WHERE section = 'purchases' AND category = 'other'
+    GROUP BY merchant
+    ORDER BY total DESC, merchant
+  `).all() as UnknownMerchant[];
+}
+
+// Rules match by substring, so accepting "DIA" also claims SOMMIERLANDIA, SOLAR DE LA ABADIA and
+// QUOTIDIANO — all real merchants in this dataset. The accept form shows this before the click.
+export function rulePreview(db: Database.Database, match: string): { merchant: string; count: number }[] {
+  if (match.length < 3) return [];
+  return db.prepare(`
+    SELECT merchant, COUNT(*) AS count FROM transactions
+    WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0
+    GROUP BY merchant ORDER BY merchant
+  `).all(match.toUpperCase()) as { merchant: string; count: number }[];
+}
+
+// Applies a freshly accepted rule to rows already loaded, so the dashboard updates without a full
+// re-ingest. The section scope mirrors categorize() exactly — it short-circuits taxes_and_charges
+// and runs the rule loop over payments (BONIF PROMO CUOTA XENEIZE is a real, rule-categorized
+// payments row) — otherwise this update and `npm run ingest` would disagree.
+export function recategorize(
+  db: Database.Database, match: string, category: string, subcategory: string | null
+): number {
+  return db.prepare(
+    `UPDATE transactions SET category = ?, subcategory = ?
+     WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0`
+  ).run(category, subcategory, match.toUpperCase()).changes;
 }
