@@ -1361,7 +1361,7 @@ git commit -m "feat: query layer with netting, cuota remaining-principal, per-br
   - `<ModeToggle spend value baseMonth?/>` client component writing `?value=`/`?spend=` via router; shows "in <baseMonth> pesos" when value=real and baseMonth given
   - `<Nav />` client component that preserves current search params across links: `/` Overview, `/trends`, `/categories`, `/recurring`, `/compare`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `web/src/lib/format.test.ts`:
 ```ts
@@ -1405,11 +1405,11 @@ describe("withModes", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd web && npx vitest run src/lib/format.test.ts src/lib/params.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/format.ts`:
 ```ts
@@ -1538,11 +1538,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- [ ] **Step 4: Run tests + build**
+- [x] **Step 4: Run tests + build**
 
 Run: `cd web && npm test` — Expected: PASS. Run: `npm run build` — Expected: success.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/format.ts web/src/lib/format.test.ts web/src/lib/params.ts web/src/lib/params.test.ts web/src/components web/src/app/layout.tsx
