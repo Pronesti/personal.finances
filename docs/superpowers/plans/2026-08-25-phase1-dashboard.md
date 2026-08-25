@@ -773,7 +773,7 @@ git commit -m "feat: ingest with cycle-month keying and ingest-time alerts"
 **Interfaces:**
 - Produces: `type CpiTable = Record<string, number>` (`"YYYY-MM"` → index); `toReal(amountArs, fromMonth, toMonth, table): number`; `latestMonth(table): string`; `loadCpi(): CpiTable` (module-cached read of `DATA_DIR/ipc.json`; missing file → `Error("data/ipc.json missing — run npm run fetch-ipc")`). Missing month → nearest **earlier** month present; empty table → `Error(".. run npm run fetch-ipc")`. When CPI lags statements (latest cycle newer than latest index), that cycle is effectively undeflated — the UI labels the base month (Task 9) so this is visible, not silent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/cpi.test.ts`:
 ```ts
@@ -798,11 +798,11 @@ describe("cpi", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/cpi.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/cpi.ts`:
 ```ts
@@ -866,12 +866,12 @@ main().catch(e => { console.error(e); process.exit(1); });
 
 If the series id 404s, find the current one at `https://datosgobar.github.io/series-tiempo-ar-explorer/` (search "IPC nivel general nacional índice") and swap `SERIES_ID`. Commit the produced `data/ipc.json`.
 
-- [ ] **Step 4: Run tests + fetch**
+- [x] **Step 4: Run tests + fetch**
 
 Run: `cd web && npx vitest run src/lib/cpi.test.ts` — Expected: PASS.
 Run: `cd web && npm run fetch-ipc` — Expected: `wrote .../data/ipc.json N months, latest: 2026-06` (INDEC publishes ~mid following month).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/cpi.ts web/src/lib/cpi.test.ts web/scripts/fetch-ipc.ts data/ipc.json

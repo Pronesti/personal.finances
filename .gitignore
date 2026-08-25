@@ -18,3 +18,5 @@ venv/
 node_modules/
 web/.next/
 data/app.db
+data/app.db-wal
+data/app.db-shm
