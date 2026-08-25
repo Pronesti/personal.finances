@@ -1561,7 +1561,7 @@ git commit -m "feat: UI shell with mode-preserving nav and toggles"
 - Consumes: `eli5`/`getDb` (T2/T8), `loadCpi` (T6), `parseModes`/`withModes`/`fmtArs`/`fmtPct` (T9), `ModeToggle` (T9).
 - Produces: 6 tiles per spec §4. Five link to deep views **preserving modes**; the Alerts tile is a non-link that shows the actual messages (no dead-end navigation).
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 `web/src/components/Sparkline.tsx`:
 ```tsx
@@ -1650,11 +1650,11 @@ export default async function Overview({ searchParams }: { searchParams: Promise
 }
 ```
 
-- [ ] **Step 2: Verify in browser**
+- [x] **Step 2: Verify in browser**
 
 Run: `cd web && npm run dev`, open `http://localhost:3000`. Expected: 6 tiles with real numbers; both toggles change tile values; "in 2026-06 pesos" (or latest CPI month) label visible in real mode; tile links keep the chosen modes; alerts tile shows "statements add up" (0 expected on real data).
 
-- [ ] **Step 3: Build + commit**
+- [x] **Step 3: Build + commit**
 
 Run: `npm run build` — Expected: success.
 

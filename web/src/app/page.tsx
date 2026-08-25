@@ -1,69 +1,67 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getDb } from "@/lib/db";
+import { loadCpi } from "@/lib/cpi";
+import { eli5 } from "@/lib/queries";
+import { parseModes, withModes } from "@/lib/params";
+import { fmtArs, fmtPct } from "@/lib/format";
+import { ModeToggle } from "@/components/ModeToggle";
+import { Sparkline } from "@/components/Sparkline";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+function Tile({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {
+  const cls = "block rounded-xl border border-zinc-200 dark:border-zinc-800 p-4";
+  const inner = (
+    <>
+      <div className="text-xs uppercase tracking-wide text-zinc-500 mb-1">{label}</div>
+      {children}
+    </>
+  );
+  return href
+    ? <Link href={href} className={`${cls} hover:shadow-md transition-shadow`}>{inner}</Link>
+    : <div className={cls}>{inner}</div>;
+}
+
+export default async function Overview({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const modes = parseModes(await searchParams);
+  const t = eli5(getDb(), { ...modes, cpi: loadCpi() });
+  const valueLabel = modes.value === "real" ? "real" : "nominal";
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">Statement {t.latestClosing}</h1>
+        <ModeToggle spend={modes.spend} value={modes.value} baseMonth={t.baseMonth} />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <Tile href={withModes("/trends", modes)} label={`Spent this statement (${valueLabel})`}>
+          <div className="text-2xl font-bold">{fmtArs(t.spentThisMonth)}</div>
+          <div className="text-sm text-zinc-500">{fmtPct(t.pctVsPrev)} vs last month</div>
+        </Tile>
+        <Tile href={withModes("/recurring", modes)} label="Committed next month">
+          <div className="text-2xl font-bold">{fmtArs(t.committedNextMonth)}</div>
+          <div className="text-sm text-zinc-500">due after {t.nextDueDate ?? "—"}</div>
+        </Tile>
+        <Tile href={withModes("/categories", modes)} label="Top categories">
+          {t.topCategories.map(c => (
+            <div key={c.category} className="flex justify-between text-sm">
+              <span>{c.category}</span><span>{fmtArs(c.amount)}</span>
+            </div>
+          ))}
+        </Tile>
+        <Tile label="Alerts">
+          <div className="text-2xl font-bold">{t.alerts.length}</div>
+          {t.alerts.length === 0
+            ? <div className="text-sm text-zinc-500">statements add up</div>
+            : t.alerts.map((a, i) => <div key={i} className="text-xs text-red-600">{a.message}</div>)}
+        </Tile>
+        <Tile href={withModes("/compare", modes)} label="Cuota burden (both cards)">
+          <div className="text-2xl font-bold">{fmtArs(t.cuotaTotal)}</div>
+          <div className="text-sm text-zinc-500">over next {t.cuotaMonths} months</div>
+        </Tile>
+        <Tile href={withModes("/trends", modes)} label={`12-month trend (${valueLabel})`}>
+          <Sparkline data={t.sparkline} />
+        </Tile>
+      </div>
+    </main>
   );
 }
