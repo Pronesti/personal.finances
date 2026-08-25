@@ -224,3 +224,27 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
     baseMonth: latestMonth(opts.cpi),
   };
 }
+
+// Chart 9. Both series land in the active value mode: ARS-billed rows through the normal
+// path, USD-billed rows converted at their month's MEP so the split is readable side by side.
+export function currencySplit(db: Database.Database, opts: ValueOpts) {
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, opts);
+  const acc = new Map<string, { arsBilled: number; usdBilled: number }>();
+  for (const r of rows) {
+    const bucket = acc.get(r.month) ?? { arsBilled: 0, usdBilled: 0 };
+    if (r.ars != null) {
+      const amt = effectiveAmount(r, opts, ctx);
+      if (amt != null) bucket.arsBilled += amt;
+    } else if (r.usd != null) {
+      const mult = ctx.taxMult.get(r.statement_id) ?? 1;
+      bucket.usdBilled += opts.value === "usd"
+        ? r.usd * mult
+        : toMode(r.usd * mult * mepFor(r.month, opts.mep), r.month, opts, ctx.baseMonth);
+    }
+    acc.set(r.month, bucket);
+  }
+  return [...acc.entries()]
+    .map(([month, v]) => ({ month, ...v }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+}

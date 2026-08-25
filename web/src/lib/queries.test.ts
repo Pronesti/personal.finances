@@ -197,3 +197,27 @@ describe("toMode", () => {
     expect(toMode(1000, "2026-06", o("cash", "usd"), "2026-07")).toBeCloseTo(1);
   });
 });
+
+import { currencySplit } from "@/lib/queries";
+
+describe("currencySplit", () => {
+  it("separates ARS-billed from USD-billed spend, both in the active mode", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const jul = currencySplit(db, o("cash", "usd")).find(r => r.month === "2026-07")!;
+    expect(jul.usdBilled).toBeCloseTo(3.73, 6);  // the seeded Spotify row
+    expect(jul.arsBilled).toBeGreaterThan(0);
+  });
+  it("reports USD-billed spend in pesos when the mode is nominal", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const jul = currencySplit(db, o("cash", "nominal")).find(r => r.month === "2026-07")!;
+    expect(jul.usdBilled).toBeCloseTo(3.73 * 1100, 6);
+    expect(jul.arsBilled).toBeCloseTo(1400, 6);  // 1000 - 200 + 100 + 500
+  });
+  it("leaves months without USD-billed rows at zero", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    expect(currencySplit(db, o("cash", "nominal")).find(r => r.month === "2026-06")!.usdBilled).toBe(0);
+  });
+});
