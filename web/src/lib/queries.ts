@@ -435,3 +435,18 @@ export function dailySpend(db: Database.Database, opts: ValueOpts) {
   return [...acc.entries()].map(([date, amount]) => ({ date, amount }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+export type StatementSummary = {
+  file: string; brand: string; month: string; closing_date: string;
+  transactions: number; alerts: number;
+};
+
+export function statementList(db: Database.Database): StatementSummary[] {
+  return db.prepare(`
+    SELECT s.file, s.brand, s.cycle_month AS month, s.closing_date,
+           (SELECT COUNT(*) FROM transactions t WHERE t.statement_id = s.id) AS transactions,
+           (SELECT COUNT(*) FROM alerts a WHERE a.statement_id = s.id) AS alerts
+    FROM statements s
+    ORDER BY s.closing_date DESC, s.brand
+  `).all() as StatementSummary[];
+}

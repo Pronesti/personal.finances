@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { openDb } from "@/lib/db";
 import {
-  MAX_PDF_BYTES, safePdfName, ingestUpload, pdfDir, jsonDir, resolvePython, runPipeline,
+  MAX_PDF_BYTES, REPO_ROOT, safePdfName, ingestUpload, pdfDir, jsonDir, resolvePython, runPipeline,
 } from "@/lib/upload";
 import { Failure } from "@/lib/failure";
 
@@ -109,6 +109,30 @@ describe("runPipeline", () => {
     await expect(run).rejects.toBeInstanceOf(Failure);
     await run.catch((e: Failure) => {
       expect(e.code).toBe("python_missing");
+    });
+  });
+
+  it("keeps python_missing (and its hint) when there is no venv at all", async () => {
+    // Regression: resolvePython() used to be called inside runPipeline's try, so its Failure was
+    // caught and reclassified as parse_failed, throwing away the one message that says what to do.
+    useStub(WRITES_JSON);
+    delete process.env.TARJETAS_PYTHON;
+    const realVenv = path.join(REPO_ROOT, ".venv", "bin", "python3");
+    if (fs.existsSync(realVenv)) return; // this machine has a venv; the branch is unreachable here
+    const run = runPipeline(path.join(sandbox, "pdfs", "x.pdf"));
+    await run.catch((e: Failure) => {
+      expect(e.code).toBe("python_missing");
+      expect(e.hint).toContain("python3 -m venv");
+    });
+  });
+
+  it("does not reclassify an already-classified Failure", async () => {
+    useStub(WRITES_JSON);
+    process.env.TARJETAS_PYTHON = path.join(sandbox, "nope");
+    const run = runPipeline(path.join(sandbox, "pdfs", "x.pdf"));
+    await run.catch((e: Failure) => {
+      expect(e.code).toBe("python_missing");
+      expect(e.hint).toContain("python3 -m venv");
     });
   });
 

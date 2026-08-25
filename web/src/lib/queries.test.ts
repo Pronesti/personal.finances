@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -35,6 +35,12 @@ function seed(db: Database.Database) {
 describe("queries", () => {
   let db: Database.Database;
   beforeEach(() => { db = openDb(":memory:"); seed(db); });
+
+  it("statementList reports each statement newest first with its counts", () => {
+    const rows = statementList(db);
+    expect(rows.map(r => r.file)).toEqual(["m_2026_07.json", "v_2026_07.json", "v_2026_06.json"]);
+    expect(rows[0]).toMatchObject({ brand: "mastercard", month: "2026-07", transactions: 1, alerts: 0 });
+  });
 
   it("accrual counts remaining principal at first-observed cuota, nets refunds, skips USD-only in sums", () => {
     const r = monthlySpendByCategory(db, o("accrual", "nominal"));

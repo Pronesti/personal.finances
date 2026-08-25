@@ -50,8 +50,11 @@ function tail(s: string, n = 3): string {
 // gets an explicit env — process.env would hand ANTHROPIC_API_KEY to Python for no reason.
 export async function runPipeline(pdfPath: string): Promise<string> {
   const target = path.join(jsonDir(), path.basename(pdfPath).replace(/\.pdf$/i, ".json"));
+  // Resolved OUTSIDE the try: its "no venv" Failure already says exactly what to do, and being
+  // caught below would reclassify it as parse_failed and drop the hint.
+  const python = resolvePython();
   try {
-    await execFileP(resolvePython(), [script(), pdfPath], {
+    await execFileP(python, [script(), pdfPath], {
       cwd: REPO_ROOT,
       timeout: TIMEOUT_MS,
       maxBuffer: 4 * 1024 * 1024,
@@ -67,10 +70,11 @@ export async function runPipeline(pdfPath: string): Promise<string> {
       },
     });
   } catch (e) {
+    if (e instanceof Failure) throw e; // already classified, and better than anything below
     const err = e as { stderr?: string; message: string; code?: string | number; killed?: boolean };
     const stderr = tail(err.stderr ?? "");
     if (err.code === "ENOENT")
-      throw new Failure("python_missing", `Cannot run ${resolvePython()}.`, SETUP_HINT);
+      throw new Failure("python_missing", `Cannot run ${python}.`, SETUP_HINT);
     if (stderr.includes("ModuleNotFoundError"))
       throw new Failure("python_missing", "The Python environment is missing pdfplumber.", SETUP_HINT);
     if (err.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER")
