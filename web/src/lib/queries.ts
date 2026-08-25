@@ -1,31 +1,64 @@
 import type Database from "better-sqlite3";
 import { toReal, latestMonth, type CpiTable } from "@/lib/cpi";
+import { mepFor, type MepTable } from "@/lib/mep";
 import { detectRecurring, type RecurringCharge } from "@/lib/recurring";
 
 export type SpendMode = "cash" | "accrual";
-export type ValueMode = "nominal" | "real";
-export type ValueOpts = { spend: SpendMode; value: ValueMode; cpi: CpiTable };
+export type ValueMode = "nominal" | "real" | "usd";
+export type TaxMode = "excl" | "incl";
+export type ValueOpts = {
+  spend: SpendMode; value: ValueMode; tax: TaxMode; cpi: CpiTable; mep: MepTable;
+};
 
 type BaseRow = {
+  statement_id: number;
   month: string; date: string | null; description: string; merchant: string;
   category: string; subcategory: string | null; ars: number | null; usd: number | null;
   installment_number: number | null; installment_count: number | null;
 };
 
 function baseRows(db: Database.Database): BaseRow[] {
-  // Negatives net against spend; USD-only rows ride along for drill/recurring (rev notes 2-3).
+  // Negatives net against spend, in BOTH currencies (rev note 2) — a USD refund must be able
+  // to cancel its USD charge. USD rows ride along for drill/recurring (rev note 3).
   return db.prepare(`
-    SELECT s.cycle_month AS month, t.date, t.description, t.merchant,
+    SELECT t.statement_id, s.cycle_month AS month, t.date, t.description, t.merchant,
            t.category, t.subcategory, t.ars, t.usd, t.installment_number, t.installment_count
     FROM transactions t JOIN statements s ON s.id = t.statement_id
-    WHERE t.section = 'purchases' AND (t.ars != 0 OR (t.ars IS NULL AND t.usd > 0))
+    WHERE t.section = 'purchases'
+      AND ((t.ars IS NOT NULL AND t.ars != 0) OR (t.ars IS NULL AND t.usd IS NOT NULL AND t.usd != 0))
     ORDER BY s.cycle_month, t.date
   `).all() as BaseRow[];
 }
 
-type AmountCtx = { baseMonth: string; minK: Map<string, number> };
+type AmountCtx = { baseMonth: string; minK: Map<string, number>; taxMult: Map<number, number> };
 
-function amountCtx(rows: BaseRow[], opts: ValueOpts): AmountCtx {
+// Taxes are levied per statement, not per purchase — the JSON carries no link. Spread each
+// statement's tax total across its purchases in proportion to amount (spec §3, "true cost").
+// Two corrections keep this honest on real data:
+//   - DEVOLUCION DE SALDOS is a balance transfer, not a tax. Its positive sign is arithmetically
+//     correct (the statement reconciles with it), so exclude it rather than negating it.
+//   - DB.RG 5617 is levied on FOREIGN spend, so USD purchases (at MEP) belong in the denominator.
+// Without both, the worst real statement reaches x2.22; with them, x1.22.
+function taxMultipliers(db: Database.Database, opts: ValueOpts): Map<number, number> {
+  const mult = new Map<number, number>();
+  if (opts.tax !== "incl") return mult;
+  const rows = db.prepare(`
+    SELECT t.statement_id, s.cycle_month AS month,
+           SUM(CASE WHEN t.section = 'taxes_and_charges'
+                     AND t.description NOT LIKE 'DEVOLUCION%' THEN t.ars ELSE 0 END) AS tax,
+           SUM(CASE WHEN t.section = 'purchases' AND t.ars IS NOT NULL THEN t.ars ELSE 0 END) AS ars_purch,
+           SUM(CASE WHEN t.section = 'purchases' AND t.ars IS NULL THEN COALESCE(t.usd, 0) ELSE 0 END) AS usd_purch
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    GROUP BY t.statement_id
+  `).all() as { statement_id: number; month: string; tax: number; ars_purch: number; usd_purch: number }[];
+  for (const r of rows) {
+    const base = r.ars_purch + r.usd_purch * mepFor(r.month, opts.mep);
+    if (base > 0) mult.set(r.statement_id, 1 + r.tax / base);
+  }
+  return mult;
+}
+
+function amountCtx(db: Database.Database, rows: BaseRow[], opts: ValueOpts): AmountCtx {
   const minK = new Map<string, number>();
   for (const r of rows) {
     if (r.installment_count == null || r.installment_number == null) continue;
@@ -35,26 +68,41 @@ function amountCtx(rows: BaseRow[], opts: ValueOpts): AmountCtx {
     const cur = minK.get(key);
     if (cur === undefined || r.installment_number < cur) minK.set(key, r.installment_number);
   }
-  return { baseMonth: latestMonth(opts.cpi), minK };
+  return {
+    baseMonth: opts.value === "real" ? latestMonth(opts.cpi) : "",
+    minK,
+    taxMult: taxMultipliers(db, opts),
+  };
 }
 
-// The single home of cash/accrual/real semantics. Returns null when the row
-// doesn't contribute to ARS aggregates in this mode (USD-only, or a non-first cuota in accrual).
+// Converts an ARS amount into the active value mode. Exported: projections and the
+// currency split need it for figures that never pass through a BaseRow.
+export function toMode(amountArs: number, month: string, opts: ValueOpts, baseMonth: string): number {
+  if (opts.value === "real") return toReal(amountArs, month, baseMonth, opts.cpi);
+  if (opts.value === "usd") return amountArs / mepFor(month, opts.mep);
+  return amountArs;
+}
+
+// The single home of cash/accrual/real/usd/tax semantics. Returns null when the row
+// doesn't contribute in this mode (USD-only outside usd mode, or a later cuota in accrual).
 function effectiveAmount(r: BaseRow, opts: ValueOpts, ctx: AmountCtx): number | null {
-  if (r.ars == null) return null; // USD-only: visible in drill rows, never in ARS sums
-  let amt = r.ars;
+  let cuotaFactor = 1;
   if (opts.spend === "accrual" && r.installment_count != null && r.installment_number != null) {
     const k = ctx.minK.get(`${r.merchant}|${r.installment_count}|${r.date ?? ""}`)!;
     if (r.installment_number !== k) return null;
-    amt = r.ars * (r.installment_count - k + 1); // remaining principal; full price when k=1 (rev note 4)
+    cuotaFactor = r.installment_count - k + 1; // remaining principal; full price when k=1 (rev note 4)
   }
-  if (opts.value === "real") amt = toReal(amt, r.month, ctx.baseMonth, opts.cpi);
-  return amt;
+  const mult = ctx.taxMult.get(r.statement_id) ?? 1;
+  if (r.ars == null) {
+    // USD-billed row: only usd mode can value it, and its own USD figure is the truth.
+    return opts.value === "usd" && r.usd != null ? r.usd * cuotaFactor * mult : null;
+  }
+  return toMode(r.ars * cuotaFactor * mult, r.month, opts, ctx.baseMonth);
 }
 
 export function monthlySpendByCategory(db: Database.Database, opts: ValueOpts) {
   const rows = baseRows(db);
-  const ctx = amountCtx(rows, opts);
+  const ctx = amountCtx(db, rows, opts);
   const acc = new Map<string, number>();
   for (const r of rows) {
     const amt = effectiveAmount(r, opts, ctx);
@@ -79,7 +127,7 @@ export function categoryDrill(
   const level: "category" | "subcategory" | "merchant" =
     !filter.category ? "category" : !filter.subcategory ? "subcategory" : "merchant";
   const all = baseRows(db);
-  const ctx = amountCtx(all, opts);
+  const ctx = amountCtx(db, all, opts);
   const rows: DrillRow[] = [];
   const groups = new Map<string, number>();
   for (const r of all) {
@@ -110,7 +158,7 @@ export function periodComparison(
   db: Database.Database, opts: ValueOpts, granularity: "month" | "quarter" | "year"
 ) {
   const rows = baseRows(db);
-  const ctx = amountCtx(rows, opts);
+  const ctx = amountCtx(db, rows, opts);
   const acc = new Map<string, number>();
   for (const r of rows) {
     const amt = effectiveAmount(r, opts, ctx);

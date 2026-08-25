@@ -26,14 +26,23 @@ function Seg({ param, options, current }: { param: string; options: [string, str
   );
 }
 
-export function ModeToggle({ spend, value, baseMonth }: { spend: string; value: string; baseMonth?: string }) {
+export function ModeToggle({ modes, baseMonth, spendToggle = true }: {
+  modes: { spend: string; value: string; tax: string };
+  baseMonth?: string;
+  spendToggle?: boolean;
+}) {
   return (
-    <div className="flex items-center gap-3">
-      {value === "real" && baseMonth && (
+    <div className="flex flex-wrap items-center gap-3">
+      {modes.value === "real" && baseMonth && (
         <span className="text-xs text-zinc-500">in {baseMonth} pesos</span>
       )}
-      <Seg param="value" current={value} options={[["real", "Real $"], ["nominal", "Nominal $"]]} />
-      <Seg param="spend" current={spend} options={[["accrual", "Purchases"], ["cash", "As billed"]]} />
+      {modes.value === "usd" && <span className="text-xs text-zinc-500">at MEP</span>}
+      <Seg param="value" current={modes.value}
+        options={[["real", "Real $"], ["nominal", "Nominal $"], ["usd", "USD"]]} />
+      {spendToggle && (
+        <Seg param="spend" current={modes.spend} options={[["accrual", "Purchases"], ["cash", "As billed"]]} />
+      )}
+      <Seg param="tax" current={modes.tax} options={[["excl", "Pre-tax"], ["incl", "True cost"]]} />
     </div>
   );
 }

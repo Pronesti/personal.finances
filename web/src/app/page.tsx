@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { loadCpi } from "@/lib/cpi";
 import { eli5 } from "@/lib/queries";
-import { parseModes, withModes } from "@/lib/params";
-import { fmtArs, fmtPct } from "@/lib/format";
+import { parseModes, withModes, valueOpts } from "@/lib/params";
+import { fmtMoney, fmtPct } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Sparkline } from "@/components/Sparkline";
 
@@ -24,27 +23,27 @@ function Tile({ href, label, children }: { href?: string; label: string; childre
 
 export default async function Overview({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const modes = parseModes(await searchParams);
-  const t = eli5(getDb(), { ...modes, cpi: loadCpi() });
-  const valueLabel = modes.value === "real" ? "real" : "nominal";
+  const t = eli5(getDb(), valueOpts(modes));
+  const valueLabel = modes.value === "real" ? "real" : modes.value === "usd" ? "USD" : "nominal";
   return (
     <main>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">Statement {t.latestClosing}</h1>
-        <ModeToggle spend={modes.spend} value={modes.value} baseMonth={t.baseMonth} />
+        <ModeToggle modes={modes} baseMonth={t.baseMonth} />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Tile href={withModes("/trends", modes)} label={`Spent this statement (${valueLabel})`}>
-          <div className="text-2xl font-bold">{fmtArs(t.spentThisMonth)}</div>
+          <div className="text-2xl font-bold">{fmtMoney(t.spentThisMonth, modes.value)}</div>
           <div className="text-sm text-zinc-500">{fmtPct(t.pctVsPrev)} vs last month</div>
         </Tile>
         <Tile href={withModes("/recurring", modes)} label="Committed next month">
-          <div className="text-2xl font-bold">{fmtArs(t.committedNextMonth)}</div>
+          <div className="text-2xl font-bold">{fmtMoney(t.committedNextMonth, modes.value)}</div>
           <div className="text-sm text-zinc-500">due after {t.nextDueDate ?? "—"}</div>
         </Tile>
         <Tile href={withModes("/categories", modes)} label="Top categories">
           {t.topCategories.map(c => (
             <div key={c.category} className="flex justify-between text-sm">
-              <span>{c.category}</span><span>{fmtArs(c.amount)}</span>
+              <span>{c.category}</span><span>{fmtMoney(c.amount, modes.value)}</span>
             </div>
           ))}
         </Tile>
@@ -55,7 +54,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             : t.alerts.map((a, i) => <div key={i} className="text-xs text-red-600">{a.message}</div>)}
         </Tile>
         <Tile href={withModes("/compare", modes)} label="Cuota burden (both cards)">
-          <div className="text-2xl font-bold">{fmtArs(t.cuotaTotal)}</div>
+          <div className="text-2xl font-bold">{fmtMoney(t.cuotaTotal, modes.value)}</div>
           <div className="text-sm text-zinc-500">over next {t.cuotaMonths} months</div>
         </Tile>
         <Tile href={withModes("/trends", modes)} label={`12-month trend (${valueLabel})`}>
