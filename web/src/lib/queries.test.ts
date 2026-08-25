@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -35,6 +35,42 @@ function seed(db: Database.Database) {
 describe("queries", () => {
   let db: Database.Database;
   beforeEach(() => { db = openDb(":memory:"); seed(db); });
+
+  it("reviewableAlerts merges integrity alerts and anomalies, all open by default", () => {
+    const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };
+    db.prepare("INSERT INTO alerts (statement_id, kind, message, expected, actual) VALUES (?,?,?,?,?)")
+      .run(sid.id, "math_mismatch", "v_2026_07.json block 1: declared 10 vs summed 20.00", 10, 20);
+    const rows = reviewableAlerts(db, cpi);
+    const integrity = rows.filter(r => r.source === "integrity");
+    expect(integrity).toHaveLength(1);
+    expect(integrity[0]).toMatchObject({ kind: "math_mismatch", state: "open", month: "2026-07" });
+    // Identity, not prose: no filename, no cents.
+    expect(integrity[0].key).toBe("integrity|visa|2026-07-30|math_mismatch|10");
+  });
+
+  it("keeps a dismissal when the statement is re-ingested under a new filename", () => {
+    const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };
+    db.prepare("INSERT INTO alerts (statement_id, kind, message, expected, actual) VALUES (?,?,?,?,?)")
+      .run(sid.id, "math_mismatch", "v_2026_07.json block 1: declared 10 vs summed 20.00", 10, 20);
+    const key = reviewableAlerts(db, cpi).find(r => r.source === "integrity")!.key;
+    setAlertReview(db, key, "dismissed");
+    // Same cycle, different filename and one cent of drift in the message.
+    db.prepare("UPDATE statements SET file = 'visa_july.json' WHERE id = ?").run(sid.id);
+    db.prepare("UPDATE alerts SET message = 'visa_july.json block 1: declared 10 vs summed 20.01' WHERE statement_id = ?").run(sid.id);
+    expect(reviewableAlerts(db, cpi).find(r => r.key === key)!.state).toBe("dismissed");
+  });
+
+  it("stores an explicit reopen so it beats a computed default", () => {
+    setAlertReview(db, "anomaly|duplicate|X|2026-07|2026-07-01|100", "open");
+    expect(db.prepare("SELECT state FROM alert_reviews WHERE key = ?")
+      .get("anomaly|duplicate|X|2026-07|2026-07-01|100")).toEqual({ state: "open" });
+  });
+
+  it("staleReviews clears reviews no live alert claims", () => {
+    setAlertReview(db, "anomaly|duplicate|GONE|2020-01|2020-01-01|1", "dismissed");
+    expect(staleReviews(db, reviewableAlerts(db, cpi))).toBe(1);
+    expect(db.prepare("SELECT COUNT(*) n FROM alert_reviews").get()).toEqual({ n: 0 });
+  });
 
   it("statementList reports each statement newest first with its counts", () => {
     const rows = statementList(db);
