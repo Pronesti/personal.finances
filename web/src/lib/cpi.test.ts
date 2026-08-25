@@ -17,3 +17,19 @@ describe("cpi", () => {
     expect(() => toReal(1, "2025-01", "2025-02", {})).toThrow(/fetch-ipc/);
   });
 });
+
+import { trailingMonthlyInflation } from "@/lib/cpi";
+
+describe("trailingMonthlyInflation", () => {
+  it("returns the geometric mean monthly rate over the trailing window", () => {
+    const t = { "2026-01": 100, "2026-02": 110, "2026-03": 121 };
+    expect(trailingMonthlyInflation(t, 6)).toBeCloseTo(0.1, 6);
+  });
+  it("honours the window length", () => {
+    const t = { "2026-01": 100, "2026-02": 100, "2026-03": 100, "2026-04": 121 };
+    expect(trailingMonthlyInflation(t, 2)).toBeCloseTo(0.1, 6);
+  });
+  it("throws actionably on a table too short to measure", () => {
+    expect(() => trailingMonthlyInflation({ "2026-01": 100 })).toThrow(/fetch-ipc/);
+  });
+});

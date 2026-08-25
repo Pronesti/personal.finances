@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/paths";
+import { monthsBetween } from "@/lib/months";
 
 export type CpiTable = Record<string, number>;
 
@@ -33,4 +34,14 @@ export function loadCpi(): CpiTable {
   const p = path.join(DATA_DIR, "ipc.json");
   if (!fs.existsSync(p)) throw new Error("data/ipc.json missing — run npm run fetch-ipc");
   return (_cpi = JSON.parse(fs.readFileSync(p, "utf8")) as CpiTable);
+}
+
+// Geometric mean monthly inflation over the trailing window — the rate projections grow by.
+export function trailingMonthlyInflation(table: CpiTable, n = 6): number {
+  const months = Object.keys(table).sort();
+  if (months.length < 2) throw new Error(`CPI table too short — run ${CPI_REMEDY}`);
+  const last = months[months.length - 1];
+  const first = months[Math.max(0, months.length - 1 - n)];
+  const periods = monthsBetween(first, last) - 1; // inclusive span minus one = elapsed months
+  return Math.pow(table[last] / table[first], 1 / periods) - 1;
 }

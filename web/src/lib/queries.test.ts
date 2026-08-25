@@ -221,3 +221,26 @@ describe("currencySplit", () => {
     expect(currencySplit(db, o("cash", "nominal")).find(r => r.month === "2026-06")!.usdBilled).toBe(0);
   });
 });
+
+import { cuotaProjection, latestStatementIds } from "@/lib/queries";
+
+describe("cuotaProjection", () => {
+  it("takes the certain layer only from the newest statement per brand", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    // The June Visa statement is superseded by the July one. Its schedule must not be added.
+    const june = (db.prepare("SELECT id FROM statements WHERE file = 'v_2026_06.json'").get() as { id: number }).id;
+    db.prepare("INSERT INTO upcoming_installments (statement_id, month, amount_ars) VALUES (?, '2026-08', 9999)").run(june);
+
+    expect(latestStatementIds(db)).toHaveLength(2); // one visa, one mastercard
+    const p = cuotaProjection(db, o("cash", "nominal"), 3);
+    expect(p.map(x => x.month)).toEqual(["2026-08", "2026-09", "2026-10"]);
+    expect(p[0].certain).toBeCloseTo(250, 6); // 200 (visa July) + 50 (mastercard), never 10249
+    expect(p[1].certain).toBeCloseTo(100, 6);
+    expect(p[2].certain).toBe(0);
+  });
+
+  it("returns nothing when no statements are ingested", () => {
+    expect(cuotaProjection(openDb(":memory:"), o("cash", "nominal"))).toEqual([]);
+  });
+});

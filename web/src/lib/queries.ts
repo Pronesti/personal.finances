@@ -3,6 +3,9 @@ import { toReal, latestMonth, type CpiTable } from "@/lib/cpi";
 import { mepFor, type MepTable } from "@/lib/mep";
 import { detectRecurring, type RecurringCharge } from "@/lib/recurring";
 import { detectAnomalies, type Anomaly } from "@/lib/anomalies";
+import { project, type ProjectionMonth } from "@/lib/projection";
+import { trailingMonthlyInflation } from "@/lib/cpi";
+import { addMonth } from "@/lib/months";
 
 export type SpendMode = "cash" | "accrual";
 export type ValueMode = "nominal" | "real" | "usd";
@@ -190,13 +193,10 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
   const [lastMonthKey, spentThisMonth] = sorted[sorted.length - 1];
   const prev = sorted.length > 1 ? sorted[sorted.length - 2][1] : null;
 
-  // Latest statement per brand — two cards close the same day; LIMIT 1 would drop one (rev note 10).
-  const latestPerBrand = db.prepare(`
-    SELECT s.id, s.closing_date, s.due_date FROM statements s
-    JOIN (SELECT brand, MAX(closing_date) mc FROM statements GROUP BY brand) x
-      ON x.brand = s.brand AND x.mc = s.closing_date
-  `).all() as { id: number; closing_date: string; due_date: string | null }[];
-  const ids = latestPerBrand.map(s => s.id);
+  const ids = latestStatementIds(db);
+  const latestPerBrand = db.prepare(
+    `SELECT closing_date, due_date FROM statements WHERE id IN (${ids.map(() => "?").join(",")})`
+  ).all(...ids) as { closing_date: string; due_date: string | null }[];
   const upcoming = db.prepare(
     `SELECT month, SUM(amount_ars) amount FROM upcoming_installments
      WHERE statement_id IN (${ids.map(() => "?").join(",")}) GROUP BY month ORDER BY month`
@@ -264,4 +264,64 @@ export function monthlyTotals(db: Database.Database, opts: ValueOpts) {
   }
   return [...acc.entries()].map(([month, amount]) => ({ month, amount }))
     .sort((a, b) => a.month.localeCompare(b.month));
+}
+
+// Two cards close the same day, and an older statement's installment schedule is superseded
+// by the newer one's. LIMIT 1 drops a card; summing all statements double-counts (rev note 7).
+export function latestStatementIds(db: Database.Database): number[] {
+  return (db.prepare(`
+    SELECT s.id FROM statements s
+    JOIN (SELECT brand, MAX(closing_date) mc FROM statements GROUP BY brand) x
+      ON x.brand = s.brand AND x.mc = s.closing_date
+  `).all() as { id: number }[]).map(r => r.id);
+}
+
+export function cuotaProjection(
+  db: Database.Database, opts: ValueOpts, horizon = 6
+): ProjectionMonth[] {
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, opts);
+  const months = [...new Set(rows.map(r => r.month))].sort();
+  const latestMonthSeen = months.at(-1);
+  if (!latestMonthSeen) return [];
+
+  const ids = latestStatementIds(db);
+  const upcomingRaw = db.prepare(
+    `SELECT month, SUM(amount_ars) amount FROM upcoming_installments
+     WHERE statement_id IN (${ids.map(() => "?").join(",")}) GROUP BY month ORDER BY month`
+  ).all(...ids) as { month: string; amount: number }[];
+  const upcoming = upcomingRaw.map(u => ({
+    month: u.month,
+    amount: toMode(u.amount, latestMonthSeen, opts, ctx.baseMonth),
+  }));
+
+  // Recency gate: a subscription last charged in 2025 is not a 2027 obligation. Without it
+  // ~87,000 ARS/month of dead merchants ride along, including two that moved to USD billing.
+  const cutoff = addMonth(latestMonthSeen, -1);
+  const recurring = detectRecurring(rows)
+    .filter(r => r.currency === "ARS" && r.lastMonth >= cutoff);
+  const recurringNames = new Set(recurring.map(r => r.merchant));
+  const recurringMonthly = recurring.reduce(
+    (s, r) => s + toMode(r.lastAmount, r.lastMonth, opts, ctx.baseMonth), 0
+  );
+
+  // Variable = neither contractual cuota nor detected recurring. Trailing 6 cycle months.
+  const trailing = months.slice(-6);
+  const variableByMonth = new Map(trailing.map(m => [m, 0]));
+  for (const r of rows) {
+    if (!variableByMonth.has(r.month)) continue;
+    if (r.installment_count != null || recurringNames.has(r.merchant)) continue;
+    const amt = effectiveAmount(r, opts, ctx);
+    if (amt != null) variableByMonth.set(r.month, variableByMonth.get(r.month)! + amt);
+  }
+
+  return project({
+    startMonth: addMonth(latestMonthSeen),
+    horizon,
+    upcoming,
+    recurringMonthly,
+    variableHistory: [...variableByMonth.values()].filter(v => v > 0),
+    inflation: trailingMonthlyInflation(opts.cpi),
+    mode: opts.value,
+  });
 }
