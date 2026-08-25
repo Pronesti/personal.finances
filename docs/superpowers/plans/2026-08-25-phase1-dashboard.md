@@ -112,7 +112,7 @@ git add -A && git commit -m "feat: scaffold Next.js app with vitest"
   - `migrate(db): void`
 - Tables (later tasks depend on these exact names): `statements(id, file UNIQUE, brand, closing_date, cycle_month, due_date, prev_closing_date, balance_ars, balance_usd, minimum_payment_ars)`, `transactions(id, statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)`, `upcoming_installments(statement_id, month, amount_ars, PK(statement_id, month))`, `alerts(id, statement_id, kind, message, expected, actual)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/db.test.ts`:
 ```ts
@@ -149,11 +149,11 @@ describe("db", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/db.test.ts` — Expected: FAIL (module not found).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/paths.ts`:
 ```ts
@@ -232,11 +232,11 @@ export function getDb(): Database.Database {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cd web && npx vitest run src/lib/db.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/paths.ts web/src/lib/db.ts web/src/lib/db.test.ts
