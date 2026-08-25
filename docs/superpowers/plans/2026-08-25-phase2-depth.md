@@ -346,16 +346,16 @@ Expected: `done: 27 statements, 0 integrity alerts`.
 From the repo root:
 
 Run: `sqlite3 data/app.db "SELECT COUNT(*) FROM transactions WHERE merchant IN ('HBO MAX','GOOGLE YOUTUBE PREMIUM');"`
-Expected: `36` — HBO Max's three namings unify to **19** rows and YouTube Premium's 17 tokens to **17**. If you get 12, the `HELP MAX COM` alias is missing.
+Expected: `38` — HBO Max's three namings unify to **19** rows (4 + 8 + 7) and YouTube Premium's variants to **19**. If you get 31, the `HELP MAX COM` alias is missing.
 
 Run: `sqlite3 data/app.db "SELECT merchant, COUNT(*) FROM transactions WHERE merchant LIKE 'HELP%' OR merchant LIKE 'PERSONAL FLOW%' OR merchant LIKE 'GOOGLE YOUTUBEP P%' OR merchant LIKE 'LEF CASA%' OR merchant LIKE 'CASASSA%LI%' GROUP BY 1;"`
 Expected: no rows.
 
 Run: `sqlite3 data/app.db "SELECT category, COUNT(*) FROM transactions WHERE merchant IN ('HBO MAX','GOOGLE YOUTUBE PREMIUM') GROUP BY 1;"`
-Expected: a single `subscriptions|36` row (proves the two replaced category rules landed and that `HELP MAX COM`'s 7 previously-`other` rows are now filed correctly).
+Expected: a single `subscriptions|38` row (proves the two replaced category rules landed and that `HELP MAX COM`'s 7 previously-`other` rows are now filed correctly).
 
-Run: `sqlite3 data/app.db "SELECT COUNT(*) FROM transactions WHERE merchant GLOB '*[0-9] [0-9][0-9][0-9],[0-9][0-9]';"`
-Expected: `0` (no amounts baked into merchant names).
+Run: `sqlite3 data/app.db "SELECT COUNT(*) FROM transactions WHERE section='purchases' AND merchant GLOB '*[0-9] [0-9][0-9][0-9],[0-9][0-9]';"`
+Expected: `0` (no amounts baked into merchant names). Restrict to `purchases`: three `taxes_and_charges` rows are named `DB IVA $ 21% 2 069,63` and similar, where the merchant column is meaningless — `categorize` short-circuits on the section before ever reading it.
 
 - [ ] **Step 6: Commit**
 

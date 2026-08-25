@@ -1,3 +1,5 @@
+import { addMonth, monthsBetween } from "@/lib/months";
+
 export type RecurringCharge = {
   merchant: string;
   currency: "ARS" | "USD";
@@ -10,17 +12,6 @@ export type RecurringCharge = {
 };
 
 type Row = { merchant: string; month: string; ars: number | null; usd: number | null; installment_count?: number | null };
-
-function monthsBetween(a: string, b: string): number {
-  const [ay, am] = a.split("-").map(Number);
-  const [by, bm] = b.split("-").map(Number);
-  return (by - ay) * 12 + (bm - am) + 1; // inclusive span
-}
-
-function addMonth(m: string): string {
-  const [y, mo] = m.split("-").map(Number);
-  return new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 7); // mo is 0-indexed next month
-}
 
 export function detectRecurring(
   rows: Row[],

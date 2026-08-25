@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { categorize, normalizeMerchant, type Rule } from "@/lib/categorize";
+import { applyAlias, type Alias } from "@/lib/aliases";
 import { checkStatement, type StatementJson, type Alert } from "@/lib/integrity";
 
 export function cycleMonth(closingDate: string, prevClosingDate: string | null): string {
@@ -10,7 +11,7 @@ export function cycleMonth(closingDate: string, prevClosingDate: string | null):
   return new Date((start + end) / 2).toISOString().slice(0, 7);
 }
 
-export function statementToRows(json: StatementJson, rules: Rule[]) {
+export function statementToRows(json: StatementJson, rules: Rule[], aliases: Alias[]) {
   const prev = json.period.previous_closing_date ?? null;
   const statement = {
     file: json.file,
@@ -24,12 +25,13 @@ export function statementToRows(json: StatementJson, rules: Rule[]) {
     minimum_payment_ars: json.balances?.minimum_payment_ars ?? null,
   };
   const transactions = json.transactions.map(t => {
-    const { category, subcategory } = categorize(t.description, t.section, rules);
+    const merchant = applyAlias(normalizeMerchant(t.description), aliases);
+    const { category, subcategory } = categorize(merchant, t.section, rules);
     return {
       section: t.section,
       date: t.date,
       description: t.description,
-      merchant: normalizeMerchant(t.description),
+      merchant,
       category, subcategory,
       ars: t.ars, usd: t.usd,
       installment_number: t.installment_number,
@@ -43,8 +45,8 @@ export function statementToRows(json: StatementJson, rules: Rule[]) {
   return { statement, transactions, installments, alerts };
 }
 
-export function ingestFile(db: Database.Database, json: StatementJson, rules: Rule[]): void {
-  const { statement, transactions, installments, alerts } = statementToRows(json, rules);
+export function ingestFile(db: Database.Database, json: StatementJson, rules: Rule[], aliases: Alias[]): void {
+  const { statement, transactions, installments, alerts } = statementToRows(json, rules, aliases);
   const run = db.transaction(() => {
     db.prepare("DELETE FROM statements WHERE file = ?").run(statement.file);
     const sid = db.prepare(

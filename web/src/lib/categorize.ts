@@ -11,7 +11,10 @@ export type Category = (typeof CATEGORIES)[number];
 export type Rule = { match: string; category: Category; subcategory?: string };
 
 const PREFIX_RE = /^(MERPAGO|MERCADOPAGO|DLOCAL|DLO|PAYU|EBANX|\d+)\*/i;
-const USD_TAIL_RE = /\s*\S*USD\s*[\d.,]+$/i; // "USD 3,73" and glued "MT8ZSVB45USD 9,99"
+// Trailing "<CUR> 1 234,56" amounts — Argentine statements use spaces as thousands separators,
+// and glue the code to a voucher ("MT8ZSVB45USD 9,99"). Without the \s the amount becomes part
+// of the merchant name and every occurrence looks like a brand-new merchant.
+const USD_TAIL_RE = /\s*\S*(USD|CLP|EUR|BRL|UYU)\s*[\d.,\s]+$/i;
 const NUM_TAIL_RE = /\s+(ID:)?\d{6,}(-\d+)*$/i; // voucher/account tails, incl. "ID:000..." (OSDE drift)
 
 export function normalizeMerchant(description: string): string {
@@ -27,15 +30,15 @@ export function loadRules(): Rule[] {
   return JSON.parse(fs.readFileSync(p, "utf8")).rules as Rule[];
 }
 
+// Takes an already normalized + aliased merchant (ingest does both), not a raw description.
 export function categorize(
-  description: string,
+  merchant: string,
   section: string,
   rules: Rule[]
 ): { category: Category; subcategory: string | null } {
   if (section === "taxes_and_charges") return { category: "taxes_fees", subcategory: null };
-  const m = normalizeMerchant(description);
   for (const r of rules) {
-    if (m.includes(r.match.toUpperCase())) {
+    if (merchant.includes(r.match.toUpperCase())) {
       return { category: r.category, subcategory: r.subcategory ?? null };
     }
   }

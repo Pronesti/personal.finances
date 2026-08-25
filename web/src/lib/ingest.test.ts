@@ -3,8 +3,10 @@ import { cycleMonth, statementToRows, ingestFile } from "@/lib/ingest";
 import { openDb } from "@/lib/db";
 import type { StatementJson } from "@/lib/integrity";
 import type { Rule } from "@/lib/categorize";
+import type { Alias } from "@/lib/aliases";
 
 const rules: Rule[] = [{ match: "OSDE", category: "health", subcategory: "insurance" }];
+const aliases: Alias[] = [{ match: "OSDE", alias: "OSDE" }];
 
 const fixture = {
   file: "visa_2026_07_30.pdf",
@@ -43,7 +45,7 @@ describe("cycleMonth", () => {
 
 describe("statementToRows", () => {
   it("maps statement with cycle_month, categorizes, filters zero installments", () => {
-    const r = statementToRows(fixture, rules);
+    const r = statementToRows(fixture, rules, aliases);
     expect(r.statement).toMatchObject({ file: "visa_2026_07_30.pdf", cycle_month: "2026-07" });
     expect(r.transactions).toHaveLength(6);
     expect(r.transactions.find(t => t.description.startsWith("OSDE"))).toMatchObject({ merchant: "OSDE", category: "health" });
@@ -53,7 +55,7 @@ describe("statementToRows", () => {
   it("carries integrity alerts", () => {
     const bad = structuredClone(fixture);
     bad.declared_totals![0].ars = 999999;
-    expect(statementToRows(bad, rules).alerts).toHaveLength(1);
+    expect(statementToRows(bad, rules, aliases).alerts).toHaveLength(1);
   });
 });
 
@@ -62,8 +64,8 @@ describe("ingestFile", () => {
     const db = openDb(":memory:");
     const bad = structuredClone(fixture);
     bad.declared_totals![0].ars = 999999;
-    ingestFile(db, bad, rules);
-    ingestFile(db, bad, rules);
+    ingestFile(db, bad, rules, aliases);
+    ingestFile(db, bad, rules, aliases);
     expect(db.prepare("SELECT COUNT(*) n FROM statements").get()).toEqual({ n: 1 });
     expect(db.prepare("SELECT COUNT(*) n FROM transactions").get()).toEqual({ n: 6 });
     expect(db.prepare("SELECT COUNT(*) n FROM upcoming_installments").get()).toEqual({ n: 1 });

@@ -5,7 +5,7 @@ const rules: Rule[] = [
   { match: "MOVISTAR AR", category: "entertainment", subcategory: "events" },
   { match: "MOVISTAR", category: "services", subcategory: "phone" },
   { match: "OSDE", category: "health", subcategory: "insurance" },
-  { match: "HBOM", category: "subscriptions", subcategory: "streaming" },
+  { match: "HBO MAX", category: "subscriptions", subcategory: "streaming" },
   { match: "PEDIDOSYA", category: "food", subcategory: "delivery" },
 ];
 
@@ -29,20 +29,23 @@ describe("normalizeMerchant", () => {
 
 describe("categorize", () => {
   it("first matching rule wins — Movistar Arena is events, not phone", () => {
-    expect(categorize("292746*MOVISTAR AREN", "purchases", rules))
+    expect(categorize(normalizeMerchant("292746*MOVISTAR AREN"), "purchases", rules))
       .toEqual({ category: "entertainment", subcategory: "events" });
   });
-  it("matches rules on normalized merchant across drifted variants", () => {
-    for (const d of ["DLO*HELP_HBOMAX_COM", "help hbomax com", "DLOCAL*HELP HBOM"]) {
-      expect(categorize(d, "purchases", rules).category).toBe("subscriptions");
-    }
-  });
   it("taxes_and_charges section is always taxes_fees", () => {
-    expect(categorize("IVA RG 4240 21%( 37759,04)", "taxes_and_charges", rules))
+    expect(categorize(normalizeMerchant("IVA RG 4240 21%( 37759,04)"), "taxes_and_charges", rules))
       .toEqual({ category: "taxes_fees", subcategory: null });
   });
   it("unknown merchant falls back to other", () => {
-    expect(categorize("XYZ RANDOM SHOP", "purchases", rules))
+    expect(categorize(normalizeMerchant("XYZ RANDOM SHOP"), "purchases", rules))
       .toEqual({ category: "other", subcategory: null });
+  });
+});
+
+describe("categorize on aliased merchants", () => {
+  // Matching drifted spellings is the alias map's job now (see aliases.test.ts); rules are
+  // written against the canonical name the alias produces.
+  it("matches rules written for the canonical alias names", () => {
+    expect(categorize("HBO MAX", "purchases", rules).category).toBe("subscriptions");
   });
 });
