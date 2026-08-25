@@ -244,3 +244,85 @@ describe("cuotaProjection", () => {
     expect(cuotaProjection(openDb(":memory:"), o("cash", "nominal"))).toEqual([]);
   });
 });
+
+import { sankeyFlows, dailySpend } from "@/lib/queries";
+
+describe("sankeyFlows", () => {
+  it("emits index-valid brand -> category -> merchant links that conserve flow", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const { nodes, links } = sankeyFlows(db, o("cash", "nominal"), "2026-07");
+    const name = (i: number) => nodes[i].name;
+    expect(nodes.map(n => n.name)).toEqual(expect.arrayContaining(["visa", "mastercard", "food", "transport"]));
+    for (const l of links) {
+      expect(l.source).toBeGreaterThanOrEqual(0);
+      expect(l.target).toBeLessThan(nodes.length);
+      expect(l.value).toBeGreaterThan(0);
+    }
+    // Every category conserves flow: what the cards send in equals what merchants take out.
+    const inTo = new Map<string, number>();
+    const outOf = new Map<string, number>();
+    for (const l of links) {
+      const src = name(l.source), tgt = name(l.target);
+      if (src === "visa" || src === "mastercard") inTo.set(tgt, (inTo.get(tgt) ?? 0) + l.value);
+      else outOf.set(src, (outOf.get(src) ?? 0) + l.value);
+    }
+    for (const [category, into] of inTo) expect(outOf.get(category)).toBeCloseTo(into, 6);
+  });
+
+  it("nets refunds at merchant grain, so food is 800 not 1000", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const { nodes, links } = sankeyFlows(db, o("cash", "nominal"), "2026-07");
+    const food = links.find(l => nodes[l.source].name === "visa" && nodes[l.target].name === "food")!;
+    expect(food.value).toBeCloseTo(800, 6);
+  });
+
+  it("drops a merchant that nets to zero without unbalancing its category", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const sid = (db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number }).id;
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       VALUES (?, 'purchases', '2026-07-20', 'REFUNDED', 'REFUNDED', 'food', NULL, ?, NULL, NULL, NULL)`
+    );
+    ins.run(sid, 5000); ins.run(sid, -5000);
+    const { nodes, links } = sankeyFlows(db, o("cash", "nominal"), "2026-07");
+    expect(nodes.map(n => n.name)).not.toContain("REFUNDED");
+    const into = links.filter(l => nodes[l.target].name === "food" && nodes[l.source].name === "visa")
+      .reduce((s, l) => s + l.value, 0);
+    const outOf = links.filter(l => nodes[l.source].name === "food").reduce((s, l) => s + l.value, 0);
+    expect(outOf).toBeCloseTo(into, 6);
+  });
+
+  it("returns nothing for a month with no statements", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    expect(sankeyFlows(db, o("cash", "nominal"), "2020-01")).toEqual({ nodes: [], links: [] });
+  });
+});
+
+describe("dailySpend", () => {
+  it("counts a cuota series once at full price, not once per statement", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       SELECT id, 'purchases', '2026-06-15', 'SOFA', 'SOFA', 'shopping', NULL, 1000, NULL, ?, 6
+       FROM statements WHERE file = ?`
+    );
+    ins.run(1, "v_2026_06.json");
+    ins.run(2, "v_2026_07.json");
+    // Even though the caller asks for cash mode, a calendar is about purchase days: accrual wins.
+    const day = dailySpend(db, o("cash", "nominal")).find(d => d.date === "2026-06-15")!;
+    expect(day.amount).toBeCloseTo(6000, 6);
+  });
+
+  it("emits one entry per dated day and skips undated rows", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const days = dailySpend(db, o("cash", "nominal"));
+    expect(days.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d.date))).toBe(true);
+    expect(new Set(days.map(d => d.date)).size).toBe(days.length);
+  });
+});

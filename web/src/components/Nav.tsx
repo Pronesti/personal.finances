@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 const links = [
-  ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/categories", "Categories"],
+  ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/categories", "Categories"], ["/sankey", "Sankey"], ["/calendar", "Calendar"],
   ["/recurring", "Recurring"], ["/anomalies", "Anomalies"], ["/inflation", "Inflation"], ["/compare", "Compare"],
 ] as const;
 

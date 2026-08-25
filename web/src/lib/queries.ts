@@ -354,3 +354,77 @@ export function personalInflation(
     basket: [...new Set(basketRows.map(r => r.merchant))].sort(),
   };
 }
+
+const TOP_MERCHANTS = 8; // per category; the tail becomes one "<category> — other" band
+
+// Chart 2. One netted map keyed brand|category|merchant is the whole trick: deriving both
+// link sets from the same survivors makes flow conservation automatic. Accumulating the two
+// sides separately and dropping non-positives from each breaks 6 of 19 real months.
+export function sankeyFlows(db: Database.Database, opts: ValueOpts, month: string) {
+  const empty = { nodes: [] as { name: string }[], links: [] as { source: number; target: number; value: number }[] };
+  const all = baseRows(db);
+  const ctx = amountCtx(db, all, opts);
+  const brandByStatement = new Map(
+    (db.prepare("SELECT id, brand FROM statements").all() as { id: number; brand: string }[])
+      .map(s => [s.id, s.brand])
+  );
+
+  const flows = new Map<string, number>(); // "brand|category|merchant" -> netted amount
+  for (const r of all) {
+    if (r.month !== month) continue;
+    const amt = effectiveAmount(r, opts, ctx);
+    if (amt == null) continue; // negatives ride along and net (rev note 2)
+    const brand = brandByStatement.get(r.statement_id) ?? "card";
+    const key = `${brand}|${r.category}|${r.merchant}`;
+    flows.set(key, (flows.get(key) ?? 0) + amt);
+  }
+  for (const [k, v] of flows) if (v <= 0) flows.delete(k);
+  if (flows.size === 0) return empty;
+
+  const brandToCat = new Map<string, number>();
+  const perCategory = new Map<string, Map<string, number>>();
+  for (const [k, v] of flows) {
+    const [brand, category, merchant] = k.split("|");
+    brandToCat.set(`${brand}|${category}`, (brandToCat.get(`${brand}|${category}`) ?? 0) + v);
+    const m = perCategory.get(category) ?? new Map<string, number>();
+    m.set(merchant, (m.get(merchant) ?? 0) + v); // one merchant, possibly two cards
+    perCategory.set(category, m);
+  }
+
+  const names: string[] = [];
+  const idx = (name: string) => {
+    const at = names.indexOf(name);
+    return at >= 0 ? at : names.push(name) - 1;
+  };
+  const links: { source: number; target: number; value: number }[] = [];
+  for (const [key, value] of brandToCat) {
+    const [brand, category] = key.split("|");
+    links.push({ source: idx(brand), target: idx(category), value });
+  }
+  for (const [category, merchants] of perCategory) {
+    const sorted = [...merchants.entries()].sort((a, b) => b[1] - a[1]);
+    for (const [merchant, value] of sorted.slice(0, TOP_MERCHANTS)) {
+      links.push({ source: idx(category), target: idx(merchant), value });
+    }
+    const tail = sorted.slice(TOP_MERCHANTS).reduce((s, [, v]) => s + v, 0);
+    if (tail > 0) links.push({ source: idx(category), target: idx(`${category} — other`), value: tail });
+  }
+  return { nodes: names.map(name => ({ name })), links };
+}
+
+// Chart 3. Always accrual: a calendar answers "what did I buy that day", and cuota rows are
+// re-listed by every statement at their original purchase date (rev note 4 collapses them).
+export function dailySpend(db: Database.Database, opts: ValueOpts) {
+  const accrual: ValueOpts = { ...opts, spend: "accrual" };
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, accrual);
+  const acc = new Map<string, number>();
+  for (const r of rows) {
+    if (r.date == null) continue;
+    const amt = effectiveAmount(r, accrual, ctx);
+    if (amt == null) continue;
+    acc.set(r.date, (acc.get(r.date) ?? 0) + amt);
+  }
+  return [...acc.entries()].map(([date, amount]) => ({ date, amount }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
