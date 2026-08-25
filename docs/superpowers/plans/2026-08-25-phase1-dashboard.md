@@ -259,7 +259,7 @@ git commit -m "feat: sqlite schema, connection seam, page singleton"
   - `type Rule = { match: string; category: Category; subcategory?: string }`; `loadRules(): Rule[]` (reads `DATA_DIR/merchant-categories.json`)
 - **Rule order matters**: first match wins — `MOVISTAR AR` (Arena/entertainment) must precede `MOVISTAR` (phone). Normalization replaces `[._*]` with spaces, so rules are written in spaced form (`APPLE COM/BILL`, not `APPLE.COM/BILL`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/categorize.test.ts`:
 ```ts
@@ -313,11 +313,11 @@ describe("categorize", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/categorize.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/categorize.ts`:
 ```ts
@@ -409,11 +409,11 @@ Note: `[._*] → space` runs *before* the USD-tail strip, so rules use spaced fo
 ```
 (`OREGON HOTEL` before `HOTEL`: real data has a 12-cuota bedsheet merchant named "OREGON HOTEL _ SBANAS" — eyeball new `includes()` rules after each real ingest.)
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cd web && npx vitest run src/lib/categorize.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/categorize.ts web/src/lib/categorize.test.ts data/merchant-categories.json
