@@ -49,3 +49,86 @@ describe("categorize on aliased merchants", () => {
     expect(categorize("HBO MAX", "purchases", rules).category).toBe("subscriptions");
   });
 });
+
+// --- proposal store ---
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {
+  loadCategoryFile, saveCategoryFile, pendingMerchants, acceptProposal, rejectProposal,
+  type CategoryFile,
+} from "@/lib/categorize";
+
+const base: CategoryFile = {
+  rules: [{ match: "SPOTIFY", category: "subscriptions", subcategory: "music" }],
+  proposals: [{ merchant: "LA PANADERIA", sent: "LA PANADERIA", category: "food", subcategory: "bakery", confidence: "high" }],
+  rejected: ["WEIRD THING"],
+};
+
+function tmpFile(contents: string): string {
+  const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "cat-")), "merchant-categories.json");
+  fs.writeFileSync(p, contents);
+  return p;
+}
+
+describe("category file", () => {
+  it("defaults the new sections when the file predates them", () => {
+    expect(loadCategoryFile(tmpFile(JSON.stringify({ rules: base.rules }))))
+      .toEqual({ rules: base.rules, proposals: [], rejected: [] });
+  });
+
+  it("round-trips, keeping one rule per line so an accept is a one-line diff", () => {
+    const p = tmpFile("{}");
+    saveCategoryFile(base, p);
+    expect(loadCategoryFile(p)).toEqual(base);
+    const text = fs.readFileSync(p, "utf8");
+    expect(text).toContain(`    {"match":"SPOTIFY","category":"subscriptions","subcategory":"music"}`);
+  });
+
+  it("writes a file with no proposals or rejections without producing invalid JSON", () => {
+    const p = tmpFile("{}");
+    const empty: CategoryFile = { rules: base.rules, proposals: [], rejected: [] };
+    saveCategoryFile(empty, p);
+    expect(loadCategoryFile(p)).toEqual(empty);
+  });
+});
+
+describe("pendingMerchants", () => {
+  it("skips merchants that are already ruled, proposed or rejected", () => {
+    expect(pendingMerchants(base, ["SPOTIFY", "LA PANADERIA", "WEIRD THING", "NEW ONE"]))
+      .toEqual(["NEW ONE"]);
+  });
+  it("uses categorize's own matcher, so a substring hit counts as ruled", () => {
+    expect(pendingMerchants(base, ["SPOTIFY AB 1234"])).toEqual([]);
+  });
+});
+
+describe("acceptProposal", () => {
+  it("appends the rule last and drops the proposal", () => {
+    const { data, added } = acceptProposal(base, "LA PANADERIA", { match: "LA PANADERIA", category: "food", subcategory: "bakery" });
+    expect(added).toBe(true);
+    expect(data.rules.at(-1)).toEqual({ match: "LA PANADERIA", category: "food", subcategory: "bakery" });
+    expect(data.rules[0]).toEqual(base.rules[0]);
+    expect(data.proposals).toEqual([]);
+  });
+
+  it("accepts an edited category and match", () => {
+    const { data } = acceptProposal(base, "LA PANADERIA", { match: "PANADERIA", category: "shopping", subcategory: "groceries" });
+    expect(data.rules.at(-1)).toEqual({ match: "PANADERIA", category: "shopping", subcategory: "groceries" });
+  });
+
+  it("never overwrites a manual rule that already claims the match, and says it did not", () => {
+    const { data, added } = acceptProposal(base, "LA PANADERIA", { match: "SPOTIFY", category: "food", subcategory: "bakery" });
+    expect(added).toBe(false);
+    expect(data.rules).toEqual(base.rules); // manual override wins (spec §7)
+    expect(data.proposals).toEqual([]);
+  });
+});
+
+describe("rejectProposal", () => {
+  it("remembers the rejection so the merchant is not asked about again", () => {
+    const next = rejectProposal(base, "LA PANADERIA");
+    expect(next.proposals).toEqual([]);
+    expect(next.rejected).toContain("LA PANADERIA");
+  });
+});

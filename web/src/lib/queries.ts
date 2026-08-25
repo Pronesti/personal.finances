@@ -521,3 +521,41 @@ export function staleReviews(db: Database.Database, live: ReviewableAlert[]): nu
   for (const k of keys) del.run(k);
   return keys.length;
 }
+
+export type UnknownMerchant = { merchant: string; total: number; count: number };
+
+// Nominal pesos, and negatives NET (inherited decision 2) — ABS() would make a refund increase a
+// merchant's queue weight. This is a work queue ordered by "worth naming", not an analysis.
+export function unknownMerchants(db: Database.Database): UnknownMerchant[] {
+  return db.prepare(`
+    SELECT merchant, SUM(COALESCE(ars, 0)) AS total, COUNT(*) AS count
+    FROM transactions
+    WHERE section = 'purchases' AND category = 'other'
+    GROUP BY merchant
+    ORDER BY total DESC, merchant
+  `).all() as UnknownMerchant[];
+}
+
+// Rules match by substring, so accepting "DIA" also claims SOMMIERLANDIA, SOLAR DE LA ABADIA and
+// QUOTIDIANO — all real merchants in this dataset. The accept form shows this before the click.
+export function rulePreview(db: Database.Database, match: string): { merchant: string; count: number }[] {
+  if (match.length < 3) return [];
+  return db.prepare(`
+    SELECT merchant, COUNT(*) AS count FROM transactions
+    WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0
+    GROUP BY merchant ORDER BY merchant
+  `).all(match.toUpperCase()) as { merchant: string; count: number }[];
+}
+
+// Applies a freshly accepted rule to rows already loaded, so the dashboard updates without a full
+// re-ingest. The section scope mirrors categorize() exactly — it short-circuits taxes_and_charges
+// and runs the rule loop over payments (BONIF PROMO CUOTA XENEIZE is a real, rule-categorized
+// payments row) — otherwise this update and `npm run ingest` would disagree.
+export function recategorize(
+  db: Database.Database, match: string, category: string, subcategory: string | null
+): number {
+  return db.prepare(
+    `UPDATE transactions SET category = ?, subcategory = ?
+     WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0`
+  ).run(category, subcategory, match.toUpperCase()).changes;
+}

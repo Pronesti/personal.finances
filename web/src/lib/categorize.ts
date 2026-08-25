@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/paths";
+import type { Proposal } from "@/lib/llm";
 
 export const CATEGORIES = [
   "food", "transport", "subscriptions", "health", "entertainment", "shopping",
@@ -25,9 +26,36 @@ export function normalizeMerchant(description: string): string {
   return s.replace(/\s+/g, " ").trim().toUpperCase();
 }
 
+export type CategoryFile = { rules: Rule[]; proposals: Proposal[]; rejected: string[] };
+
+const FILE = path.join(DATA_DIR, "merchant-categories.json");
+
+export function loadCategoryFile(file: string = FILE): CategoryFile {
+  const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<CategoryFile>;
+  return { rules: raw.rules ?? [], proposals: raw.proposals ?? [], rejected: raw.rejected ?? [] };
+}
+
 export function loadRules(): Rule[] {
-  const p = path.join(DATA_DIR, "merchant-categories.json");
-  return JSON.parse(fs.readFileSync(p, "utf8")).rules as Rule[];
+  return loadCategoryFile().rules;
+}
+
+// One entry per line, because the ordering of this file is load-bearing (first match wins) and a
+// human reads it. JSON.stringify(…, 2) would explode 32 rules to 160 lines and bury every accept
+// in a reformat. Written via a temp file + rename: a half-written file breaks every future ingest.
+export function saveCategoryFile(data: CategoryFile, file: string = FILE): void {
+  const list = (items: unknown[]) =>
+    items.length === 0 ? "[]" : `[\n${items.map(o => `    ${JSON.stringify(o)}`).join(",\n")}\n  ]`;
+  const body = [
+    "{",
+    `  "rules": ${list(data.rules)},`,
+    `  "proposals": ${list(data.proposals)},`,
+    `  "rejected": ${JSON.stringify(data.rejected)}`,
+    "}",
+    "",
+  ].join("\n");
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, body);
+  fs.renameSync(tmp, file);
 }
 
 // Takes an already normalized + aliased merchant (ingest does both), not a raw description.
@@ -43,4 +71,40 @@ export function categorize(
     }
   }
   return { category: "other", subcategory: null };
+}
+
+// Uses categorize itself rather than a second matcher: three implementations of "does this rule
+// claim this merchant" (here, categorize, and recategorize's SQL) would drift independently.
+export function pendingMerchants(data: CategoryFile, unknown: string[]): string[] {
+  const proposed = new Set(data.proposals.map(p => p.merchant));
+  const rejected = new Set(data.rejected);
+  return unknown.filter(m =>
+    categorize(m, "purchases", data.rules).category === "other" &&
+    !proposed.has(m) && !rejected.has(m));
+}
+
+// Appending puts the new rule last — the lowest priority in a first-match-wins file. Safe by
+// construction: a merchant only gets a proposal because no existing rule matched it. A match an
+// existing rule already claims is dropped, never overwritten (spec §7) — and `added: false` tells
+// the caller not to rewrite the database either.
+export function acceptProposal(
+  data: CategoryFile, merchant: string, rule: Rule
+): { data: CategoryFile; added: boolean } {
+  const claimed = data.rules.some(r => r.match.toUpperCase() === rule.match.toUpperCase());
+  return {
+    added: !claimed,
+    data: {
+      rules: claimed ? data.rules : [...data.rules, rule],
+      proposals: data.proposals.filter(p => p.merchant !== merchant),
+      rejected: data.rejected,
+    },
+  };
+}
+
+export function rejectProposal(data: CategoryFile, merchant: string): CategoryFile {
+  return {
+    rules: data.rules,
+    proposals: data.proposals.filter(p => p.merchant !== merchant),
+    rejected: data.rejected.includes(merchant) ? data.rejected : [...data.rejected, merchant],
+  };
 }

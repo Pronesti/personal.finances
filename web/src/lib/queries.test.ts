@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -76,6 +76,32 @@ describe("queries", () => {
     const { rows } = categoryDrill(db, o("cash", "nominal"), { merchant: "COTO" });
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every(r => r.merchant === "COTO")).toBe(true);
+  });
+
+  it("unknownMerchants lists uncategorized purchase merchants, biggest spender first, netting refunds", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','DIA','DIA','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-21','DIA DEVOL','DIA','other',NULL,-1000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-22','SOMMIERLANDIA','SOMMIERLANDIA','other',NULL,5000,NULL,NULL,NULL)`).run();
+    const rows = unknownMerchants(db);
+    expect(rows.map(r => r.merchant)).toEqual(["SOMMIERLANDIA", "DIA"]);
+    expect(rows.find(r => r.merchant === "DIA")!.total).toBe(2000); // 3000 - 1000, not 4000
+  });
+
+  it("rulePreview shows every other merchant a substring rule would also claim", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','DIA','DIA','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'purchases','2026-07-22','SOMMIERLANDIA','SOMMIERLANDIA','other',NULL,5000,NULL,NULL,NULL)`).run();
+    expect(rulePreview(db, "DIA").map(r => r.merchant)).toEqual(["DIA", "SOMMIERLANDIA"]);
+  });
+
+  it("recategorize covers the same rows a full ingest would, payments included", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-07-20','XENEIZE','CUOTA XENEIZE','other',NULL,3000,NULL,NULL,NULL),
+                       (2,'payments','2026-07-21','BONIF PROMO CUOTA XENEIZE','BONIF PROMO CUOTA XENEIZE','other',NULL,-500,NULL,NULL,NULL),
+                       (2,'taxes_and_charges',NULL,'IVA','IVA CUOTA XENEIZE','taxes_fees',NULL,100,NULL,NULL,NULL)`).run();
+    expect(recategorize(db, "CUOTA XENEIZE", "entertainment", "sports")).toBe(2);
+    expect(db.prepare("SELECT COUNT(*) n FROM transactions WHERE category='taxes_fees'").get()).toEqual({ n: 1 });
   });
 
   it("statementList reports each statement newest first with its counts", () => {
