@@ -1046,7 +1046,7 @@ git commit -m "feat: currency-aware recurring charge detection"
   - `eli5(db, opts): { spentThisMonth: number; pctVsPrev: number | null; committedNextMonth: number; topCategories: { category: string; amount: number }[]; alerts: { kind: string; message: string }[]; cuotaMonths: number; cuotaTotal: number; sparkline: { month: string; amount: number }[]; latestClosing: string; nextDueDate: string | null; baseMonth: string }` — throws `Error("No statements ingested — run npm run ingest")` on empty DB; honors **both** modes (rev note 10); cuota tiles aggregate latest statement **per brand**.
 - **Spend semantics** (rev notes 2–4): base rows = `section='purchases' AND (ars != 0 OR (ars IS NULL AND usd > 0))` — negatives net, USD-only rows ride along. ARS aggregates skip `ars IS NULL` rows. `accrual`: per cuota series (key `merchant|installment_count`) find the **minimum observed** `installment_number` k; the k-row counts as `ars × (count − k + 1)` (remaining principal — full price when k=1), all other cuota rows excluded. `real`: deflate from `cycle_month` to `latestMonth(cpi)` (resolved **once** per query call, not per row). Month = `statements.cycle_month`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/queries.test.ts`:
 ```ts
@@ -1147,11 +1147,11 @@ describe("queries", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/queries.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/queries.ts`:
 ```ts
@@ -1333,11 +1333,11 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
 }
 ```
 
-- [ ] **Step 4: Run full test suite**
+- [x] **Step 4: Run full test suite**
 
 Run: `cd web && npm test` — Expected: ALL PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/queries.ts web/src/lib/queries.test.ts
