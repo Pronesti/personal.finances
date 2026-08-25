@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import { toReal, latestMonth, type CpiTable } from "@/lib/cpi";
 import { mepFor, type MepTable } from "@/lib/mep";
 import { detectRecurring, type RecurringCharge } from "@/lib/recurring";
+import { detectAnomalies, type Anomaly } from "@/lib/anomalies";
 
 export type SpendMode = "cash" | "accrual";
 export type ValueMode = "nominal" | "real" | "usd";
@@ -184,10 +185,8 @@ export function coverage(db: Database.Database): { month: string; brands: string
 
 export function eli5(db: Database.Database, opts: ValueOpts) {
   const months = monthlySpendByCategory(db, opts);
-  if (months.length === 0) throw new Error("No statements ingested — run npm run ingest");
-  const byMonth = new Map<string, number>();
-  for (const m of months) byMonth.set(m.month, (byMonth.get(m.month) ?? 0) + m.amount);
-  const sorted = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const sorted = monthlyTotals(db, opts).map(m => [m.month, m.amount] as [string, number]);
+  if (sorted.length === 0) throw new Error("No statements ingested — run npm run ingest");
   const [lastMonthKey, spentThisMonth] = sorted[sorted.length - 1];
   const prev = sorted.length > 1 ? sorted[sorted.length - 2][1] : null;
 
@@ -246,5 +245,23 @@ export function currencySplit(db: Database.Database, opts: ValueOpts) {
   }
   return [...acc.entries()]
     .map(([month, v]) => ({ month, ...v }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+}
+
+// Computed per query, never persisted: anomalies depend on the whole history and on CPI,
+// so a stored copy would go stale the moment a statement or the CPI table changes.
+export function anomalies(db: Database.Database, cpi: CpiTable): Anomaly[] {
+  return detectAnomalies(baseRows(db), cpi);
+}
+
+export function monthlyTotals(db: Database.Database, opts: ValueOpts) {
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, opts);
+  const acc = new Map<string, number>();
+  for (const r of rows) {
+    const amt = effectiveAmount(r, opts, ctx);
+    if (amt != null) acc.set(r.month, (acc.get(r.month) ?? 0) + amt);
+  }
+  return [...acc.entries()].map(([month, amount]) => ({ month, amount }))
     .sort((a, b) => a.month.localeCompare(b.month));
 }
