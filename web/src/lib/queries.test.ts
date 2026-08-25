@@ -72,6 +72,12 @@ describe("queries", () => {
     expect(db.prepare("SELECT COUNT(*) n FROM alert_reviews").get()).toEqual({ n: 0 });
   });
 
+  it("categoryDrill narrows to a single merchant", () => {
+    const { rows } = categoryDrill(db, o("cash", "nominal"), { merchant: "COTO" });
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every(r => r.merchant === "COTO")).toBe(true);
+  });
+
   it("statementList reports each statement newest first with its counts", () => {
     const rows = statementList(db);
     expect(rows.map(r => r.file)).toEqual(["m_2026_07.json", "v_2026_07.json", "v_2026_06.json"]);

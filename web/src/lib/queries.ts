@@ -127,7 +127,7 @@ export type DrillRow = {
 
 export function categoryDrill(
   db: Database.Database, opts: ValueOpts,
-  filter: { category?: string; subcategory?: string; month?: string }
+  filter: { category?: string; subcategory?: string; month?: string; merchant?: string }
 ) {
   const level: "category" | "subcategory" | "merchant" =
     !filter.category ? "category" : !filter.subcategory ? "subcategory" : "merchant";
@@ -138,6 +138,7 @@ export function categoryDrill(
   for (const r of all) {
     if (filter.category && r.category !== filter.category) continue;
     if (filter.subcategory && (r.subcategory ?? "(none)") !== filter.subcategory) continue;
+    if (filter.merchant && r.merchant !== filter.merchant) continue;
     if (filter.month && r.month !== filter.month) continue;
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null && r.usd == null) continue; // dropped by mode (non-first cuota in accrual)
@@ -491,7 +492,9 @@ export function reviewableAlerts(db: Database.Database, cpi: CpiTable): Reviewab
     return {
       key, source: "anomaly" as const, kind: a.kind, month: a.month, date: a.date,
       merchant: a.merchant, amount: a.amount,
-      message: a.resolved ? `${a.message} (already reversed on the statement)` : a.message,
+      // detectAnomalies already spells out "already reversed on the same statement" for a
+      // resolved duplicate; repeating it here just doubled the sentence in the table.
+      message: a.message,
       // A duplicate the statement already reversed is closed by the data — until a human says
       // otherwise, which is why an explicit 'open' row is stored rather than the row deleted.
       state: states.get(key) ?? (a.resolved ? "reviewed" : "open"),
