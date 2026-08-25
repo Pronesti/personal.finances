@@ -4,17 +4,21 @@ import { DATA_DIR } from "@/lib/paths";
 
 export type CpiTable = Record<string, number>;
 
-function indexFor(month: string, table: CpiTable): number {
+export const CPI_REMEDY = "npm run fetch-ipc";
+
+// Shared by CPI and MEP: exact month, else nearest earlier month. `remedy` is the command
+// the user must run, so an empty or short table produces an actionable error, not a NaN.
+export function monthValue(month: string, table: Record<string, number>, remedy: string): number {
   const months = Object.keys(table).sort();
-  if (months.length === 0) throw new Error("CPI table empty — run npm run fetch-ipc");
+  if (months.length === 0) throw new Error(`table empty — run ${remedy}`);
   if (table[month] !== undefined) return table[month];
   const earlier = months.filter(m => m < month);
-  if (earlier.length === 0) throw new Error(`No CPI data at or before ${month}`);
+  if (earlier.length === 0) throw new Error(`No data at or before ${month} — run ${remedy}`);
   return table[earlier[earlier.length - 1]];
 }
 
 export function toReal(amountArs: number, fromMonth: string, toMonth: string, table: CpiTable): number {
-  return amountArs * (indexFor(toMonth, table) / indexFor(fromMonth, table));
+  return amountArs * (monthValue(toMonth, table, CPI_REMEDY) / monthValue(fromMonth, table, CPI_REMEDY));
 }
 
 export function latestMonth(table: CpiTable): string {

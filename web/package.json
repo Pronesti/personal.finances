@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "vitest run",
     "ingest": "tsx scripts/ingest.ts",
-    "fetch-ipc": "tsx scripts/fetch-ipc.ts"
+    "fetch-ipc": "tsx scripts/fetch-ipc.ts",
+    "fetch-mep": "tsx scripts/fetch-mep.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
