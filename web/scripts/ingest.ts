@@ -16,12 +16,14 @@ async function main() {
   for (const f of files) {
     try {
       const json = JSON.parse(fs.readFileSync(path.join(jsonDir, f), "utf8")) as StatementJson;
-      ingestFile(db, json, rules, aliases);
+      alertTotal += ingestFile(db, json, rules, aliases).alerts.length;
     } catch (e) {
       throw new Error(`ingest failed on ${f}: ${(e as Error).message}`);
     }
   }
-  alertTotal = (db.prepare("SELECT COUNT(*) n FROM alerts").get() as { n: number }).n;
-  console.log(`done: ${files.length} statements, ${alertTotal} integrity alerts`);
+  // files.length is the number of JSONs read, not the number of statements that survived
+  // superseding — only the DB knows that, and it is what every later verification checks.
+  const { n } = db.prepare("SELECT COUNT(*) n FROM statements").get() as { n: number };
+  console.log(`done: ${n} statements from ${files.length} files, ${alertTotal} integrity alerts`);
 }
 main().catch(e => { console.error(e); process.exit(1); });

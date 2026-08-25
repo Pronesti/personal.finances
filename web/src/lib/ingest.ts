@@ -45,10 +45,24 @@ export function statementToRows(json: StatementJson, rules: Rule[], aliases: Ali
   return { statement, transactions, installments, alerts };
 }
 
-export function ingestFile(db: Database.Database, json: StatementJson, rules: Rule[], aliases: Alias[]): void {
+export type IngestReport = {
+  file: string; brand: string; cycle_month: string;
+  transactions: number; replaced: string[]; alerts: Alert[];
+};
+
+export function ingestFile(
+  db: Database.Database, json: StatementJson, rules: Rule[], aliases: Alias[]
+): IngestReport {
   const { statement, transactions, installments, alerts } = statementToRows(json, rules, aliases);
+  let replaced: string[] = [];
   const run = db.transaction(() => {
-    db.prepare("DELETE FROM statements WHERE file = ?").run(statement.file);
+    // Two identities, both authoritative: the filename, and the cycle the statement covers.
+    // Without the second, the same statement saved under a new name doubles its month.
+    // RETURNING keeps the predicate in one place instead of a SELECT and a DELETE that can drift.
+    replaced = (db.prepare(
+      "DELETE FROM statements WHERE file = ? OR (brand = ? AND closing_date = ?) RETURNING file"
+    ).all(statement.file, statement.brand, statement.closing_date) as { file: string }[])
+      .map(d => d.file);
     const sid = db.prepare(
       `INSERT INTO statements (file, brand, closing_date, cycle_month, due_date, prev_closing_date, balance_ars, balance_usd, minimum_payment_ars)
        VALUES (@file, @brand, @closing_date, @cycle_month, @due_date, @prev_closing_date, @balance_ars, @balance_usd, @minimum_payment_ars)`
@@ -64,4 +78,8 @@ export function ingestFile(db: Database.Database, json: StatementJson, rules: Ru
     for (const a of alerts) insAl.run(sid, a.kind, a.message, a.expected, a.actual);
   });
   run();
+  return {
+    file: statement.file, brand: statement.brand, cycle_month: statement.cycle_month,
+    transactions: transactions.length, replaced, alerts,
+  };
 }
