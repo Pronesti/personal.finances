@@ -1674,7 +1674,7 @@ git commit -m "feat: ELI5 overview screen"
 - Consumes: `monthlySpendByCategory`, `periodComparison`, `coverage` (T8); `Category`/`CATEGORIES` (T3); shell (T9).
 - Produces: `CATEGORY_COLORS: Record<Category, string>` — typed against the taxonomy so a new category without a color is a compile error.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 `web/src/lib/colors.ts`:
 ```ts
@@ -1816,11 +1816,11 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
 }
 ```
 
-- [ ] **Step 2: Verify in browser**
+- [x] **Step 2: Verify in browser**
 
 `/trends`: stacked area, no doubled/empty months (cycle-month fix visible: 2026-06 populated). Toggle to nominal → steep inflation slope. `/compare`: granularity switch preserves modes; single-card months footnote lists the mastercard gaps.
 
-- [ ] **Step 3: Build + commit**
+- [x] **Step 3: Build + commit**
 
 Run: `cd web && npm run build` — Expected: success.
 
