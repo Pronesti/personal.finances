@@ -1840,7 +1840,7 @@ git commit -m "feat: trends and period comparison charts with coverage footnote"
 - Consumes: `categoryDrill` (returns `level` — page does not re-derive it), `recurringTable` (T8), `CATEGORY_COLORS` (T11), shell (T9).
 - Produces: drill URL scheme `/categories?category=food&subcategory=delivery` — bar click descends one level; breadcrumb clears levels; modes preserved throughout.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 `web/src/components/DrillBars.tsx`:
 ```tsx
@@ -1976,11 +1976,11 @@ export default async function Recurring() {
 }
 ```
 
-- [ ] **Step 2: Verify in browser**
+- [x] **Step 2: Verify in browser**
 
 `/categories`: bars by category → click food → subcategories → merchants + tx table (USD-only rows show "—" amount + USD value). `/recurring`: OSDE unified (ID: drift fixed), Spotify shows an ARS row *and* a USD row, >10% nominal jumps red. Known: HBO Max may still split/miss (alias map is Phase 2 — don't chase it here).
 
-- [ ] **Step 3: Full suite + build + commit**
+- [x] **Step 3: Full suite + build + commit**
 
 Run: `cd web && npm test && npm run build` — Expected: ALL PASS + build success.
 
