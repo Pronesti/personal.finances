@@ -81,7 +81,6 @@ describe("queries", () => {
   it("eli5 aggregates cuotas across latest statement per brand and honors modes", () => {
     const t = eli5(db, o("cash", "real"));
     expect(t.spentThisMonth).toBeCloseTo(1400);
-    expect(t.committedNextMonth).toBe(250);
     expect(t.cuotaMonths).toBe(2);
     expect(t.cuotaTotal).toBe(350);
     expect(t.baseMonth).toBe("2026-07");
@@ -324,5 +323,31 @@ describe("dailySpend", () => {
     const days = dailySpend(db, o("cash", "nominal"));
     expect(days.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d.date))).toBe(true);
     expect(new Set(days.map(d => d.date)).size).toBe(days.length);
+  });
+});
+
+describe("eli5 phase 2 tiles", () => {
+  it("forecasts the next statement as three layers", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const t = eli5(db, o("cash", "nominal"));
+    expect(t.nextStatementForecast.certain).toBeCloseTo(250, 6); // newest statement per brand
+    expect(t.nextStatementForecast.estHigh).toBeGreaterThanOrEqual(t.nextStatementForecast.estLow);
+  });
+
+  it("surfaces unresolved anomalies and hides the ones the statement already reversed", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       SELECT id, 'purchases', '2026-07-14', 'ACME', 'ACME', 'shopping', NULL, ?, NULL, NULL, NULL
+       FROM statements WHERE file = 'v_2026_07.json'`
+    );
+    ins.run(90000); ins.run(90000);                  // open duplicate
+    ins.run(80000); ins.run(80000); ins.run(-80000); // duplicate the bank already reversed
+    const t = eli5(db, o("cash", "nominal"));
+    expect(t.openAnomalies.every(a => !a.resolved)).toBe(true);
+    const dupes = t.openAnomalies.filter(a => a.kind === "duplicate");
+    expect(dupes.map(a => a.amount)).toEqual([90000]);
   });
 });

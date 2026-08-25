@@ -208,10 +208,17 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
 
   const latest = latestPerBrand.sort((a, b) => b.closing_date.localeCompare(a.closing_date))[0];
 
+  const openAnomalies = anomalies(db, opts.cpi).filter(a => !a.resolved).slice(0, 5);
+  const [next] = cuotaProjection(db, opts, 1);
+  const nextStatementForecast = next
+    ? { certain: next.certain, expected: next.expected, estLow: next.estLow, estHigh: next.estHigh }
+    : { certain: 0, expected: 0, estLow: 0, estHigh: 0 };
+
   return {
     spentThisMonth,
     pctVsPrev: prev ? ((spentThisMonth - prev) / prev) * 100 : null,
-    committedNextMonth: upcoming[0]?.amount ?? 0,
+    openAnomalies,
+    nextStatementForecast,
     topCategories: months.filter(m => m.month === lastMonthKey)
       .sort((a, b) => b.amount - a.amount).slice(0, 3)
       .map(m => ({ category: m.category, amount: m.amount })),

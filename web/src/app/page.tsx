@@ -36,9 +36,15 @@ export default async function Overview({ searchParams }: { searchParams: Promise
           <div className="text-2xl font-bold">{fmtMoney(t.spentThisMonth, modes.value)}</div>
           <div className="text-sm text-zinc-500">{fmtPct(t.pctVsPrev)} vs last month</div>
         </Tile>
-        <Tile href={withModes("/recurring", modes)} label="Committed next month">
-          <div className="text-2xl font-bold">{fmtMoney(t.committedNextMonth, modes.value)}</div>
-          <div className="text-sm text-zinc-500">due after {t.nextDueDate ?? "—"}</div>
+        <Tile href={withModes("/future", modes)} label="Next statement forecast">
+          <div className="text-2xl font-bold">
+            {fmtMoney(t.nextStatementForecast.certain + t.nextStatementForecast.expected + t.nextStatementForecast.estLow, modes.value)}
+            {" – "}
+            {fmtMoney(t.nextStatementForecast.certain + t.nextStatementForecast.expected + t.nextStatementForecast.estHigh, modes.value)}
+          </div>
+          <div className="text-sm text-zinc-500">
+            {fmtMoney(t.nextStatementForecast.certain, modes.value)} contractual · due after {t.nextDueDate ?? "—"}
+          </div>
         </Tile>
         <Tile href={withModes("/categories", modes)} label="Top categories">
           {t.topCategories.map(c => (
@@ -47,11 +53,16 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             </div>
           ))}
         </Tile>
-        <Tile label="Alerts">
-          <div className="text-2xl font-bold">{t.alerts.length}</div>
-          {t.alerts.length === 0
-            ? <div className="text-sm text-zinc-500">statements add up</div>
-            : t.alerts.map((a, i) => <div key={i} className="text-xs text-red-600">{a.message}</div>)}
+        <Tile href={withModes("/anomalies", modes)} label="Alerts">
+          <div className="text-2xl font-bold">{t.alerts.length + t.openAnomalies.length}</div>
+          {t.alerts.length + t.openAnomalies.length === 0
+            ? <div className="text-sm text-zinc-500">statements add up, nothing odd</div>
+            : <>
+                {t.alerts.map((a, i) => <div key={`a${i}`} className="text-xs text-red-600">{a.message}</div>)}
+                {t.openAnomalies.map((a, i) => (
+                  <div key={`n${i}`} className="text-xs text-red-600">{a.merchant}: {a.message}</div>
+                ))}
+              </>}
         </Tile>
         <Tile href={withModes("/compare", modes)} label="Cuota burden (both cards)">
           <div className="text-2xl font-bold">{fmtMoney(t.cuotaTotal, modes.value)}</div>
