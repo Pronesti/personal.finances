@@ -891,7 +891,7 @@ git commit -m "feat: CPI deflator with INDEC fetcher and cached table"
 - Produces: `type RecurringCharge = { merchant: string; currency: "ARS" | "USD"; occurrences: number; lastMonth: string; lastAmount: number; prevAmount: number | null; pctChange: number | null; nextExpectedMonth: string }`; `detectRecurring(rows, opts?): RecurringCharge[]`.
 - Heuristics (research: Actual Budget): ≥3 distinct months AND ≥60% of the span between first and last appearance. Cuota rows excluded (contractual, not recurring). **Currency-aware** (rev note 3): a row is ARS when `ars > 0`, USD when `ars == null && usd > 0`; grouping key is `merchant|currency`, so Spotify's mid-2025 switch to USD billing shows as two honest rows (stale ARS one, active USD one) instead of a phantom cancellation. `pctChange` on nominal amounts within the same currency — nominal jump IS the price-hike signal (spec §3).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/lib/recurring.test.ts`:
 ```ts
@@ -941,11 +941,11 @@ describe("detectRecurring", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd web && npx vitest run src/lib/recurring.test.ts` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `web/src/lib/recurring.ts`:
 ```ts
@@ -1015,11 +1015,11 @@ export function detectRecurring(
 
 Known limit (rev note 7): drifted/truncated merchant strings still split groups (e.g. `HELP HBOM` vs `HELP HBOMAX COM`) — density may then fail for genuinely recurring merchants. The alias map is the Phase 2 fix; do not tune density down to compensate.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cd web && npx vitest run src/lib/recurring.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/recurring.ts web/src/lib/recurring.test.ts
