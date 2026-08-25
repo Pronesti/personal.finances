@@ -493,7 +493,13 @@ From the repo root, confirm the previously-swallowed Mastercard series is back:
 Run: `sqlite3 data/app.db "SELECT s.brand, s.cycle_month, t.date, t.installment_number, t.installment_count, t.ars FROM transactions t JOIN statements s ON s.id=t.statement_id WHERE t.merchant='MOVISTAR ARENA' AND t.installment_count=6 ORDER BY t.date, t.installment_number;"`
 Expected: three distinct purchase dates (2024-12-09, 2026-03-05, 2026-03-10). Under the old key all but the 2024-12-09 series' rows were discarded; under the new key each is its own series.
 
-Then start the dev server and open `/trends` in **accrual** mode: 2026-06 must show a non-zero Mastercard contribution, and 2025-04 shopping must drop by ~449,000 ARS (the `LEF CASA DE MUSICA` series is no longer double-counted now that Task 1 merged its two spellings and this task keys it once).
+Then confirm each formerly-broken series is counted exactly once, at full price, in `accrual` mode:
+
+| Merchant | Cycle month | Expected accrual amount | Was |
+|---|---|---|---|
+| `MOVISTAR ARENA` (Mastercard, 2026-05-27) | 2026-06 | 135,000 | 0 — whole series discarded |
+| `LEF CASA DE MUSICA` (2025-04-30) | 2025-05 | 673,359 | 1,122,265 — counted twice |
+| `CASASSA Y LORENZO` (2025-02-06) | 2025-02 | 123,600 | 185,400 — counted twice |
 
 - [ ] **Step 6: Commit**
 

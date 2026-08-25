@@ -90,3 +90,22 @@ describe("queries", () => {
     expect(() => eli5(empty, { spend: "cash", value: "real", cpi })).toThrow(/npm run ingest/);
   });
 });
+
+describe("cuota series identity", () => {
+  it("keys each series by its purchase date — two series, one merchant, one count", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const sid = (db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number }).id;
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       VALUES (?, 'purchases', ?, 'ML', 'MERCADOLIBRE', 'shopping', NULL, 1000, NULL, ?, 6)`
+    );
+    ins.run(sid, "2026-01-05", 1);  // series A, first cuota observed
+    ins.run(sid, "2026-05-20", 4);  // series B, first observed at k=4
+    const shopping = monthlySpendByCategory(db, { spend: "accrual", value: "nominal", cpi })
+      .filter(r => r.month === "2026-07" && r.category === "shopping")
+      .reduce((s, r) => s + r.amount, 0);
+    // A: 1000 x 6 = 6000. B: 1000 x (6-4+1) = 3000. Plus the seeded TIENDA 100 x (6-3+1) = 400.
+    expect(shopping).toBeCloseTo(9400, 6);
+  });
+});

@@ -29,7 +29,9 @@ function amountCtx(rows: BaseRow[], opts: ValueOpts): AmountCtx {
   const minK = new Map<string, number>();
   for (const r of rows) {
     if (r.installment_count == null || r.installment_number == null) continue;
-    const key = `${r.merchant}|${r.installment_count}`;
+    // merchant+count is NOT a series id — MERCADOLIBRE|6 covers six distinct purchases.
+    // The purchase date is constant across a real series, so it completes the key.
+    const key = `${r.merchant}|${r.installment_count}|${r.date ?? ""}`;
     const cur = minK.get(key);
     if (cur === undefined || r.installment_number < cur) minK.set(key, r.installment_number);
   }
@@ -42,7 +44,7 @@ function effectiveAmount(r: BaseRow, opts: ValueOpts, ctx: AmountCtx): number | 
   if (r.ars == null) return null; // USD-only: visible in drill rows, never in ARS sums
   let amt = r.ars;
   if (opts.spend === "accrual" && r.installment_count != null && r.installment_number != null) {
-    const k = ctx.minK.get(`${r.merchant}|${r.installment_count}`)!;
+    const k = ctx.minK.get(`${r.merchant}|${r.installment_count}|${r.date ?? ""}`)!;
     if (r.installment_number !== k) return null;
     amt = r.ars * (r.installment_count - k + 1); // remaining principal; full price when k=1 (rev note 4)
   }

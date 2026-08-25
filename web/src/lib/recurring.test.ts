@@ -42,3 +42,23 @@ describe("detectRecurring", () => {
     expect(r[0].occurrences).toBe(3);
   });
 });
+
+describe("netting reversals", () => {
+  it("nets an offsetting reversal instead of counting the charge twice", () => {
+    const r = detectRecurring([
+      ars("OSDE", "2026-04", 100), ars("OSDE", "2026-05", 100),
+      ars("OSDE", "2026-06", 100), ars("OSDE", "2026-06", 100), ars("OSDE", "2026-06", -100),
+    ]);
+    expect(r).toHaveLength(1);
+    expect(r[0].lastAmount).toBe(100);   // not 200
+    expect(r[0].pctChange).toBe(0);
+  });
+  it("drops a month that nets to zero rather than treating it as an occurrence", () => {
+    const r = detectRecurring([
+      ars("GYM", "2026-01", 500), ars("GYM", "2026-02", 500), ars("GYM", "2026-03", 500),
+      ars("GYM", "2026-04", 500), ars("GYM", "2026-04", -500),
+    ]);
+    expect(r[0].occurrences).toBe(3);
+    expect(r[0].lastMonth).toBe("2026-03");
+  });
+});
