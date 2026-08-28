@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
-import { reviewableAlerts, staleReviews, monthlyTotals } from "@/lib/queries";
-import { parseModes, valueOpts, withModes } from "@/lib/params";
+import { reviewableAlerts, staleReviews, periodTotals } from "@/lib/queries";
+import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
+import { periodOf } from "@/lib/months";
 import { fmtArs } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Pills } from "@/components/Pills";
 import { AnomalyTimeline } from "@/components/AnomalyTimeline";
 import { reviewAlert } from "./actions";
 
@@ -16,12 +18,14 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default async function Anomalies({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
-  const modes = parseModes(await searchParams);
+  const sp = await searchParams;
+  const modes = parseModes(sp);
+  const g = parseGranularity(sp);
   const db = getDb();
   const opts = valueOpts(modes);
   const alerts = reviewableAlerts(db, opts.cpi);
   const cleared = staleReviews(db, alerts);
-  const totals = monthlyTotals(db, opts);
+  const totals = periodTotals(db, opts, g);
   const open = alerts.filter(a => a.state === "open");
   return (
     <main>
@@ -34,7 +38,14 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
         anomalies (recomputed every load).
         {cleared > 0 && ` Cleared ${cleared} review${cleared === 1 ? "" : "s"} whose alert no longer exists.`}
       </p>
-      <AnomalyTimeline totals={totals} flaggedMonths={open.map(a => a.month)} value={modes.value} />
+      {/* Granularity moves the timeline only: the table below is a list of alerts, not a
+          time series, so grouping it would hide the very rows this page exists to show. */}
+      <Pills options={GRANULARITIES} current={g} href={x => withModes("/anomalies", modes, { g: x })} />
+      <AnomalyTimeline
+        totals={totals}
+        flaggedPeriods={open.map(a => periodOf(a.month, g))}
+        value={modes.value}
+      />
       <table className="mt-6 w-full text-sm">
         <thead><tr className="border-b border-line text-left text-ink-muted">
           <th className="py-1">When</th><th>Kind</th><th>Merchant</th>
@@ -93,7 +104,8 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
         This page shows the results of the checks on your statements. The checks find duplicate
         charges, price jumps, new merchants, and errors in the statement totals. The goal is to
         find problems early, when a dispute with the bank is possible. The chart marks the
-        months with open alerts. Read the table and examine each open alert. An alert is not
+        periods with open alerts; the pills group it by month, quarter, year, or all, and the
+        table below always lists every alert. Read the table and examine each open alert. An alert is not
         always an error. It is a question. Mark an alert as reviewed when the charge is correct.
         Dismiss it when it is not important. Zero open alerts is good. An open balance or math
         alert is bad. It shows that the statement numbers do not agree.

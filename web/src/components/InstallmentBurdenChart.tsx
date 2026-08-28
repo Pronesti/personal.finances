@@ -2,7 +2,7 @@
 import { ComposedChart, Bar, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
-import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps } from "./chart";
+import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidth } from "./chart";
 
 export function InstallmentBurdenChart({ data, value }: {
   data: { period: string; installment: number; oneOff: number; plans: number; sharePct: number }[];
@@ -21,8 +21,8 @@ export function InstallmentBurdenChart({ data, value }: {
           formatter={(v, name) => (name === "installment share" ? `${Number(v).toFixed(1)}%` : fmtMoney(Number(v), value))}
         />
         <Legend {...legendProps(t)} />
-        <Bar yAxisId="amt" dataKey="oneOff" name="one-off" stackId="1" fill={t.series.neutral} />
-        <Bar yAxisId="amt" dataKey="installment" name="installment-billed" stackId="1" fill={t.series.secondary} radius={[3, 3, 0, 0]} />
+        <Bar yAxisId="amt" dataKey="oneOff" name="one-off" stackId="1" fill={t.series.neutral} {...barWidth(data.length)} />
+        <Bar yAxisId="amt" dataKey="installment" name="installment-billed" stackId="1" fill={t.series.secondary} radius={[3, 3, 0, 0]} {...barWidth(data.length)} />
         <Line yAxisId="pct" dataKey="sharePct" name="installment share" stroke={t.series.band} strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>

@@ -2,7 +2,7 @@
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
-import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps } from "./chart";
+import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidth } from "./chart";
 
 export function NoveltyBars({ data, value }: {
   data: { period: string; newSpend: number; returningSpend: number; newMerchants: number }[];
@@ -25,8 +25,8 @@ export function NoveltyBars({ data, value }: {
           }}
         />
         <Legend {...legendProps(t)} />
-        <Bar dataKey="returningSpend" name="returning merchants" stackId="1" fill={t.series.neutral} />
-        <Bar dataKey="newSpend" name="first-time merchants" stackId="1" fill={t.series.primary} radius={[3, 3, 0, 0]} />
+        <Bar dataKey="returningSpend" name="returning merchants" stackId="1" fill={t.series.neutral} {...barWidth(data.length)} />
+        <Bar dataKey="newSpend" name="first-time merchants" stackId="1" fill={t.series.primary} radius={[3, 3, 0, 0]} {...barWidth(data.length)} />
       </BarChart>
     </ResponsiveContainer>
   );

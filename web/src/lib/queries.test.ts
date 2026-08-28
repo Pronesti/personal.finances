@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden } from "@/lib/queries";
+import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -212,20 +212,20 @@ describe("queries", () => {
   });
 
   it("accrual counts remaining principal at first-observed installment, nets refunds, skips USD-only in sums", () => {
-    const r = monthlySpendByCategory(db, o("accrual", "nominal"));
-    const july = Object.fromEntries(r.filter(x => x.month === "2026-07").map(x => [x.category, x.amount]));
+    const r = spendByCategory(db, o("accrual", "nominal"));
+    const july = Object.fromEntries(r.filter(x => x.period === "2026-07").map(x => [x.category, x.amount]));
     expect(july).toEqual({ food: 800, shopping: 400, transport: 500 });
   });
 
   it("cash sums as billed", () => {
-    const r = monthlySpendByCategory(db, o("cash", "nominal"));
-    const july = Object.fromEntries(r.filter(x => x.month === "2026-07").map(x => [x.category, x.amount]));
+    const r = spendByCategory(db, o("cash", "nominal"));
+    const july = Object.fromEntries(r.filter(x => x.period === "2026-07").map(x => [x.category, x.amount]));
     expect(july).toEqual({ food: 800, shopping: 100, transport: 500 });
   });
 
   it("real mode deflates June to July pesos", () => {
-    const r = monthlySpendByCategory(db, o("cash", "real"));
-    expect(r.find(x => x.month === "2026-06" && x.category === "food")!.amount).toBeCloseTo(1100);
+    const r = spendByCategory(db, o("cash", "real"));
+    expect(r.find(x => x.period === "2026-06" && x.category === "food")!.amount).toBeCloseTo(1100);
   });
 
   it("drill returns level, groups, and keeps USD-only rows visible with null amount", () => {
@@ -321,25 +321,59 @@ describe("installment series identity", () => {
     );
     ins.run(sid, "2026-01-05", 1);  // series A, first installment observed
     ins.run(sid, "2026-05-20", 4);  // series B, first observed at k=4
-    const shopping = monthlySpendByCategory(db, o("accrual", "nominal"))
-      .filter(r => r.month === "2026-07" && r.category === "shopping")
+    const shopping = spendByCategory(db, o("accrual", "nominal"))
+      .filter(r => r.period === "2026-07" && r.category === "shopping")
       .reduce((s, r) => s + r.amount, 0);
     // A: 1000 x 6 = 6000. B: 1000 x (6-4+1) = 3000. Plus the seeded TIENDA 100 x (6-3+1) = 400.
     expect(shopping).toBeCloseTo(9400, 6);
   });
 });
 
+describe("all granularity", () => {
+  const db = openAndSeed();
+
+  it("collapses spendByCategory to one bucket per category", () => {
+    const all = spendByCategory(db, o("cash", "nominal"), "all");
+    expect([...new Set(all.map(r => r.period))]).toEqual(["all"]);
+    const byMonth = spendByCategory(db, o("cash", "nominal"));
+    expect(all.reduce((s, r) => s + r.amount, 0))
+      .toBeCloseTo(byMonth.reduce((s, r) => s + r.amount, 0), 6);
+  });
+
+  it("collapses periodTotals and periodComparison to a single unchanged total", () => {
+    const [only, ...rest] = periodTotals(db, o("cash", "nominal"), "all");
+    expect(rest).toEqual([]);
+    expect(only.period).toBe("all");
+    const months = periodTotals(db, o("cash", "nominal"));
+    expect(only.amount).toBeCloseTo(months.reduce((s, m) => s + m.amount, 0), 6);
+    // One bucket has no predecessor, so the delta is undefined rather than 0%.
+    expect(periodComparison(db, o("cash", "nominal"), "all"))
+      .toEqual([{ period: "all", amount: only.amount, pctVsPrev: null }]);
+  });
+
+  it("scopes categoryDrill and sankeyFlows to the whole history", () => {
+    const scoped = categoryDrill(db, o("cash", "nominal"), { granularity: "all", period: "all" });
+    expect(scoped.groups).toEqual(categoryDrill(db, o("cash", "nominal"), {}).groups);
+    // Every month's flows in one diagram, so the total is the sum of the monthly ones.
+    const total = (l: { value: number }[]) => l.reduce((s, x) => s + x.value, 0);
+    const allFlows = sankeyFlows(db, o("cash", "nominal"), "all", "all");
+    expect(total(allFlows.links)).toBeGreaterThan(
+      total(sankeyFlows(db, o("cash", "nominal"), "2026-07").links)
+    );
+  });
+});
+
 import { toMode } from "@/lib/queries";
 
-const monthTotal = (rows: { month: string; amount: number }[], month: string) =>
-  rows.filter(r => r.month === month).reduce((s, r) => s + r.amount, 0);
+const monthTotal = (rows: { period: string; amount: number }[], month: string) =>
+  rows.filter(r => r.period === month).reduce((s, r) => s + r.amount, 0);
 
 describe("USD value mode", () => {
   it("converts ARS rows at the month's MEP rate", () => {
     const db = openDb(":memory:");
     seed(db);
-    const usd = monthTotal(monthlySpendByCategory(db, o("cash", "usd")), "2026-06");
-    const nominal = monthTotal(monthlySpendByCategory(db, o("cash", "nominal")), "2026-06");
+    const usd = monthTotal(spendByCategory(db, o("cash", "usd")), "2026-06");
+    const nominal = monthTotal(spendByCategory(db, o("cash", "nominal")), "2026-06");
     expect(usd).toBeCloseTo(nominal / 1000, 6);
   });
 
@@ -347,8 +381,8 @@ describe("USD value mode", () => {
     const db = openDb(":memory:");
     seed(db);
     const subs = (mode: ValueMode) =>
-      monthlySpendByCategory(db, o("cash", mode))
-        .filter(r => r.month === "2026-07" && r.category === "subscriptions")
+      spendByCategory(db, o("cash", mode))
+        .filter(r => r.period === "2026-07" && r.category === "subscriptions")
         .reduce((s, r) => s + r.amount, 0);
     expect(subs("usd")).toBeCloseTo(3.73, 6);   // the seeded Spotify row, billed in USD
     expect(subs("nominal")).toBe(0);            // rev note 3: never in ARS aggregates
@@ -365,8 +399,8 @@ describe("tax-inclusive mode", () => {
       `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
        VALUES (?, 'taxes_and_charges', NULL, 'IVA RG 4240 21%', 'IVA RG 4240 21%', 'taxes_fees', NULL, 100, NULL, NULL, NULL)`
     ).run(sid);
-    expect(monthTotal(monthlySpendByCategory(db, o("cash", "nominal", "incl")), "2026-06")).toBeCloseTo(1100, 6);
-    expect(monthTotal(monthlySpendByCategory(db, o("cash", "nominal", "excl")), "2026-06")).toBeCloseTo(1000, 6);
+    expect(monthTotal(spendByCategory(db, o("cash", "nominal", "incl")), "2026-06")).toBeCloseTo(1100, 6);
+    expect(monthTotal(spendByCategory(db, o("cash", "nominal", "excl")), "2026-06")).toBeCloseTo(1000, 6);
   });
 
   it("ignores DEVOLUCION DE SALDOS — a balance transfer, not a tax", () => {
@@ -377,7 +411,7 @@ describe("tax-inclusive mode", () => {
       `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
        VALUES (?, 'taxes_and_charges', NULL, 'DEVOLUCION DE SALDOS', 'DEVOLUCION DE SALDOS', 'taxes_fees', NULL, 5000, NULL, NULL, NULL)`
     ).run(sid);
-    expect(monthTotal(monthlySpendByCategory(db, o("cash", "nominal", "incl")), "2026-06")).toBeCloseTo(1000, 6);
+    expect(monthTotal(spendByCategory(db, o("cash", "nominal", "incl")), "2026-06")).toBeCloseTo(1000, 6);
   });
 
   it("counts USD purchases in the denominator, since RG 5617 is levied on them", () => {
@@ -392,14 +426,14 @@ describe("tax-inclusive mode", () => {
        VALUES (?, 'taxes_and_charges', NULL, 'DB.RG 5617 30%', 'DB.RG 5617 30%', 'taxes_fees', NULL, ?, NULL, NULL, NULL)`
     ).run(sid, (900 + 3.73 * 1100) * 0.1);
     // The July cycle also carries the Mastercard statement (YPF 500), which has no tax row.
-    expect(monthTotal(monthlySpendByCategory(db, o("cash", "nominal", "excl")), "2026-07")).toBeCloseTo(1400, 6);
-    expect(monthTotal(monthlySpendByCategory(db, o("cash", "nominal", "incl")), "2026-07")).toBeCloseTo(900 * 1.1 + 500, 6);
+    expect(monthTotal(spendByCategory(db, o("cash", "nominal", "excl")), "2026-07")).toBeCloseTo(1400, 6);
+    expect(monthTotal(spendByCategory(db, o("cash", "nominal", "incl")), "2026-07")).toBeCloseTo(900 * 1.1 + 500, 6);
   });
 
   it("leaves statements with no tax rows alone", () => {
     const db = openDb(":memory:");
     seed(db);
-    const jul = (tax: TaxMode) => monthTotal(monthlySpendByCategory(db, o("cash", "nominal", tax)), "2026-07");
+    const jul = (tax: TaxMode) => monthTotal(spendByCategory(db, o("cash", "nominal", tax)), "2026-07");
     expect(jul("incl")).toBeCloseTo(jul("excl"), 6);
   });
 });
@@ -418,21 +452,21 @@ describe("currencySplit", () => {
   it("separates ARS-billed from USD-billed spend, both in the active mode", () => {
     const db = openDb(":memory:");
     seed(db);
-    const jul = currencySplit(db, o("cash", "usd")).find(r => r.month === "2026-07")!;
+    const jul = currencySplit(db, o("cash", "usd")).find(r => r.period === "2026-07")!;
     expect(jul.usdBilled).toBeCloseTo(3.73, 6);  // the seeded Spotify row
     expect(jul.arsBilled).toBeGreaterThan(0);
   });
   it("reports USD-billed spend in pesos when the mode is nominal", () => {
     const db = openDb(":memory:");
     seed(db);
-    const jul = currencySplit(db, o("cash", "nominal")).find(r => r.month === "2026-07")!;
+    const jul = currencySplit(db, o("cash", "nominal")).find(r => r.period === "2026-07")!;
     expect(jul.usdBilled).toBeCloseTo(3.73 * 1100, 6);
     expect(jul.arsBilled).toBeCloseTo(1400, 6);  // 1000 - 200 + 100 + 500
   });
   it("leaves months without USD-billed rows at zero", () => {
     const db = openDb(":memory:");
     seed(db);
-    expect(currencySplit(db, o("cash", "nominal")).find(r => r.month === "2026-06")!.usdBilled).toBe(0);
+    expect(currencySplit(db, o("cash", "nominal")).find(r => r.period === "2026-06")!.usdBilled).toBe(0);
   });
 });
 
@@ -652,7 +686,7 @@ describe("moneyBack", () => {
 describe("paymentFloat", () => {
   it("measures purchase-to-due days and the real-terms gain of paying later", () => {
     const rows = paymentFloat(openAndSeed(), cpi);
-    const june = rows.find(r => r.month === "2026-06")!;
+    const june = rows.find(r => r.period === "2026-06")!;
     expect(june.avgDays).toBe(27); // 2026-06-10 -> due 2026-07-07
     // 1000 pesos: worth 1100 base pesos at purchase (CPI 100), 1000 at the July due date.
     expect(june.gain).toBeCloseTo(100);
@@ -661,7 +695,7 @@ describe("paymentFloat", () => {
   });
 
   it("splits one-off from installment float — the cuota rows carry their original purchase date", () => {
-    const july = paymentFloat(openAndSeed(), cpi).find(r => r.month === "2026-07")!;
+    const july = paymentFloat(openAndSeed(), cpi).find(r => r.period === "2026-07")!;
     expect(july.avgDaysOneOff).toBeCloseTo((28 * 1000 + 26 * 500) / 1500); // COTO + YPF, due-date weighted
     expect(july.avgDaysInstallment).toBe(27); // TIENDA 2026-07-11 -> visa due 2026-08-07
     // Both CPI legs fall back to the table's last month (2026-07): zero gain, never invented.
@@ -672,7 +706,7 @@ describe("paymentFloat", () => {
     const db = openAndSeed();
     db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
                 VALUES (1,'purchases','2023-12-15','OLD PLAN','OLD PLAN','shopping',NULL,1000,NULL,17,18)`).run();
-    const june = paymentFloat(db, cpi).find(r => r.month === "2026-06")!;
+    const june = paymentFloat(db, cpi).find(r => r.period === "2026-06")!;
     // Clamped to the first CPI month: the old row contributes the same gain as a June purchase.
     expect(june.gain).toBeCloseTo(200);
   });

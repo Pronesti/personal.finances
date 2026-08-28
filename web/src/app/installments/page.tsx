@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { installmentBurden, activePlans } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, spanLabel, valueOpts, withModes } from "@/lib/params";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -46,7 +46,7 @@ export default async function Installments({ searchParams }: { searchParams: Pro
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Installment share</div>
           <div className="text-2xl font-bold">{latest ? pct(latest.sharePct) : "—"}</div>
-          <div className="text-sm text-ink-muted">of the latest {g}&apos;s purchases</div>
+          <div className="text-sm text-ink-muted">of {spanLabel(g)}&apos;s purchases</div>
         </div>
       </div>
 

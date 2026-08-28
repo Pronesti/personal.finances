@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseModes, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, periodWord, spanLabel, withModes } from "@/lib/params";
 
 describe("parseModes", () => {
   it("defaults to accrual + real + pre-tax", () => {
@@ -14,6 +14,27 @@ describe("parseModes", () => {
       .toEqual({ spend: "accrual", value: "usd", tax: "incl" });
     expect(parseModes({ value: "bogus", tax: "bogus" }))
       .toEqual({ spend: "accrual", value: "real", tax: "excl" });
+  });
+});
+
+describe("parseGranularity", () => {
+  it("defaults to month and rejects junk", () => {
+    expect(parseGranularity({})).toBe("month");
+    expect(parseGranularity({ g: "bogus" })).toBe("month");
+  });
+  it("reads every granularity, all included", () => {
+    expect(parseGranularity({ g: "quarter" })).toBe("quarter");
+    expect(parseGranularity({ g: "year" })).toBe("year");
+    expect(parseGranularity({ g: "all" })).toBe("all");
+  });
+});
+
+describe("granularity copy helpers", () => {
+  it("names a bucket instead of a period for all", () => {
+    expect(periodWord("month")).toBe("month");
+    expect(periodWord("all")).toBe("period");
+    expect(spanLabel("quarter")).toBe("the latest quarter");
+    expect(spanLabel("all")).toBe("the whole history");
   });
 });
 

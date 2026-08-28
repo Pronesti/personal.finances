@@ -54,3 +54,13 @@ export function legendProps(t: ChartTheme) {
 export function gridProps(t: ChartTheme) {
   return { stroke: t.grid, strokeDasharray: "3 3", vertical: false } as const;
 }
+
+/**
+ * Recharts derives a bar's width from the distance between category ticks, which is zero when a
+ * chart holds a single point — exactly what the "all" granularity produces. Without an explicit
+ * width those bars are laid out 0px wide and the chart reads as empty. Spread onto every `<Bar>`
+ * whose x axis is a period.
+ */
+export function barWidth(points: number) {
+  return points < 2 ? ({ barSize: 120 } as const) : ({} as const);
+}

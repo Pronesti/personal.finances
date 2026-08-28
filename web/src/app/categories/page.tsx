@@ -3,24 +3,18 @@ import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { categoryDrill, coverage } from "@/lib/queries";
 import { periodOf, type Granularity } from "@/lib/months";
-import { parseModes, withModes, valueOpts } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, withModes, valueOpts } from "@/lib/params";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Pills } from "@/components/Pills";
 import { DrillBars } from "@/components/DrillBars";
 
 export const dynamic = "force-dynamic";
 
-const GRANULARITIES: Granularity[] = ["month", "quarter", "year"];
-
-const pill = (active: boolean) =>
-  `rounded-md px-2 py-0.5 transition-colors ${
-    active ? "bg-accent font-medium text-accent-ink" : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-  }`;
-
 export default async function Categories({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const sp = await searchParams;
   const modes = parseModes(sp);
-  const g: Granularity = sp.g === "quarter" ? "quarter" : sp.g === "year" ? "year" : "month";
+  const g = parseGranularity(sp);
   const db = getDb();
 
   // coverage() comes back ordered by cycle month, so collapsing to period labels keeps them
@@ -55,16 +49,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         <h1 className="text-xl font-semibold">Categories</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
-      <div className="mb-2 flex flex-wrap gap-1 text-sm">
-        {GRANULARITIES.map(x => (
-          <Link key={x} href={granularityHref(x)} className={pill(x === g)}>{x}</Link>
-        ))}
-      </div>
-      <div className="mb-4 flex flex-wrap gap-1 text-sm">
-        {periods.map(p => (
-          <Link key={p} href={periodHref(p)} className={pill(p === period)}>{p}</Link>
-        ))}
-      </div>
+      <Pills options={GRANULARITIES} current={g} href={x => granularityHref(x as Granularity)} />
+      {/* One bucket at "all" granularity — a period picker with a single choice is noise. */}
+      {g !== "all" && <Pills options={periods} current={period} href={periodHref} />}
       <div className="mb-4 flex gap-2 text-sm">
         <Link href={crumbHref()} className="text-accent hover:underline">all</Link>
         {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{filter.category}</Link></>}
@@ -72,7 +59,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
       </div>
       {groups.length === 0
-        ? <p className="text-sm text-ink-muted">No spending in {period || "any statement"}.</p>
+        ? <p className="text-sm text-ink-muted">
+            No spending in {g === "all" ? "any statement" : period || "any statement"}.
+          </p>
         : <DrillBars groups={groups} level={level} value={modes.value} />}
       {(level !== "category" || filter.merchant) && (
         <table className="w-full text-sm mt-6">
@@ -94,7 +83,8 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
       <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
         This page shows your costs divided by category. The goal is to find where your money
-        goes in one period. Use the pills to select the period. Click a bar to go down one
+        goes in one period. Use the first row of pills to select month, quarter, year, or all,
+        which drills the whole history at once, and the second row to select the period itself. Click a bar to go down one
         level: category, then subcategory, then merchant. The table shows the purchases of the
         selected level. Use the path line above the chart to go back. Compare a category with
         the same category in an earlier period. A category that grows without a known cause is

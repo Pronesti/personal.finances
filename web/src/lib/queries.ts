@@ -105,19 +105,23 @@ function effectiveAmount(r: BaseRow, opts: ValueOpts, ctx: AmountCtx): number | 
   return toMode(r.ars * installmentFactor * mult, r.month, opts, ctx.baseMonth);
 }
 
-export function monthlySpendByCategory(db: Database.Database, opts: ValueOpts) {
+// Summing already-converted amounts across the months of a period is safe in every value mode:
+// effectiveAmount() has already put each row in base-month pesos (real), USD, or nominal pesos.
+export function spendByCategory(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+) {
   const rows = baseRows(db);
   const ctx = amountCtx(db, rows, opts);
   const acc = new Map<string, number>();
   for (const r of rows) {
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null) continue;
-    const key = `${r.month}|${r.category}`;
+    const key = `${periodOf(r.month, granularity)}|${r.category}`;
     acc.set(key, (acc.get(key) ?? 0) + amt);
   }
   return [...acc.entries()]
-    .map(([k, amount]) => { const [month, category] = k.split("|"); return { month, category, amount }; })
-    .sort((a, b) => a.month.localeCompare(b.month) || a.category.localeCompare(b.category));
+    .map(([k, amount]) => { const [period, category] = k.split("|"); return { period, category, amount }; })
+    .sort((a, b) => a.period.localeCompare(b.period) || a.category.localeCompare(b.category));
 }
 
 export type DrillRow = {
@@ -193,8 +197,8 @@ export function coverage(db: Database.Database): { month: string; brands: string
 }
 
 export function eli5(db: Database.Database, opts: ValueOpts) {
-  const months = monthlySpendByCategory(db, opts);
-  const sorted = monthlyTotals(db, opts).map(m => [m.month, m.amount] as [string, number]);
+  const months = spendByCategory(db, opts);
+  const sorted = periodTotals(db, opts).map(m => [m.period, m.amount] as [string, number]);
   if (sorted.length === 0) throw new Error("No statements ingested — run npm run ingest");
   const [lastMonthKey, spentThisMonth] = sorted[sorted.length - 1];
   const prev = sorted.length > 1 ? sorted[sorted.length - 2][1] : null;
@@ -231,7 +235,7 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
     pctVsPrev: prev ? ((spentThisMonth - prev) / prev) * 100 : null,
     openAnomalies,
     nextStatementForecast,
-    topCategories: months.filter(m => m.month === lastMonthKey)
+    topCategories: months.filter(m => m.period === lastMonthKey)
       .sort((a, b) => b.amount - a.amount).slice(0, 3)
       .map(m => ({ category: m.category, amount: m.amount })),
     alerts,
@@ -246,12 +250,17 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
 
 // Chart 9. Both series land in the active value mode: ARS-billed rows through the normal
 // path, USD-billed rows converted at their month's MEP so the split is readable side by side.
-export function currencySplit(db: Database.Database, opts: ValueOpts) {
+export function currencySplit(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+) {
   const rows = baseRows(db);
   const ctx = amountCtx(db, rows, opts);
   const acc = new Map<string, { arsBilled: number; usdBilled: number }>();
   for (const r of rows) {
-    const bucket = acc.get(r.month) ?? { arsBilled: 0, usdBilled: 0 };
+    // Each USD row is converted at ITS OWN month's MEP before the period sums it, so a
+    // quarter never reprices January's travel at March's rate.
+    const period = periodOf(r.month, granularity);
+    const bucket = acc.get(period) ?? { arsBilled: 0, usdBilled: 0 };
     if (r.ars != null) {
       const amt = effectiveAmount(r, opts, ctx);
       if (amt != null) bucket.arsBilled += amt;
@@ -261,11 +270,11 @@ export function currencySplit(db: Database.Database, opts: ValueOpts) {
         ? r.usd * mult
         : toMode(r.usd * mult * mepFor(r.month, opts.mep), r.month, opts, ctx.baseMonth);
     }
-    acc.set(r.month, bucket);
+    acc.set(period, bucket);
   }
   return [...acc.entries()]
-    .map(([month, v]) => ({ month, ...v }))
-    .sort((a, b) => a.month.localeCompare(b.month));
+    .map(([period, v]) => ({ period, ...v }))
+    .sort((a, b) => a.period.localeCompare(b.period));
 }
 
 // Computed per query, never persisted: anomalies depend on the whole history and on CPI,
@@ -274,16 +283,20 @@ export function anomalies(db: Database.Database, cpi: CpiTable): Anomaly[] {
   return detectAnomalies(baseRows(db), cpi);
 }
 
-export function monthlyTotals(db: Database.Database, opts: ValueOpts) {
+export function periodTotals(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+) {
   const rows = baseRows(db);
   const ctx = amountCtx(db, rows, opts);
   const acc = new Map<string, number>();
   for (const r of rows) {
     const amt = effectiveAmount(r, opts, ctx);
-    if (amt != null) acc.set(r.month, (acc.get(r.month) ?? 0) + amt);
+    if (amt == null) continue;
+    const period = periodOf(r.month, granularity);
+    acc.set(period, (acc.get(period) ?? 0) + amt);
   }
-  return [...acc.entries()].map(([month, amount]) => ({ month, amount }))
-    .sort((a, b) => a.month.localeCompare(b.month));
+  return [...acc.entries()].map(([period, amount]) => ({ period, amount }))
+    .sort((a, b) => a.period.localeCompare(b.period));
 }
 
 // Two cards close the same day, and an older statement's installment schedule is superseded
@@ -384,7 +397,9 @@ const TOP_MERCHANTS = 8; // per category; the tail becomes one "<category> — o
 // Chart 2. One netted map keyed brand|category|merchant is the whole trick: deriving both
 // link sets from the same survivors makes flow conservation automatic. Accumulating the two
 // sides separately and dropping non-positives from each breaks 6 of 19 real months.
-export function sankeyFlows(db: Database.Database, opts: ValueOpts, month: string) {
+export function sankeyFlows(
+  db: Database.Database, opts: ValueOpts, period: string, granularity: Granularity = "month"
+) {
   const empty = { nodes: [] as { name: string }[], links: [] as { source: number; target: number; value: number }[] };
   const all = baseRows(db);
   const ctx = amountCtx(db, all, opts);
@@ -395,7 +410,7 @@ export function sankeyFlows(db: Database.Database, opts: ValueOpts, month: strin
 
   const flows = new Map<string, number>(); // "brand|category|merchant" -> netted amount
   for (const r of all) {
-    if (r.month !== month) continue;
+    if (periodOf(r.month, granularity) !== period) continue;
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null) continue; // negatives ride along and net (rev note 2)
     const brand = brandByStatement.get(r.statement_id) ?? "card";
@@ -976,8 +991,8 @@ export function moneyBack(
   };
 }
 
-export type FloatMonth = {
-  month: string;
+export type FloatPeriod = {
+  period: string;
   /** Purchase-to-due days, weighted by nominal amount. */
   avgDays: number;
   avgDaysOneOff: number | null;
@@ -1006,7 +1021,9 @@ function cpiAtOrFirst(month: string, cpi: CpiTable): number {
 // exactly the effect this chart exists to show. USD-billed rows are excluded: their float is a
 // MEP bet, not a CPI one. A due month past the CPI table falls back to the latest index, so
 // the newest month's gain is understated, never invented.
-export function paymentFloat(db: Database.Database, cpi: CpiTable): FloatMonth[] {
+export function paymentFloat(
+  db: Database.Database, cpi: CpiTable, granularity: Granularity = "month"
+): FloatPeriod[] {
   const rows = db.prepare(`
     SELECT s.cycle_month AS month, s.due_date, t.date, t.ars,
            t.installment_count IS NOT NULL AS isInstallment
@@ -1024,24 +1041,27 @@ export function paymentFloat(db: Database.Database, cpi: CpiTable): FloatMonth[]
     if (days < 0) continue; // malformed row; a negative float is a parse error, not a loan to the bank
     const realAtPurchase = r.ars * (cpi[base] / cpiAtOrFirst(r.date.slice(0, 7), cpi));
     const realAtDue = r.ars * (cpi[base] / cpiAtOrFirst(due.slice(0, 7), cpi));
-    const b = acc.get(r.month)
+    // Bucketing by period rather than by cycle month keeps avgDays a true amount-weighted
+    // mean over the whole bucket — the weights are accumulated, never averaged twice.
+    const period = periodOf(r.month, granularity);
+    const b = acc.get(period)
       ?? { days: [0, 0], weight: [0, 0], gain: [0, 0], realAtPurchase: 0 };
     b.days[r.isInstallment] += days * r.ars;
     b.weight[r.isInstallment] += r.ars;
     b.gain[r.isInstallment] += realAtPurchase - realAtDue;
     b.realAtPurchase += realAtPurchase;
-    acc.set(r.month, b);
+    acc.set(period, b);
   }
-  return [...acc.entries()].map(([month, b]) => {
+  return [...acc.entries()].map(([period, b]) => {
     const weight = b.weight[0] + b.weight[1];
     const gain = b.gain[0] + b.gain[1];
     return {
-      month,
+      period,
       avgDays: (b.days[0] + b.days[1]) / weight,
       avgDaysOneOff: b.weight[0] > 0 ? b.days[0] / b.weight[0] : null,
       avgDaysInstallment: b.weight[1] > 0 ? b.days[1] / b.weight[1] : null,
       gainOneOff: b.gain[0], gainInstallment: b.gain[1], gain,
       gainPct: b.realAtPurchase > 0 ? (gain / b.realAtPurchase) * 100 : 0,
     };
-  }).sort((a, b) => a.month.localeCompare(b.month));
+  }).sort((a, b) => a.period.localeCompare(b.period));
 }

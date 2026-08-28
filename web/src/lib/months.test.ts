@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { periodOf } from "@/lib/months";
+import { periodOf, ALL_PERIOD } from "@/lib/months";
 
 describe("periodOf", () => {
   it("passes months through unchanged", () => {
@@ -17,5 +17,11 @@ describe("periodOf", () => {
   it("drops the month for years", () => {
     expect(periodOf("2026-12", "year")).toBe("2026");
     expect(periodOf("2025-01", "year")).toBe("2025");
+  });
+
+  it("collapses every month to one bucket for all", () => {
+    expect(periodOf("2024-01", "all")).toBe(ALL_PERIOD);
+    expect(periodOf("2026-12", "all")).toBe(ALL_PERIOD);
+    expect(ALL_PERIOD).toBe("all");
   });
 });

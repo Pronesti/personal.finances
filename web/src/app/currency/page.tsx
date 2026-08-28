@@ -1,22 +1,26 @@
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { currencySplit } from "@/lib/queries";
-import { parseModes, valueOpts } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Pills } from "@/components/Pills";
 import { CurrencyBars } from "@/components/CurrencyBars";
 
 export const dynamic = "force-dynamic";
 
 export default async function Currency({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
-  const modes = parseModes(await searchParams);
+  const sp = await searchParams;
+  const modes = parseModes(sp);
+  const g = parseGranularity(sp);
   const opts = valueOpts(modes);
-  const data = currencySplit(getDb(), opts);
+  const data = currencySplit(getDb(), opts, g);
   return (
     <main>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">ARS vs USD spending</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
+      <Pills options={GRANULARITIES} current={g} href={x => withModes("/currency", modes, { g: x })} />
       <CurrencyBars data={data} value={modes.value} />
       <p className="text-xs text-ink-muted mt-3">
         USD-billed purchases are converted at each cycle month&apos;s average MEP rate so both bars
@@ -26,7 +30,8 @@ export default async function Currency({ searchParams }: { searchParams: Promise
       <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
         This page compares your costs in pesos with your costs in US dollars. The goal is to show
         the weight of purchases in a foreign currency. The dollar amounts change to pesos at the
-        MEP rate of each month. Thus the two bars have the same unit. A large dollar bar is not
+        MEP rate of each month, also when the pills group months into a quarter, a year, or all
+        of the history. Thus the two bars have the same unit. A large dollar bar is not
         bad alone. It usually shows travel or purchases from other countries. But dollar
         purchases add the RG 5617 tax. See the Taxes page for that cost.
       </p>

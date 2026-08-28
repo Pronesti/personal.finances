@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { merchantConcentration, merchantNovelty, coverage } from "@/lib/queries";
 import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
-import { periodOf } from "@/lib/months";
+import { periodOf, ALL_PERIOD } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -24,10 +24,10 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const opts = valueOpts(modes);
   const db = getDb();
   const periods = [...new Set(coverage(db).map(c => periodOf(c.month, g)))];
-  // "all" is the default and the fallback for a period label from another granularity —
+  // ALL_PERIOD is the default and the fallback for a period label from another granularity —
   // switching granularity deliberately drops `period` back to the full history.
-  const period = typeof sp.period === "string" && periods.includes(sp.period) ? sp.period : "all";
-  const scope = period === "all" ? undefined : { granularity: g, period };
+  const period = typeof sp.period === "string" && periods.includes(sp.period) ? sp.period : ALL_PERIOD;
+  const scope = period === ALL_PERIOD ? undefined : { granularity: g, period };
   const { merchants, totalSpend } = merchantConcentration(db, opts, scope);
   const novelty = merchantNovelty(db, opts, g);
   return (
@@ -38,17 +38,21 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
       </div>
 
       <Pills options={GRANULARITIES} current={g} href={x => withModes("/merchants", modes, { g: x })} />
-      <Pills
-        options={["all", ...periods]}
-        current={period}
-        href={p => withModes("/merchants", modes, p === "all" ? { g } : { g, period: p })}
-      />
+      {/* At "all" granularity every month is already one bucket, so the scope row would offer
+          "all" and nothing else — the granularity pill has said it. */}
+      {g !== "all" && (
+        <Pills
+          options={[ALL_PERIOD, ...periods]}
+          current={period}
+          href={p => withModes("/merchants", modes, p === ALL_PERIOD ? { g } : { g, period: p })}
+        />
+      )}
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Merchants</div>
           <div className="text-2xl font-bold">{merchants.length}</div>
-          <div className="text-sm text-ink-muted">{period === "all" ? "across the whole history" : `in ${period}`}</div>
+          <div className="text-sm text-ink-muted">{period === ALL_PERIOD ? "across the whole history" : `in ${period}`}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Top 5 take</div>

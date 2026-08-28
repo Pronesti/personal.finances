@@ -5,10 +5,25 @@ import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
 type SP = { [k: string]: string | string[] | undefined };
 
-export const GRANULARITIES = ["month", "quarter", "year"] as const;
+export const GRANULARITIES = ["month", "quarter", "year", "all"] as const;
 
 export function parseGranularity(sp: SP): Granularity {
-  return sp.g === "quarter" ? "quarter" : sp.g === "year" ? "year" : "month";
+  return sp.g === "quarter" ? "quarter"
+    : sp.g === "year" ? "year"
+    : sp.g === "all" ? "all"
+    : "month";
+}
+
+// Copy helper: "all" names a bucket, not a period, so prose that reads "each {g}" needs a
+// neutral word for it. Pages that say "the latest {g}" want `spanLabel` instead.
+export function periodWord(g: Granularity): string {
+  return g === "all" ? "period" : g;
+}
+
+// Prose for the span one bucket covers — "the latest month", but "the whole history" for "all",
+// where there is only ever one bucket and "latest" would be meaningless.
+export function spanLabel(g: Granularity): string {
+  return g === "all" ? "the whole history" : `the latest ${g}`;
 }
 
 export type Modes = { spend: SpendMode; value: ValueMode; tax: TaxMode };

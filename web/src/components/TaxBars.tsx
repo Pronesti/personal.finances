@@ -2,7 +2,7 @@
 import { ComposedChart, Bar, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode, TaxPeriod } from "@/lib/queries";
-import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps } from "./chart";
+import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidth } from "./chart";
 
 export function TaxBars({ data, value }: { data: TaxPeriod[]; value: ValueMode }) {
   const t = useChartTheme();
@@ -27,7 +27,7 @@ export function TaxBars({ data, value }: { data: TaxPeriod[]; value: ValueMode }
         />
         <Legend {...legendProps(t)} />
         {series.map((s, i) => (
-          <Bar key={s.key} yAxisId="amt" dataKey={s.key} name={s.name} stackId="1" fill={s.fill}
+          <Bar key={s.key} yAxisId="amt" dataKey={s.key} name={s.name} stackId="1" fill={s.fill} {...barWidth(data.length)}
             radius={i === series.length - 1 ? [3, 3, 0, 0] : undefined} />
         ))}
         <Line yAxisId="pct" dataKey="ratePct" name="overhead" stroke={t.ink} strokeWidth={2} strokeDasharray="5 4" dot={false} />

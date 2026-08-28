@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { taxBurden } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, periodWord, valueOpts, withModes } from "@/lib/params";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -40,10 +40,10 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Average overhead</div>
           <div className="text-2xl font-bold">{avgRate != null ? pct(avgRate) : "—"}</div>
-          <div className="text-sm text-ink-muted">on top of each {g}&apos;s purchases</div>
+          <div className="text-sm text-ink-muted">on top of each {periodWord(g)}&apos;s purchases</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Worst {g}</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Worst {periodWord(g)}</div>
           <div className="text-2xl font-bold">{worst ? pct(worst.ratePct) : "—"}</div>
           <div className="text-sm text-ink-muted">{worst ? worst.period : "no tax lines yet"}</div>
         </div>
