@@ -46,6 +46,16 @@ export default async function Future({ searchParams }: { searchParams: Promise<{
         6-month inflation rate ({rate}%/month); real figures instead deflate the contractual installments
         into today&apos;s pesos.
       </p>
+
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+        This page shows an estimate of your next statements. The goal is to show the money that
+        you must pay in the months that come. The chart has three layers. The certain layer
+        contains the installment payments. They are an obligation. The expected layer contains
+        the recurring charges. They continue if you do not cancel them. The estimated layer is a
+        range for your variable purchases. It is a calculation from the last six cycles, not a
+        promise. A small certain layer is good. It shows that you are free to change your costs.
+        A large certain layer is bad. Your money is committed before the month starts.
+      </p>
     </main>
   );
 }

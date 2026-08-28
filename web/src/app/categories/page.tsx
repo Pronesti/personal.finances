@@ -91,6 +91,15 @@ export default async function Categories({ searchParams }: { searchParams: Promi
           </tbody>
         </table>
       )}
+
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+        This page shows your costs divided by category. The goal is to find where your money
+        goes in one period. Use the pills to select the period. Click a bar to go down one
+        level: category, then subcategory, then merchant. The table shows the purchases of the
+        selected level. Use the path line above the chart to go back. Compare a category with
+        the same category in an earlier period. A category that grows without a known cause is
+        a signal. Examine its merchants.
+      </p>
     </main>
   );
 }
