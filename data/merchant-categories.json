@@ -14,7 +14,7 @@
     {"match":"OSDE","category":"health","subcategory":"insurance"},
     {"match":"FARMACIA","category":"health","subcategory":"pharmacy"},
     {"match":"FARMACITY","category":"health","subcategory":"pharmacy"},
-    {"match":"SANCOR","category":"health","subcategory":"insurance"},
+    {"match":"SANCOR","category":"transport","subcategory":"insurance"},
     {"match":"PERSONAL","category":"services","subcategory":"phone"},
     {"match":"CLARO","category":"services","subcategory":"phone"},
     {"match":"CLUB ATLETICO BO","category":"entertainment","subcategory":"sports"},
