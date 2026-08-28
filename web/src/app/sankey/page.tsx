@@ -36,6 +36,15 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
         their own band; the rest are grouped. Refunds net against their own merchant before the
         flow is drawn, so every category&apos;s inflow equals its outflow.
       </p>
+
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+        This page shows the flow of money for one cycle month. The flow goes from each card, to
+        each category, to each merchant. The goal is to see the structure of one month on one
+        screen. Select the month with the pills. The width of a band shows the amount. A wide
+        band shows a large cost. Follow a band from left to right to see which merchant receives
+        the money. Use this page to find the few large flows that control the month. A month
+        with many thin bands has no single large cause.
+      </p>
     </main>
   );
 }

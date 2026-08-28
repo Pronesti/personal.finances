@@ -26,6 +26,15 @@ export default async function Trends({ searchParams }: { searchParams: Promise<{
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
       <StackedArea data={[...byMonth.values()]} categories={categories} value={modes.value} />
+
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+        This page shows your costs for each month, divided by category. The goal is to show how
+        your costs change with time. Each colored band is one category. The height of the full
+        area is the total of that month. Read the width of a band to see the weight of that
+        category. A stable or thin band is good. A band that becomes wider each month is bad. It
+        shows a category that grows. Use the real mode to remove the effect of inflation from
+        the comparison.
+      </p>
     </main>
   );
 }

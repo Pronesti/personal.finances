@@ -22,6 +22,14 @@ export default async function Currency({ searchParams }: { searchParams: Promise
         USD-billed purchases are converted at each cycle month&apos;s average MEP rate so both bars
         share one unit. Foreign spending is lumpy — a travel month can dominate the year.
       </p>
+
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+        This page compares your costs in pesos with your costs in US dollars. The goal is to show
+        the weight of purchases in a foreign currency. The dollar amounts change to pesos at the
+        MEP rate of each month. Thus the two bars have the same unit. A large dollar bar is not
+        bad alone. It usually shows travel or purchases from other countries. But dollar
+        purchases add the RG 5617 tax. See the Taxes page for that cost.
+      </p>
     </main>
   );
 }
