@@ -18,9 +18,9 @@ export default async function Review() {
   return (
     <main>
       <h1 className="mb-2 text-xl font-semibold">Review</h1>
-      <p className="mb-4 text-sm text-zinc-500">
+      <p className="mb-4 text-sm text-ink-muted">
         {data.rules.length} rules · {data.proposals.length} awaiting review ·{" "}
-        <Link className="hover:underline" href="/categories?category=other">
+        <Link className="text-accent hover:underline" href="/categories?category=other">
           {unknown.length} merchants still uncategorized
         </Link>. Only the merchant name is ever sent — never an amount, a date, an account number or
         your name, and any name that still looks like money is not sent at all.
@@ -29,7 +29,7 @@ export default async function Review() {
 
       {data.proposals.length > 0 && (
         <table className="mt-6 w-full text-sm">
-          <thead><tr className="text-left text-zinc-500">
+          <thead><tr className="border-b border-line text-left text-ink-muted">
             <th className="py-1">Merchant</th><th>Rule</th>
             <th className="text-right">Spend</th><th className="text-right">Decide</th>
           </tr></thead>
@@ -37,23 +37,23 @@ export default async function Review() {
             {data.proposals.map((p, i) => {
               const also = (previews.get(p.merchant) ?? []).filter(r => r.merchant !== p.merchant);
               return (
-                <tr key={p.merchant} className="border-t border-zinc-100 align-top dark:border-zinc-800">
+                <tr key={p.merchant} className="border-t border-line align-top">
                   <td className="py-1">
                     {p.merchant}
-                    {p.confidence === "low" && <span className="ml-2 text-xs text-amber-600 dark:text-amber-500">low confidence</span>}
-                    {p.sent !== p.merchant && <div className="text-xs text-zinc-500">sent as &ldquo;{p.sent}&rdquo;</div>}
+                    {p.confidence === "low" && <span className="ml-2 text-xs text-warning">low confidence</span>}
+                    {p.sent !== p.merchant && <div className="text-xs text-ink-muted">sent as &ldquo;{p.sent}&rdquo;</div>}
                   </td>
                   <td>
                     <form action={acceptAction} className="flex flex-wrap items-center gap-2" id={`f-${i}`}>
                       <input type="hidden" name="merchant" value={p.merchant} />
-                      <input name="match" defaultValue={p.merchant} className="w-48 rounded border border-zinc-300 px-1 dark:border-zinc-700 dark:bg-transparent" />
-                      <select name="category" defaultValue={p.category} className="rounded border border-zinc-300 px-1 dark:border-zinc-700 dark:bg-transparent">
+                      <input name="match" defaultValue={p.merchant} className="w-48 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
+                      <select name="category" defaultValue={p.category} className="rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink">
                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
-                      <input name="subcategory" defaultValue={p.subcategory} className="w-32 rounded border border-zinc-300 px-1 dark:border-zinc-700 dark:bg-transparent" />
+                      <input name="subcategory" defaultValue={p.subcategory} className="w-32 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
                     </form>
                     {also.length > 0 && (
-                      <div className="mt-1 text-xs text-amber-700 dark:text-amber-500">
+                      <div className="mt-1 text-xs text-warning">
                         This rule also claims: {also.map(r => r.merchant).join(", ")}
                       </div>
                     )}
@@ -61,11 +61,11 @@ export default async function Review() {
                   {/* A USD-only merchant nets 0 ARS; "$ 0" would read as "this cost nothing". */}
                   <td className="text-right">{spend.get(p.merchant) ? fmtArs(spend.get(p.merchant)!) : "—"}</td>
                   <td className="whitespace-nowrap text-right">
-                    <button form={`f-${i}`} type="submit" className="hover:underline">accept</button>
+                    <button form={`f-${i}`} type="submit" className="text-accent hover:underline">accept</button>
                     <span className="px-1">·</span>
                     <form action={rejectAction} className="inline">
                       <input type="hidden" name="merchant" value={p.merchant} />
-                      <button type="submit" className="hover:underline">reject</button>
+                      <button type="submit" className="text-ink-muted hover:text-negative hover:underline">reject</button>
                     </form>
                   </td>
                 </tr>
@@ -75,7 +75,7 @@ export default async function Review() {
         </table>
       )}
 
-      <p className="mt-6 text-xs text-zinc-500">
+      <p className="mt-6 text-xs text-ink-muted">
         Accepting appends a rule to data/merchant-categories.json and applies it to the transactions
         already loaded. Rules match by substring and are first-match-wins, so edit the rule text if it
         would claim merchants you did not mean — the warning above the accept button lists them.

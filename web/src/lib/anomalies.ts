@@ -71,7 +71,7 @@ function duplicates(rows: AnomalyRow[]): Anomaly[] {
 // visit count reads as a price hike (ungated this fires 42 times on real data; gated, 6).
 function amountJumps(rows: AnomalyRow[], cpi: CpiTable): Anomaly[] {
   const recurring = new Set(
-    detectRecurring(rows).filter(r => r.currency === "ARS").map(r => r.merchant)
+    detectRecurring(rows, { cpi }).filter(r => r.currencies.includes("ARS")).map(r => r.merchant)
   );
   const totals = new Map<string, Map<string, number>>();
   const charges = new Map<string, Map<string, number>>();

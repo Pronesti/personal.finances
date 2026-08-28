@@ -1,16 +1,19 @@
 "use client";
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps } from "./chart";
 
 export function InflationLines({ data }: { data: { month: string; personal: number; official: number }[] }) {
+  const t = useChartTheme();
   return (
     <ResponsiveContainer width="100%" height={420}>
       <LineChart data={data}>
-        <XAxis dataKey="month" fontSize={12} />
-        <YAxis tickFormatter={(v: number) => Math.round(v).toString()} fontSize={12} width={60} />
-        <Tooltip formatter={(v) => Number(v).toFixed(1)} />
-        <Legend />
-        <Line type="monotone" dataKey="personal" name="Your basket" stroke="#ef4444" strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="official" name="INDEC IPC" stroke="#71717a" strokeWidth={2} strokeDasharray="5 4" dot={false} />
+        <CartesianGrid {...gridProps(t)} />
+        <XAxis dataKey="month" {...axisProps(t)} />
+        <YAxis tickFormatter={(v: number) => Math.round(v).toString()} width={60} {...axisProps(t)} />
+        <Tooltip formatter={(v) => Number(v).toFixed(1)} {...tooltipProps(t)} />
+        <Legend {...legendProps(t)} />
+        <Line type="monotone" dataKey="personal" name="Your basket" stroke={t.series.alert} strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="official" name="INDEC IPC" stroke={t.series.neutral} strokeWidth={2} strokeDasharray="5 4" dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

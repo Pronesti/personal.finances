@@ -5,7 +5,7 @@ import { detectRecurring, type RecurringCharge } from "@/lib/recurring";
 import { detectAnomalies, type Anomaly } from "@/lib/anomalies";
 import { project, type ProjectionMonth } from "@/lib/projection";
 import { trailingMonthlyInflation } from "@/lib/cpi";
-import { addMonth } from "@/lib/months";
+import { addMonth, periodOf, type Granularity } from "@/lib/months";
 import { personalInflationIndex, type BasketPoint } from "@/lib/inflation";
 
 export type SpendMode = "cash" | "accrual";
@@ -127,7 +127,12 @@ export type DrillRow = {
 
 export function categoryDrill(
   db: Database.Database, opts: ValueOpts,
-  filter: { category?: string; subcategory?: string; month?: string; merchant?: string }
+  filter: {
+    category?: string; subcategory?: string; merchant?: string;
+    // Scope to one period. `period` is a label produced by periodOf() at this granularity —
+    // "2026-07", "2026-Q3" or "2026" — so one filter covers all three time scopes.
+    granularity?: Granularity; period?: string;
+  }
 ) {
   const level: "category" | "subcategory" | "merchant" =
     !filter.category ? "category" : !filter.subcategory ? "subcategory" : "merchant";
@@ -139,7 +144,7 @@ export function categoryDrill(
     if (filter.category && r.category !== filter.category) continue;
     if (filter.subcategory && (r.subcategory ?? "(none)") !== filter.subcategory) continue;
     if (filter.merchant && r.merchant !== filter.merchant) continue;
-    if (filter.month && r.month !== filter.month) continue;
+    if (filter.period && periodOf(r.month, filter.granularity ?? "month") !== filter.period) continue;
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null && r.usd == null) continue; // dropped by mode (non-first cuota in accrual)
     rows.push({ month: r.month, date: r.date, description: r.description, merchant: r.merchant,
@@ -156,12 +161,12 @@ export function categoryDrill(
   };
 }
 
-export function recurringTable(db: Database.Database): RecurringCharge[] {
-  return detectRecurring(baseRows(db));
+export function recurringTable(db: Database.Database, cpi: CpiTable): RecurringCharge[] {
+  return detectRecurring(baseRows(db), { cpi });
 }
 
 export function periodComparison(
-  db: Database.Database, opts: ValueOpts, granularity: "month" | "quarter" | "year"
+  db: Database.Database, opts: ValueOpts, granularity: Granularity
 ) {
   const rows = baseRows(db);
   const ctx = amountCtx(db, rows, opts);
@@ -169,15 +174,14 @@ export function periodComparison(
   for (const r of rows) {
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null) continue;
-    const [y, m] = r.month.split("-").map(Number);
-    const period = granularity === "month" ? r.month
-      : granularity === "quarter" ? `${y}-Q${Math.ceil(m / 3)}` : String(y);
+    const period = periodOf(r.month, granularity);
     acc.set(period, (acc.get(period) ?? 0) + amt);
   }
   const sorted = [...acc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return sorted.map(([period, amount], i) => ({
     period, amount,
-    pctVsPrev: i === 0 ? null : ((amount - sorted[i - 1][1]) / sorted[i - 1][1]) * 100,
+    // A period can net to zero (purchase fully refunded); a delta against it is undefined, not infinite.
+    pctVsPrev: i === 0 || sorted[i - 1][1] === 0 ? null : ((amount - sorted[i - 1][1]) / sorted[i - 1][1]) * 100,
   }));
 }
 
@@ -203,6 +207,13 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
     `SELECT month, SUM(amount_ars) amount FROM upcoming_installments
      WHERE statement_id IN (${ids.map(() => "?").join(",")}) GROUP BY month ORDER BY month`
   ).all(...ids) as { month: string; amount: number }[];
+  // upcoming_installments stores nominal ARS. Value it the way cuotaProjection does: at the
+  // latest month seen, not at the future month it falls due — neither CPI nor MEP has data
+  // past the last statement. Without this the tile printed raw pesos behind a "US$" sign.
+  const baseMonth = latestMonth(opts.cpi);
+  const cuotaTotal = upcoming.reduce(
+    (s, u) => s + toMode(u.amount, lastMonthKey, opts, baseMonth), 0
+  );
 
   const alerts = db.prepare("SELECT kind, message FROM alerts ORDER BY id DESC LIMIT 5")
     .all() as { kind: string; message: string }[];
@@ -225,11 +236,11 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
       .map(m => ({ category: m.category, amount: m.amount })),
     alerts,
     cuotaMonths: upcoming.length,
-    cuotaTotal: upcoming.reduce((s, u) => s + u.amount, 0),
+    cuotaTotal,
     sparkline: sorted.slice(-12).map(([month, amount]) => ({ month, amount })),
     latestClosing: latest.closing_date,
     nextDueDate: latest.due_date,
-    baseMonth: latestMonth(opts.cpi),
+    baseMonth,
   };
 }
 
@@ -304,11 +315,14 @@ export function cuotaProjection(
     amount: toMode(u.amount, latestMonthSeen, opts, ctx.baseMonth),
   }));
 
-  // Recency gate: a subscription last charged in 2025 is not a 2027 obligation. Without it
-  // ~87,000 ARS/month of dead merchants ride along, including two that moved to USD billing.
-  const cutoff = addMonth(latestMonthSeen, -1);
-  const recurring = detectRecurring(rows)
-    .filter(r => r.currency === "ARS" && r.lastMonth >= cutoff);
+  // A subscription last charged in 2025 is not a 2027 obligation, and neither is a supermarket
+  // that merely shows up every month — detectRecurring now carries both judgements, so the
+  // ad-hoc cutoff this used to compute is gone. Low-confidence merchants are not dropped, they
+  // fall through to the variable bucket below, which is what they actually are.
+  // `currency` is the CURRENT billing currency, so merchants that migrated to USD correctly
+  // stop contributing an ARS obligation here.
+  const recurring = detectRecurring(rows, { cpi: opts.cpi, latestMonth: latestMonthSeen })
+    .filter(r => r.currency === "ARS" && r.status === "active" && r.confidence === "high");
   const recurringNames = new Set(recurring.map(r => r.merchant));
   const recurringMonthly = recurring.reduce(
     (s, r) => s + toMode(r.lastAmount, r.lastMonth, opts, ctx.baseMonth), 0
@@ -342,8 +356,10 @@ export function personalInflation(
   db: Database.Database, cpi: CpiTable
 ): { points: BasketPoint[]; basket: string[] } {
   const rows = baseRows(db);
+  // `currencies`, not `currency`: a merchant that billed in ARS for part of its history belongs
+  // in an ARS price basket for those months even if it bills in USD today.
   const names = new Set(
-    detectRecurring(rows).filter(r => r.currency === "ARS").map(r => r.merchant)
+    detectRecurring(rows, { cpi }).filter(r => r.currencies.includes("ARS")).map(r => r.merchant)
   );
   const charges = new Map<string, number>();
   for (const r of rows) {

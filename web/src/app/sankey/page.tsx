@@ -27,11 +27,11 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap gap-2 text-sm mb-4">
         {months.map(m => (
           <Link key={m} href={withModes("/sankey", modes, { month: m })}
-            className={m === month ? "font-bold underline" : "hover:underline"}>{m}</Link>
+            className={`rounded-md px-2 py-0.5 transition-colors ${m === month ? "bg-accent text-accent-ink font-medium" : "text-ink-muted hover:bg-surface-2 hover:text-ink"}`}>{m}</Link>
         ))}
       </div>
       <SankeyFlow data={data} value={modes.value} />
-      <p className="text-xs text-zinc-500 mt-3">
+      <p className="text-xs text-ink-muted mt-3">
         Card → category → merchant for one cycle month. Only the top 8 merchants per category get
         their own band; the rest are grouped. Refunds net against their own merchant before the
         flow is drawn, so every category&apos;s inflow equals its outflow.

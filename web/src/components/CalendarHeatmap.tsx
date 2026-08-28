@@ -1,13 +1,15 @@
 "use client";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
+import { useChartTheme } from "./chart";
 
 const CELL = 13, GAP = 2, WEEK = CELL + GAP;
 
 export function CalendarHeatmap({ data, value }: {
   data: { date: string; amount: number }[]; value: ValueMode;
 }) {
-  if (data.length === 0) return <p className="text-sm text-zinc-500">No dated purchases.</p>;
+  const t = useChartTheme();
+  if (data.length === 0) return <p className="text-sm text-ink-muted">No dated purchases.</p>;
   const max = Math.max(...data.map(d => d.amount));
   const byDate = new Map(data.map(d => [d.date, d.amount]));
   const start = new Date(`${data[0].date}T00:00:00Z`);
@@ -29,16 +31,21 @@ export function CalendarHeatmap({ data, value }: {
       }
     }
   }
+  // An empty day is drawn, not omitted, so the grid stays a grid. It takes the flat surface
+  // colour with a hairline border: a low-opacity ink wash (the old treatment) vanishes on a
+  // dark canvas, and anything darker than the canvas reads as a *large* value, not a missing one.
   return (
     <div className="overflow-x-auto">
       <svg width={weeks * WEEK + 8} height={7 * WEEK + 22} role="img" aria-label="Daily spend heatmap">
         {labels.map(l => (
-          <text key={l.text} x={l.x} y={8} fontSize={8} fill="currentColor" opacity={0.6}>{l.text}</text>
+          <text key={l.text} x={l.x} y={8} fontSize={8} fill={t.inkMuted}>{l.text}</text>
         ))}
         {cells.map(c => (
           <rect key={c.date} x={c.x} y={c.y + 14} width={CELL} height={CELL} rx={2}
-            fill={c.amount > 0 ? "#0ea5e9" : "currentColor"}
-            fillOpacity={c.amount > 0 ? 0.15 + 0.85 * (c.amount / max) : 0.06}>
+            fill={c.amount > 0 ? t.series.primary : t.surface}
+            stroke={t.grid}
+            strokeWidth={0.5}
+            fillOpacity={c.amount > 0 ? 0.25 + 0.75 * (c.amount / max) : 1}>
             <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : "no purchases"}`}</title>
           </rect>
         ))}

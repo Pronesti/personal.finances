@@ -145,6 +145,39 @@ describe("queries", () => {
     expect(r[1].pctVsPrev).toBeCloseTo(((1400 - 1100) / 1100) * 100);
   });
 
+  it("periodComparison yields null delta after a period netting to zero", () => {
+    // 2026-06 nets to zero: the purchase is fully refunded within the period.
+    db.prepare("UPDATE transactions SET ars = -1000 WHERE date = '2026-07-12'").run();
+    db.prepare("UPDATE transactions SET statement_id = (SELECT id FROM statements WHERE file = 'v_2026_06.json'), date = '2026-06-12' WHERE ars = -1000").run();
+    const r = periodComparison(db, o("cash", "nominal"), "month");
+    expect(r[0]).toMatchObject({ period: "2026-06", amount: 0 });
+    expect(r[1].pctVsPrev).toBeNull();
+  });
+
+  it("periodComparison buckets into quarters and years", () => {
+    expect(periodComparison(db, o("cash", "nominal"), "quarter").map(x => x.period))
+      .toEqual(["2026-Q2", "2026-Q3"]);
+    expect(periodComparison(db, o("cash", "nominal"), "year").map(x => x.period)).toEqual(["2026"]);
+  });
+
+  it("categoryDrill scopes to one month, quarter or year", () => {
+    const food = (f: Parameters<typeof categoryDrill>[2]) =>
+      categoryDrill(db, o("cash", "nominal"), f).groups.find(x => x.key === "food")?.amount;
+    expect(food({ granularity: "month", period: "2026-06" })).toBe(1000);
+    expect(food({ granularity: "quarter", period: "2026-Q2" })).toBe(1000); // 2026-06 alone
+    expect(food({ granularity: "quarter", period: "2026-Q3" })).toBe(800);  // 2026-07, refund netted
+    expect(food({ granularity: "year", period: "2026" })).toBe(1800);
+    expect(food({})).toBe(1800); // unscoped is unchanged
+  });
+
+  it("categoryDrill keeps scope and drill independent", () => {
+    const { level, rows } = categoryDrill(db, o("cash", "nominal"),
+      { category: "food", granularity: "month", period: "2026-06" });
+    expect(level).toBe("subcategory");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].month).toBe("2026-06");
+  });
+
   it("coverage reports brands per month", () => {
     expect(coverage(db)).toEqual([
       { month: "2026-06", brands: ["visa"] },
@@ -161,6 +194,13 @@ describe("queries", () => {
     expect(t.alerts).toEqual([]);
     const nom = eli5(db, o("cash", "nominal"));
     expect(nom.sparkline.find(s => s.month === "2026-06")!.amount).toBe(1000);
+  });
+
+  it("eli5 values the cuota total in the active mode, not raw pesos", () => {
+    // upcoming_installments is nominal ARS: 200 + 100 + 50. USD mode must divide by the
+    // latest month's MEP, not print 350 behind a US$ sign.
+    expect(eli5(db, o("cash", "usd")).cuotaTotal).toBeCloseTo(350 / 1100);
+    expect(eli5(db, o("cash", "nominal")).cuotaTotal).toBe(350);
   });
 
   it("eli5 throws actionable error on empty DB", () => {

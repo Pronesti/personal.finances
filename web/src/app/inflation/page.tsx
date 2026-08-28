@@ -17,13 +17,13 @@ export default async function Inflation() {
           Since {points[0].month}, your recurring basket is up{" "}
           <strong>{(last.personal - 100).toFixed(1)}%</strong> while official IPC is up{" "}
           <strong>{(last.official - 100).toFixed(1)}%</strong> —{" "}
-          <span className={gap > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
+          <span className={gap > 0 ? "text-negative font-medium" : "text-positive font-medium"}>
             {gap > 0 ? "you are paying more than average" : "you are beating average inflation"}
           </span>.
         </p>
       )}
       <InflationLines data={points} />
-      <p className="text-xs text-zinc-500 mt-3">
+      <p className="text-xs text-ink-muted mt-3">
         Both indices are based at 100 in {points[0]?.month ?? "the first month"}. Your line reprices
         the {basket.length} merchants you actually pay every month, chained month to month using only
         merchants charged in both — so a merchant joining or leaving never moves the index by itself,

@@ -19,11 +19,11 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
       <CalendarHeatmap data={data} value={modes.value} />
-      <p className="text-xs text-zinc-500 mt-3">
+      <p className="text-xs text-ink-muted mt-3">
         Purchase dates, not billing dates. Installment purchases count once at full price on the day
         they were bought — statements re-list them every month at the original date, which would
         otherwise repaint the same day a dozen times. That also means the grid reaches back before
-        the first statement: six cuota series were bought in late 2024 and are still being paid off.
+        the first statement: six installment series were bought in late 2024 and are still being paid off.
         Hover a cell for the total.
       </p>
     </main>

@@ -25,12 +25,12 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
       <div className="flex gap-2 mb-4 text-sm">
         {(["month", "quarter", "year"] as const).map(x => (
           <Link key={x} href={withModes("/compare", modes, { g: x })}
-            className={x === g ? "font-bold underline" : "hover:underline"}>{x}</Link>
+            className={`rounded-md px-2 py-0.5 transition-colors ${x === g ? "bg-accent text-accent-ink font-medium" : "text-ink-muted hover:bg-surface-2 hover:text-ink"}`}>{x}</Link>
         ))}
       </div>
       <CompareBars data={data} value={modes.value} />
       {singleCard.length > 0 && (
-        <p className="text-xs text-zinc-500 mt-3">
+        <p className="mt-3 rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-warning">
           ⚠ Single-card months (missing statements for one brand): {singleCard.map(c => c.month).join(", ")} — comparisons across these are apples-to-oranges.
         </p>
       )}

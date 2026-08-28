@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Tarjetas", description: "Credit card
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="max-w-5xl mx-auto px-4 antialiased">
+      <body className="mx-auto max-w-5xl bg-canvas px-4 text-ink antialiased">
         <Suspense><Nav /></Suspense>
         {children}
       </body>

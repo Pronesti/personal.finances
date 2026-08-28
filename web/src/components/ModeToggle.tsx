@@ -6,18 +6,21 @@ function Seg({ param, options, current }: { param: string; options: [string, str
   const pathname = usePathname();
   const sp = useSearchParams();
   return (
-    <div className="inline-flex rounded-lg border border-zinc-300 dark:border-zinc-700 overflow-hidden text-sm">
-      {options.map(([val, label]) => (
+    <div className="inline-flex overflow-hidden rounded-lg border border-line bg-surface text-sm">
+      {options.map(([val, label], i) => (
         <button
           key={val}
+          aria-pressed={val === current}
           onClick={() => {
             const next = new URLSearchParams(sp.toString());
             next.set(param, val);
             router.replace(`${pathname}?${next.toString()}`);
           }}
-          className={val === current
-            ? "px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-            : "px-3 py-1 bg-transparent"}
+          className={`px-3 py-1 transition-colors ${i > 0 ? "border-l border-line" : ""} ${
+            val === current
+              ? "bg-accent text-accent-ink"
+              : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+          }`}
         >
           {label}
         </button>
@@ -34,9 +37,9 @@ export function ModeToggle({ modes, baseMonth, spendToggle = true }: {
   return (
     <div className="flex flex-wrap items-center gap-3">
       {modes.value === "real" && baseMonth && (
-        <span className="text-xs text-zinc-500">in {baseMonth} pesos</span>
+        <span className="text-xs text-ink-subtle">in {baseMonth} pesos</span>
       )}
-      {modes.value === "usd" && <span className="text-xs text-zinc-500">at MEP</span>}
+      {modes.value === "usd" && <span className="text-xs text-ink-subtle">at MEP</span>}
       <Seg param="value" current={modes.value}
         options={[["real", "Real $"], ["nominal", "Nominal $"], ["usd", "USD"]]} />
       {spendToggle && (

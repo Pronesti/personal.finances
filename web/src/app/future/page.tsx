@@ -22,13 +22,13 @@ export default async function Future({ searchParams }: { searchParams: Promise<{
       </div>
       <ProjectionChart data={data} value={modes.value} />
       <table className="w-full text-sm mt-6">
-        <thead><tr className="text-left text-zinc-500">
+        <thead><tr className="border-b border-line text-left text-ink-muted">
           <th className="py-1">Month</th><th className="text-right">Certain</th>
           <th className="text-right">Expected</th><th className="text-right">Estimated range</th>
         </tr></thead>
         <tbody>
           {data.map(d => (
-            <tr key={d.month} className="border-t border-zinc-100 dark:border-zinc-800">
+            <tr key={d.month} className="border-t border-line">
               <td className="py-1">{d.month}</td>
               <td className="text-right">{fmt(d.certain)}</td>
               <td className="text-right">{fmt(d.expected)}</td>
@@ -37,13 +37,13 @@ export default async function Future({ searchParams }: { searchParams: Promise<{
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-zinc-500 mt-3">
+      <p className="text-xs text-ink-muted mt-3">
         Three layers, three certainties (spec §5). <strong>Certain</strong> is the contractual
         installment schedule from the newest statement of each card. <strong>Expected</strong> is
         your recurring charges — only those still active in the last two cycles — carried forward.
         <strong> Estimated</strong> is the range your variable spending has occupied over the last
         six cycles: a band, not a line, because it is a guess. Nominal figures grow at the trailing
-        6-month inflation rate ({rate}%/month); real figures instead deflate the contractual cuotas
+        6-month inflation rate ({rate}%/month); real figures instead deflate the contractual installments
         into today&apos;s pesos.
       </p>
     </main>

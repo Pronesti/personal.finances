@@ -29,25 +29,25 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
         <h1 className="text-xl font-semibold">Alerts</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
-      <p className="mb-4 text-sm text-zinc-500">
+      <p className="mb-4 text-sm text-ink-muted">
         {open.length} open of {alerts.length} — statement-integrity checks (computed at ingest) and
         anomalies (recomputed every load).
         {cleared > 0 && ` Cleared ${cleared} review${cleared === 1 ? "" : "s"} whose alert no longer exists.`}
       </p>
       <AnomalyTimeline totals={totals} flaggedMonths={open.map(a => a.month)} value={modes.value} />
       <table className="mt-6 w-full text-sm">
-        <thead><tr className="text-left text-zinc-500">
+        <thead><tr className="border-b border-line text-left text-ink-muted">
           <th className="py-1">When</th><th>Kind</th><th>Merchant</th>
           <th className="text-right">Amount</th><th>What happened</th><th className="text-right">Review</th>
         </tr></thead>
         <tbody>
           {alerts.map(a => (
-            <tr key={a.key} className={`border-t border-zinc-100 dark:border-zinc-800 ${a.state === "open" ? "" : "text-zinc-400"}`}>
+            <tr key={a.key} className={`border-t border-line ${a.state === "open" ? "" : "text-ink-subtle"}`}>
               <td className="whitespace-nowrap py-1">{a.date ?? a.month}</td>
               <td>{KIND_LABEL[a.kind] ?? a.kind}</td>
               <td>
                 {a.merchant
-                  ? <Link className="hover:underline" href={withModes("/categories", modes, { merchant: a.merchant })}>{a.merchant}</Link>
+                  ? <Link className="text-accent hover:underline" href={withModes("/categories", modes, { merchant: a.merchant })}>{a.merchant}</Link>
                   : "—"}
               </td>
               <td className="text-right">{a.amount != null ? fmtArs(a.amount) : "—"}</td>
@@ -58,20 +58,20 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
                     <form action={reviewAlert} className="inline">
                       <input type="hidden" name="key" value={a.key} />
                       <input type="hidden" name="state" value="reviewed" />
-                      <button className="hover:underline" type="submit">reviewed</button>
+                      <button className="text-accent hover:underline" type="submit">reviewed</button>
                     </form>
                     <span className="px-1">·</span>
                     <form action={reviewAlert} className="inline">
                       <input type="hidden" name="key" value={a.key} />
                       <input type="hidden" name="state" value="dismissed" />
-                      <button className="hover:underline" type="submit">dismiss</button>
+                      <button className="text-ink-muted hover:text-ink hover:underline" type="submit">dismiss</button>
                     </form>
                   </>
                 ) : (
                   <form action={reviewAlert} className="inline">
                     <input type="hidden" name="key" value={a.key} />
                     <input type="hidden" name="state" value="open" />
-                    <button className="hover:underline" type="submit">{a.state} — reopen</button>
+                    <button className="text-accent hover:underline" type="submit">{a.state} — reopen</button>
                   </form>
                 )}
               </td>
@@ -79,7 +79,7 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-xs text-zinc-500">
+      <p className="mt-3 text-xs text-ink-muted">
         Amounts are always the nominal pesos the card billed — that is what you would dispute. Review
         state is keyed to the statement and the alert&apos;s shape, not to a row id or its wording, so it
         survives re-uploading the statement under any name. Duplicates the statement already reversed

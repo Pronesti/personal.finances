@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
+/*
+ * One palette, two schemes. Every colour a page uses comes from here; components never
+ * name a raw shade. Chart marks are the one exception — recharts wants concrete strings
+ * at render time, so those live in src/lib/colors.ts and are picked by useChartTheme().
+ *
+ * Contrast targets (WCAG AA, measured against each scheme's --canvas):
+ *   ink 14:1+ · ink-muted 5.6:1+ · ink-subtle 4.5:1+ · accent/positive/negative/warning 4.5:1+
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  color-scheme: light;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --canvas: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --line: #e3e6eb;
+  --line-strong: #c8ced8;
+
+  --ink: #14161a;
+  --ink-muted: #5a6371;
+  --ink-subtle: #6b7280;
+
+  --accent: #0f6fde;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6f0fd;
+
+  --positive: #067a53;
+  --negative: #c02626;
+  --warning: #9a5b06;
+  --warning-soft: #fdf3e3;
+
+  --ring: color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+
+    --canvas: #0d0f13;
+    --surface: #161920;
+    --surface-2: #1d212a;
+    --line: #272c36;
+    --line-strong: #39404d;
+
+    --ink: #e8eaee;
+    --ink-muted: #a2abba;
+    --ink-subtle: #8b94a3;
+
+    --accent: #6cb6ff;
+    --accent-ink: #0d0f13;
+    --accent-soft: #16283d;
+
+    --positive: #34d399;
+    --negative: #ff8087;
+    --warning: #fbbf24;
+    --warning-soft: #2a2113;
   }
 }
 
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* Numbers stacked in a column only read as a column when the digits line up. */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Every table here is dense and unpadded in markup; give the columns breathing room once,
+   centrally, rather than sprinkling pr-* utilities down thirteen pages. */
+:where(th, td) {
+  padding-block: 0.35rem;
+  vertical-align: top;
+}
+:where(th, td):not(:last-child) {
+  padding-right: 0.75rem;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

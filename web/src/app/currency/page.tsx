@@ -18,7 +18,7 @@ export default async function Currency({ searchParams }: { searchParams: Promise
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
       <CurrencyBars data={data} value={modes.value} />
-      <p className="text-xs text-zinc-500 mt-3">
+      <p className="text-xs text-ink-muted mt-3">
         USD-billed purchases are converted at each cycle month&apos;s average MEP rate so both bars
         share one unit. Foreign spending is lumpy — a travel month can dominate the year.
       </p>
