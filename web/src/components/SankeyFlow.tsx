@@ -35,12 +35,16 @@ function labelledNode(t: ChartTheme, tr: Translator) {
   return function LabelledNode({ x, y, width, height, payload }: NodeProps) {
     const node = payload as unknown as SankeyNode;
     const isFirstColumn = payload.sourceLinks.length === 0;
+    // Recharts' sankey layout can hand a node a negative height when a column's padding
+    // outruns the container (yRatio goes negative in updateYOfTree), and SVG rejects
+    // negative rect heights with a console error per node.
+    const h = Math.max(0, height);
     return (
       <g>
-        <rect x={x} y={y} width={width} height={height} fill={nodeColor(node, t)} rx={2} />
+        <rect x={x} y={y} width={width} height={h} fill={nodeColor(node, t)} rx={2} />
         <text
           x={isFirstColumn ? x - 6 : x + width + 6}
-          y={y + height / 2}
+          y={y + h / 2}
           textAnchor={isFirstColumn ? "end" : "start"}
           dominantBaseline="middle"
           fontSize={11}
