@@ -118,9 +118,9 @@ export default async function Review() {
         </table>
       )}
 
-      <p className="mt-6 text-xs text-ink-muted">{tr("review.note")}</p>
+      <p className="mt-6 max-w-[80ch] text-xs text-ink-muted">{tr("review.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("review.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("review.footer")}</p>
     </main>
   );
 }

@@ -119,7 +119,7 @@ export default async function Recurring() {
         <Table rows={lapsed} mep={mep} lapsed tr={tr} />
       </section>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("recurring.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("recurring.footer")}</p>
     </main>
   );
 }

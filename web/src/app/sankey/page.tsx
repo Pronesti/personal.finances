@@ -43,9 +43,9 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
         <Pills options={periods} current={period} href={p => withModes("/sankey", modes, { g, period: p })} />
       )}
       <SankeyFlow data={data} value={modes.value} />
-      <p className="text-xs text-ink-muted mt-3">{tr("sankey.note")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("sankey.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("sankey.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("sankey.footer")}</p>
     </main>
   );
 }

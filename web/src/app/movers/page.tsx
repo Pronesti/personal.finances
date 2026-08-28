@@ -9,6 +9,7 @@ import { fmtMoney, fmtPct } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
 import { MoverBars } from "@/components/MoverBars";
+import { Stat, StatRail } from "@/components/Stat";
 
 export const dynamic = "force-dynamic";
 
@@ -49,39 +50,43 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
         <p className="text-sm text-ink-muted">{tr("movers.empty", { word: periodWord(g, tr.locale) })}</p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-3 gap-4">
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("movers.tile.net")}</div>
-              <div className="text-2xl font-bold">{fmtMoney(curTotal - prevTotal, modes.value)}</div>
-              <div className="text-sm text-ink-muted">
-                {tr("movers.tile.net.detail", {
+          <StatRail stats={
+            <>
+              <Stat
+                label={tr("movers.tile.net")}
+                value={fmtMoney(curTotal - prevTotal, modes.value)}
+                detail={tr("movers.tile.net.detail", {
                   prev: fmtMoney(prevTotal, modes.value), cur: fmtMoney(curTotal, modes.value),
                   pct: prevTotal !== 0 ? fmtPct(((curTotal - prevTotal) / prevTotal) * 100) : "—",
                 })}
-              </div>
+              />
+              <Stat
+                label={tr("movers.tile.up")}
+                value={up ? catName(up.category) : "—"}
+                detail={up ? tr("movers.tile.delta", { amount: fmtMoney(up.delta, modes.value) }) : tr("movers.tile.none")}
+              />
+              <Stat
+                label={tr("movers.tile.down")}
+                value={down ? catName(down.category) : "—"}
+                detail={down ? tr("movers.tile.delta", { amount: fmtMoney(down.delta, modes.value) }) : tr("movers.tile.none")}
+              />
+            </>
+          }>
+            <h2 className="mb-3 text-lg font-semibold">{tr("movers.heading", { prev: res.prevPeriod, cur: res.curPeriod })}</h2>
+            {/* Horizontal bars: past a point extra width only stretches the bars, so the chart
+                stops where it stays readable. */}
+            <div className="max-w-[90rem]">
+              <MoverBars data={res.movers} value={modes.value} />
             </div>
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("movers.tile.up")}</div>
-              <div className="text-2xl font-bold">{up ? catName(up.category) : "—"}</div>
-              <div className="text-sm text-ink-muted">{up ? tr("movers.tile.delta", { amount: fmtMoney(up.delta, modes.value) }) : tr("movers.tile.none")}</div>
-            </div>
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("movers.tile.down")}</div>
-              <div className="text-2xl font-bold">{down ? catName(down.category) : "—"}</div>
-              <div className="text-sm text-ink-muted">{down ? tr("movers.tile.delta", { amount: fmtMoney(down.delta, modes.value) }) : tr("movers.tile.none")}</div>
-            </div>
-          </div>
-
-          <h2 className="mb-3 text-lg font-semibold">{tr("movers.heading", { prev: res.prevPeriod, cur: res.curPeriod })}</h2>
-          <MoverBars data={res.movers} value={modes.value} />
-          <p className="mt-3 text-xs text-ink-muted">
-            {tr("movers.note")}
-            {g !== "month" && ` ${tr("movers.partial", { word: periodWord(g, tr.locale) })}`}
-          </p>
+            <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">
+              {tr("movers.note")}
+              {g !== "month" && ` ${tr("movers.partial", { word: periodWord(g, tr.locale) })}`}
+            </p>
+          </StatRail>
         </>
       )}
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("movers.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("movers.footer")}</p>
     </main>
   );
 }

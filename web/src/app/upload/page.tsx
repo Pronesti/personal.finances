@@ -29,9 +29,9 @@ export default async function Upload() {
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-xs text-ink-muted">{tr("upload.note")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("upload.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("upload.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("upload.footer")}</p>
     </main>
   );
 }

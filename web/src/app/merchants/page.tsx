@@ -10,6 +10,7 @@ import { periodOf, ALL_PERIOD } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
+import { Stat, StatRail } from "@/components/Stat";
 import { ParetoBars } from "@/components/ParetoBars";
 import { NoveltyBars } from "@/components/NoveltyBars";
 
@@ -57,61 +58,70 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
         />
       )}
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.count")}</div>
-          <div className="text-2xl font-bold">{merchants.length}</div>
-          <div className="text-sm text-ink-muted">{period === ALL_PERIOD ? tr("merchants.count.all") : tr("merchants.count.in", { period })}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.top5")}</div>
-          <div className="text-2xl font-bold">{merchants.length >= 5 ? pct(merchants[4].cumShare) : "—"}</div>
-          <div className="text-sm text-ink-muted">{tr("merchants.top5.detail", { total: fmtMoney(totalSpend, modes.value) })}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.top20")}</div>
-          <div className="text-2xl font-bold">{merchants.length >= 20 ? pct(merchants[19].cumShare) : "—"}</div>
-          <div className="text-sm text-ink-muted">{tr("merchants.top20.detail")}</div>
-        </div>
-      </div>
+      <StatRail stats={
+        <>
+          <Stat
+            label={tr("merchants.count")}
+            value={merchants.length}
+            detail={period === ALL_PERIOD ? tr("merchants.count.all") : tr("merchants.count.in", { period })}
+          />
+          <Stat
+            label={tr("merchants.top5")}
+            value={merchants.length >= 5 ? pct(merchants[4].cumShare) : "—"}
+            detail={tr("merchants.top5.detail", { total: fmtMoney(totalSpend, modes.value) })}
+          />
+          <Stat
+            label={tr("merchants.top20")}
+            value={merchants.length >= 20 ? pct(merchants[19].cumShare) : "—"}
+            detail={tr("merchants.top20.detail")}
+          />
+        </>
+      }>
+          {/* Pareto and novelty answer different questions about the same list; on an ultrawide
+              column they sit side by side instead of pushing the table below the fold. */}
+          <div className="grid gap-8 3xl:grid-cols-2">
+            <section>
+              <ParetoBars data={merchants.slice(0, TOP_CHART)} value={modes.value} />
+              <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("merchants.paretoNote", { count: TOP_CHART })}</p>
+            </section>
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{tr("merchants.noveltyHeading")}</h2>
+              <NoveltyBars data={novelty} value={modes.value} />
+              <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("merchants.noveltyNote")}</p>
+            </section>
+          </div>
 
-      <ParetoBars data={merchants.slice(0, TOP_CHART)} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("merchants.paretoNote", { count: TOP_CHART })}</p>
-
-      <h2 className="mb-3 text-lg font-semibold">{tr("merchants.noveltyHeading")}</h2>
-      <NoveltyBars data={novelty} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("merchants.noveltyNote")}</p>
-
-      <h2 className="mb-3 text-lg font-semibold">{tr("merchants.topHeading", { count: TOP_TABLE })}</h2>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
-            <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
-            <th className="pr-3 text-right">{tr("merchants.table.total")}</th><th className="pr-3 text-right">{tr("merchants.table.charges")}</th>
-            <th className="pr-3 text-right">{tr("merchants.table.share")}</th><th className="pr-3">{tr("merchants.table.active")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {merchants.slice(0, TOP_TABLE).map(m => (
-            <tr key={m.merchant} className="border-t border-line">
-              <td className="py-1 pr-3">
-                <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="text-accent hover:underline">
-                  {m.merchant}
-                </Link>
-              </td>
-              <td className="pr-3 text-ink-muted">{tr(`category.${m.category as Category}`)}</td>
-              <td className="pr-3 text-right">{fmtMoney(m.total, modes.value)}</td>
-              <td className="pr-3 text-right">{m.count}</td>
-              <td className="pr-3 text-right">{pct(m.share)}</td>
-              <td className="pr-3 text-ink-muted">
-                {m.firstMonth === m.lastMonth ? m.firstMonth : `${m.firstMonth} – ${m.lastMonth}`}
-              </td>
+        <h2 className="mb-3 mt-8 text-lg font-semibold">{tr("merchants.topHeading", { count: TOP_TABLE })}</h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
+              <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
+              <th className="pr-3 text-right">{tr("merchants.table.total")}</th><th className="pr-3 text-right">{tr("merchants.table.charges")}</th>
+              <th className="pr-3 text-right">{tr("merchants.table.share")}</th><th className="pr-3">{tr("merchants.table.active")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {merchants.slice(0, TOP_TABLE).map(m => (
+              <tr key={m.merchant} className="border-t border-line">
+                <td className="py-1 pr-3">
+                  <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="text-accent hover:underline">
+                    {m.merchant}
+                  </Link>
+                </td>
+                <td className="pr-3 text-ink-muted">{tr(`category.${m.category as Category}`)}</td>
+                <td className="pr-3 text-right">{fmtMoney(m.total, modes.value)}</td>
+                <td className="pr-3 text-right">{m.count}</td>
+                <td className="pr-3 text-right">{pct(m.share)}</td>
+                <td className="pr-3 text-ink-muted">
+                  {m.firstMonth === m.lastMonth ? m.firstMonth : `${m.firstMonth} – ${m.lastMonth}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </StatRail>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
     </main>
   );
 }

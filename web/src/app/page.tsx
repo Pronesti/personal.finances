@@ -35,7 +35,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         <h1 className="text-xl font-semibold">{tr("overview.title", { date: t.latestClosing })}</h1>
         <ModeToggle modes={modes} baseMonth={t.baseMonth} />
       </div>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 3xl:grid-cols-6">
         <Tile href={withModes("/trends", modes)} label={tr("overview.spent", { value: valueLabel })}>
           <div className="text-2xl font-bold">{fmtMoney(t.spentThisMonth, modes.value)}</div>
           <div className="text-sm text-ink-muted">{tr("overview.spent.vsPrev", { pct: fmtPct(t.pctVsPrev) })}</div>
@@ -84,7 +84,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         </Tile>
       </div>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
         {tr("overview.footer")}
       </p>
     </main>

@@ -38,7 +38,7 @@ export default async function Trends({ searchParams }: { searchParams: Promise<{
       />
       <StackedArea data={[...byPeriod.values()]} categories={categories} value={modes.value} />
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("trends.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("trends.footer")}</p>
     </main>
   );
 }

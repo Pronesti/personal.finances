@@ -25,7 +25,7 @@ export default async function Inflation() {
         </p>
       )}
       <InflationLines data={points} />
-      <p className="text-xs text-ink-muted mt-3">
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">
         {tr("inflation.note", {
           month: points[0]?.month ?? tr("inflation.firstMonth"),
           count: basket.length,
@@ -33,7 +33,7 @@ export default async function Inflation() {
         {tr("inflation.basket", { basket: basket.join(", ") })}
       </p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("inflation.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("inflation.footer")}</p>
     </main>
   );
 }

@@ -48,6 +48,13 @@ const en = {
   "nav.upload": "Upload",
   "nav.review": "Review",
 
+  "nav.aria": "Sections",
+  "nav.group.spending": "Spending",
+  "nav.group.timing": "Timing",
+  "nav.group.money": "Money",
+  "nav.group.commitments": "Commitments",
+  "nav.group.data": "Data",
+
   // ── granularity and period words ──────────────────────────────────────────
   "granularity.month": "month",
   "granularity.quarter": "quarter",
@@ -531,6 +538,13 @@ const es: Dictionary = {
   "nav.movers": "Cambios",
   "nav.upload": "Cargar",
   "nav.review": "Revisión",
+
+  "nav.aria": "Secciones",
+  "nav.group.spending": "Gastos",
+  "nav.group.timing": "Tiempo",
+  "nav.group.money": "Dinero",
+  "nav.group.commitments": "Compromisos",
+  "nav.group.data": "Datos",
 
   // ── granularidad y períodos ───────────────────────────────────────────────
   "granularity.month": "mes",

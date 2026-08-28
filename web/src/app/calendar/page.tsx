@@ -21,9 +21,9 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
       <CalendarHeatmap data={data} value={modes.value} />
-      <p className="text-xs text-ink-muted mt-3">{tr("calendar.note")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("calendar.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("calendar.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("calendar.footer")}</p>
     </main>
   );
 }

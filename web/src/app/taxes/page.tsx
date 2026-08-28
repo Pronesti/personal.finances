@@ -7,6 +7,7 @@ import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
+import { Stat, StatRail } from "@/components/Stat";
 import { TaxBars } from "@/components/TaxBars";
 
 export const dynamic = "force-dynamic";
@@ -38,28 +39,26 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("taxes.total")}</div>
-          <div className="text-2xl font-bold">{fmtMoney(total, modes.value)}</div>
-          <div className="text-sm text-ink-muted">{tr("taxes.total.detail")}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("taxes.average")}</div>
-          <div className="text-2xl font-bold">{avgRate != null ? pct(avgRate) : "—"}</div>
-          <div className="text-sm text-ink-muted">{tr("taxes.average.detail", { period: periodWord(g, tr.locale) })}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("taxes.worst", { period: periodWord(g, tr.locale) })}</div>
-          <div className="text-2xl font-bold">{worst ? pct(worst.ratePct) : "—"}</div>
-          <div className="text-sm text-ink-muted">{worst ? worst.period : tr("taxes.worst.none")}</div>
-        </div>
-      </div>
+      <StatRail stats={
+        <>
+          <Stat label={tr("taxes.total")} value={fmtMoney(total, modes.value)} detail={tr("taxes.total.detail")} />
+          <Stat
+            label={tr("taxes.average")}
+            value={avgRate != null ? pct(avgRate) : "—"}
+            detail={tr("taxes.average.detail", { period: periodWord(g, tr.locale) })}
+          />
+          <Stat
+            label={tr("taxes.worst", { period: periodWord(g, tr.locale) })}
+            value={worst ? pct(worst.ratePct) : "—"}
+            detail={worst ? worst.period : tr("taxes.worst.none")}
+          />
+        </>
+      }>
+        <TaxBars data={data} value={modes.value} />
+        <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("taxes.note")}</p>
+      </StatRail>
 
-      <TaxBars data={data} value={modes.value} />
-      <p className="mt-3 text-xs text-ink-muted">{tr("taxes.note")}</p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("taxes.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("taxes.footer")}</p>
     </main>
   );
 }

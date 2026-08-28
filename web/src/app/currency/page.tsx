@@ -29,9 +29,9 @@ export default async function Currency({ searchParams }: { searchParams: Promise
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
       <CurrencyBars data={data} value={modes.value} />
-      <p className="text-xs text-ink-muted mt-3">{tr("currency.note")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("currency.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("currency.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("currency.footer")}</p>
     </main>
   );
 }

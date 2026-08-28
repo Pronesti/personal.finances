@@ -37,7 +37,7 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
         </p>
       )}
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("compare.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("compare.footer")}</p>
     </main>
   );
 }

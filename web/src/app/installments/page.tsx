@@ -8,6 +8,7 @@ import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
+import { Stat, StatRail } from "@/components/Stat";
 import { InstallmentBurdenChart } from "@/components/InstallmentBurdenChart";
 
 export const dynamic = "force-dynamic";
@@ -39,63 +40,65 @@ export default async function Installments({ searchParams }: { searchParams: Pro
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.openPlans")}</div>
-          <div className="text-2xl font-bold">{plans.length}</div>
-          <div className="text-sm text-ink-muted">{tr("installments.openPlans.detail")}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.stillToPay")}</div>
-          <div className="text-2xl font-bold">{fmtMoney(committed, modes.value)}</div>
-          <div className="text-sm text-ink-muted">{tr("installments.stillToPay.detail")}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.share")}</div>
-          <div className="text-2xl font-bold">{latest ? pct(latest.sharePct) : "—"}</div>
-          <div className="text-sm text-ink-muted">{tr("installments.share.detail", { span: spanLabel(g, tr.locale) })}</div>
-        </div>
-      </div>
+      <StatRail stats={
+        <>
+          <Stat
+            label={tr("installments.openPlans")}
+            value={plans.length}
+            detail={tr("installments.openPlans.detail")}
+          />
+          <Stat
+            label={tr("installments.stillToPay")}
+            value={fmtMoney(committed, modes.value)}
+            detail={tr("installments.stillToPay.detail")}
+          />
+          <Stat
+            label={tr("installments.share")}
+            value={latest ? pct(latest.sharePct) : "—"}
+            detail={tr("installments.share.detail", { span: spanLabel(g, tr.locale) })}
+          />
+        </>
+      }>
+        <InstallmentBurdenChart data={burden} value={modes.value} />
+        <p className="mb-8 mt-3 max-w-[80ch] text-xs text-ink-muted">
+          {tr("installments.chartNote")}{" "}
+          <Link href={withModes("/future", modes)} className="text-accent hover:underline">{tr("nav.future")}</Link>.
+        </p>
 
-      <InstallmentBurdenChart data={burden} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">
-        {tr("installments.chartNote")}{" "}
-        <Link href={withModes("/future", modes)} className="text-accent hover:underline">{tr("nav.future")}</Link>.
-      </p>
-
-      <h2 className="mb-3 text-lg font-semibold">{tr("installments.openPlans")}</h2>
-      {plans.length === 0
-        ? <p className="text-sm text-ink-muted">{tr("installments.none")}</p>
-        : <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
-                <th className="py-1 pr-3">{tr("installments.table.merchant")}</th><th className="pr-3">{tr("installments.table.card")}</th>
-                <th className="pr-3 text-right">{tr("installments.table.progress")}</th><th className="pr-3 text-right">{tr("installments.table.monthly")}</th>
-                <th className="pr-3 text-right">{tr("installments.table.monthsLeft")}</th><th className="pr-3 text-right">{tr("installments.table.stillToPay")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((p, i) => (
-                <tr key={i} className="border-t border-line">
-                  <td className="py-1 pr-3">
-                    <Link href={withModes("/categories", modes, { merchant: p.merchant })} className="text-accent hover:underline">
-                      {p.merchant}
-                    </Link>
-                  </td>
-                  <td className="pr-3 text-ink-muted">{p.brand}</td>
-                  <td className="pr-3 text-right">{p.paid}/{p.total}</td>
-                  <td className="pr-3 text-right">{fmtMoney(p.monthly, modes.value)}</td>
-                  <td className="pr-3 text-right">{p.remainingMonths}</td>
-                  <td className="pr-3 text-right">{fmtMoney(p.remainingTotal, modes.value)}</td>
+        <h2 className="mb-3 text-lg font-semibold">{tr("installments.openPlans")}</h2>
+        {plans.length === 0
+          ? <p className="text-sm text-ink-muted">{tr("installments.none")}</p>
+          : <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
+                  <th className="py-1 pr-3">{tr("installments.table.merchant")}</th><th className="pr-3">{tr("installments.table.card")}</th>
+                  <th className="pr-3 text-right">{tr("installments.table.progress")}</th><th className="pr-3 text-right">{tr("installments.table.monthly")}</th>
+                  <th className="pr-3 text-right">{tr("installments.table.monthsLeft")}</th><th className="pr-3 text-right">{tr("installments.table.stillToPay")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>}
-      {plans.length > 0 && (
-        <p className="mt-3 text-xs text-ink-muted">{tr("installments.tableNote")}</p>
-      )}
+              </thead>
+              <tbody>
+                {plans.map((p, i) => (
+                  <tr key={i} className="border-t border-line">
+                    <td className="py-1 pr-3">
+                      <Link href={withModes("/categories", modes, { merchant: p.merchant })} className="text-accent hover:underline">
+                        {p.merchant}
+                      </Link>
+                    </td>
+                    <td className="pr-3 text-ink-muted">{p.brand}</td>
+                    <td className="pr-3 text-right">{p.paid}/{p.total}</td>
+                    <td className="pr-3 text-right">{fmtMoney(p.monthly, modes.value)}</td>
+                    <td className="pr-3 text-right">{p.remainingMonths}</td>
+                    <td className="pr-3 text-right">{fmtMoney(p.remainingTotal, modes.value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>}
+        {plans.length > 0 && (
+          <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("installments.tableNote")}</p>
+        )}
+      </StatRail>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("installments.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("installments.footer")}</p>
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { getT } from "@/lib/locale";
 import { fmtMoney, fmtPct } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { PaceChart } from "@/components/PaceChart";
+import { Stat, StatRail } from "@/components/Stat";
 
 export const dynamic = "force-dynamic";
 
@@ -44,34 +45,34 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
         <p className="text-sm text-ink-muted">{tr("pace.empty")}</p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-3 gap-4">
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("pace.tile.vsTypical")}</div>
-              <div className="text-2xl font-bold">{fmtPct(vsTypical)}</div>
-              <div className="text-sm text-ink-muted">
-                {typicalEnd != null
+          <StatRail stats={
+            <>
+              <Stat
+                label={tr("pace.tile.vsTypical")}
+                value={fmtPct(vsTypical)}
+                detail={typicalEnd != null
                   ? tr("pace.tile.vsTypical.detail", { total: fmtMoney(latest.total, modes.value), count: cycles.length - 1 })
                   : tr("pace.tile.vsTypical.none")}
-              </div>
-            </div>
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("pace.tile.days")}</div>
-              <div className="text-2xl font-bold">{tr("pace.tile.days.value", { days: latest.length })}</div>
-              <div className="text-sm text-ink-muted">{tr("pace.tile.days.detail", { month: latest.month })}</div>
-            </div>
-            <div className="rounded-xl border border-line bg-surface p-4">
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("pace.tile.biggestDay")}</div>
-              <div className="text-2xl font-bold">{biggest ? fmtMoney(biggest.amount, modes.value) : "—"}</div>
-              <div className="text-sm text-ink-muted">{biggest ? tr("pace.tile.biggestDay.detail", { day: biggest.day }) : "—"}</div>
-            </div>
-          </div>
-
-          <PaceChart cycles={cycles} typical={typical} value={modes.value} />
-          <p className="mt-3 text-xs text-ink-muted">{tr("pace.note")}</p>
+              />
+              <Stat
+                label={tr("pace.tile.days")}
+                value={tr("pace.tile.days.value", { days: latest.length })}
+                detail={tr("pace.tile.days.detail", { month: latest.month })}
+              />
+              <Stat
+                label={tr("pace.tile.biggestDay")}
+                value={biggest ? fmtMoney(biggest.amount, modes.value) : "—"}
+                detail={biggest ? tr("pace.tile.biggestDay.detail", { day: biggest.day }) : "—"}
+              />
+            </>
+          }>
+            <PaceChart cycles={cycles} typical={typical} value={modes.value} />
+            <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("pace.note")}</p>
+          </StatRail>
         </>
       )}
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("pace.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("pace.footer")}</p>
     </main>
   );
 }

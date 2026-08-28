@@ -20,7 +20,7 @@ export function LangToggle() {
 
   return (
     <div
-      className="ml-auto inline-flex overflow-hidden rounded-md border border-line text-xs"
+      className="inline-flex overflow-hidden rounded-md border border-line text-xs"
       role="group"
       aria-label={t("lang.label")}
     >

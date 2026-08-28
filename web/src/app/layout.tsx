@@ -16,10 +16,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className="mx-auto max-w-5xl bg-canvas px-4 text-ink antialiased">
+      <body className="bg-canvas text-ink antialiased">
         <I18nProvider locale={locale}>
-          <Suspense><Nav /></Suspense>
-          {children}
+          {/* Sidebar beside the content, not above it: on a wide screen the width a top nav bar
+              would waste on empty tab row goes to the charts instead. */}
+          <div className="lg:flex lg:items-start">
+            <Suspense><Nav /></Suspense>
+            <div className="min-w-0 flex-1 px-4 py-6 lg:px-8">
+              {/* Capped so the reading column stays sane on an ultrawide monitor, but far wider
+                  than a page of prose — charts and tables are what fills it. */}
+              <div className="mx-auto w-full max-w-[150rem]">{children}</div>
+            </div>
+          </div>
         </I18nProvider>
       </body>
     </html>

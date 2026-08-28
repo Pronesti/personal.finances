@@ -7,6 +7,7 @@ import { getT } from "@/lib/locale";
 import type { Granularity } from "@/lib/months";
 import { fmtArs } from "@/lib/format";
 import { Pills } from "@/components/Pills";
+import { Stat, StatRail } from "@/components/Stat";
 import { FloatChart } from "@/components/FloatChart";
 
 export const dynamic = "force-dynamic";
@@ -41,33 +42,31 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.gain")}</div>
-          <div className="text-2xl font-bold">{fmtArs(totalGain)}</div>
-          <div className="text-sm text-ink-muted">
-            {tr("float.gain.detail")}
-            {totalGain > 0 && tr("float.gain.viaInstallments", {
-              pct: ((installmentGain / totalGain) * 100).toFixed(0).replace(".", ","),
-            })}
-          </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.typical")}</div>
-          <div className="text-2xl font-bold">{avgDays != null ? tr("float.typical.days", { days: avgDays.toFixed(0) }) : "—"}</div>
-          <div className="text-sm text-ink-muted">{tr("float.typical.detail", { period: periodWord(g, tr.locale) })}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.cost")}</div>
-          <div className="text-2xl font-bold">{fmtArs(interest)}</div>
-          <div className="text-sm text-ink-muted">{tr("float.cost.detail")}</div>
-        </div>
-      </div>
+      <StatRail stats={
+        <>
+          <Stat
+            label={tr("float.gain")}
+            value={fmtArs(totalGain)}
+            detail={<>
+              {tr("float.gain.detail")}
+              {totalGain > 0 && tr("float.gain.viaInstallments", {
+                pct: ((installmentGain / totalGain) * 100).toFixed(0).replace(".", ","),
+              })}
+            </>}
+          />
+          <Stat
+            label={tr("float.typical")}
+            value={avgDays != null ? tr("float.typical.days", { days: avgDays.toFixed(0) }) : "—"}
+            detail={tr("float.typical.detail", { period: periodWord(g, tr.locale) })}
+          />
+          <Stat label={tr("float.cost")} value={fmtArs(interest)} detail={tr("float.cost.detail")} />
+        </>
+      }>
+        <FloatChart data={periods} />
+        <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("float.note")}</p>
+      </StatRail>
 
-      <FloatChart data={periods} />
-      <p className="mt-3 text-xs text-ink-muted">{tr("float.note")}</p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("float.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("float.footer")}</p>
     </main>
   );
 }

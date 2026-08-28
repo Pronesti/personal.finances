@@ -78,6 +78,10 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
 
+  /* An ultrawide monitor is a whole extra tier past 2xl: at 1920px and up the stat rails and
+     tile grids get another column rather than another stretch of empty tile. */
+  --breakpoint-3xl: 120rem;
+
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }

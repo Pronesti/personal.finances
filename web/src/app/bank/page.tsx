@@ -8,6 +8,7 @@ import { fmtMoney, fmtPct } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { BankChart } from "@/components/BankChart";
 import { RateChart } from "@/components/RateChart";
+import { Stat, StatRail } from "@/components/Stat";
 
 export const dynamic = "force-dynamic";
 
@@ -64,57 +65,55 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.utilization")}</div>
-          <div className="text-2xl font-bold">
-            {latestFull?.utilizationPct != null ? `${latestFull.utilizationPct.toFixed(1).replace(".", ",")}%` : "—"}
-          </div>
-          <div className="text-sm text-ink-muted">
-            {latestFull?.balance != null && latestFull?.limit != null
+      <StatRail stats={
+        <>
+          <Stat
+            label={tr("bank.tile.utilization")}
+            value={latestFull?.utilizationPct != null ? `${latestFull.utilizationPct.toFixed(1).replace(".", ",")}%` : "—"}
+            detail={latestFull?.balance != null && latestFull?.limit != null
               ? tr("bank.tile.utilization.detail", {
                   balance: fmtMoney(latestFull.balance, modes.value),
                   limit: fmtMoney(latestFull.limit, modes.value),
                   month: latestFull.month,
                 })
               : tr("bank.tile.none")}
-          </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.limitReal")}</div>
-          <div className="text-2xl font-bold">{fmtPct(realLimitPct)}</div>
-          <div className="text-sm text-ink-muted">
-            {windowMonths && bigBrand
+          />
+          <Stat
+            label={tr("bank.tile.limitReal")}
+            value={fmtPct(realLimitPct)}
+            detail={windowMonths && bigBrand
               ? tr("bank.tile.limitReal.detail", { brand: bigBrand, months: windowMonths })
               : tr("bank.tile.none")}
-          </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.realTem")}</div>
-          <div className="text-2xl font-bold">
-            {latestRated?.realTemPct != null ? tr("bank.tile.realTem.value", { pct: fmtPct(latestRated.realTemPct) }) : "—"}
-          </div>
-          <div className="text-sm text-ink-muted">
-            {latestRated?.temPct != null && latestRated?.inflationPct != null
+          />
+          <Stat
+            label={tr("bank.tile.realTem")}
+            value={latestRated?.realTemPct != null ? tr("bank.tile.realTem.value", { pct: fmtPct(latestRated.realTemPct) }) : "—"}
+            detail={latestRated?.temPct != null && latestRated?.inflationPct != null
               ? tr("bank.tile.realTem.detail", {
                   tem: latestRated.temPct.toFixed(2).replace(".", ","),
                   brand: latestRated.temBrand ?? "",
                   infl: latestRated.inflationPct.toFixed(2).replace(".", ","),
                 })
               : tr("bank.tile.realTem.stale")}
-          </div>
+          />
+        </>
+      }>
+        {/* Headroom and rates are read together — a wide column shows both without scrolling. */}
+        <div className="grid gap-8 3xl:grid-cols-2">
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">{tr("bank.headroomHeading")}</h2>
+            <BankChart data={months} brands={brands} value={modes.value} />
+            <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("bank.headroomNote")}</p>
+          </section>
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">{tr("bank.ratesHeading")}</h2>
+            <RateChart data={months} brands={brands} />
+            <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("bank.ratesNote")}</p>
+          </section>
         </div>
-      </div>
+      </StatRail>
 
-      <h2 className="mb-3 text-lg font-semibold">{tr("bank.headroomHeading")}</h2>
-      <BankChart data={months} brands={brands} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("bank.headroomNote")}</p>
-
-      <h2 className="mb-3 text-lg font-semibold">{tr("bank.ratesHeading")}</h2>
-      <RateChart data={months} brands={brands} />
-      <p className="mt-3 text-xs text-ink-muted">{tr("bank.ratesNote")}</p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("bank.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("bank.footer")}</p>
     </main>
   );
 }

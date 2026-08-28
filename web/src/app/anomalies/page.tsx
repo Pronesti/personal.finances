@@ -106,9 +106,9 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-xs text-ink-muted">{tr("anomalies.note")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("anomalies.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("anomalies.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("anomalies.footer")}</p>
     </main>
   );
 }

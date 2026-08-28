@@ -39,14 +39,14 @@ export default async function Future({ searchParams }: { searchParams: Promise<{
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-ink-muted mt-3">
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">
         {tr("future.note.lead")} <strong>{tr("future.note.certain")}</strong>{" "}
         {tr("future.note.certain.body")} <strong>{tr("future.note.expected")}</strong>{" "}
         {tr("future.note.expected.body")} <strong>{tr("future.note.estimated")}</strong>{" "}
         {tr("future.note.estimated.body")} {tr("future.note.tail", { rate })}
       </p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("future.footer")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("future.footer")}</p>
     </main>
   );
 }
