@@ -57,6 +57,10 @@ class UnknownLayout(Exception):
     """The PDF contains something this parser does not know how to read."""
 
 
+def warn(message: str) -> None:
+    print(f"WARN: {message}", file=sys.stderr)
+
+
 # --------------------------------------------------------------------------- #
 # low-level helpers
 # --------------------------------------------------------------------------- #
@@ -146,6 +150,9 @@ def assign_to_columns(values: list[dict], anchors: list[tuple[str, dict]]) -> di
                 best, distance = name, d
         if best is not None and distance <= 45:
             result[best] = (result.get(best, "") + " " + v["text"]).strip()
+        else:
+            warn(f"token {v['text']!r} at x={round(v['x0'])}-{round(v['x1'])} dropped: "
+                 f"nearest column {best!r} is {round(distance)}pt away (limit 45)")
     return result
 
 
@@ -187,6 +194,9 @@ def split_concept_and_amounts(line, ars_col, usd_col):
             usd = to_number(w["text"])
         elif w["x1"] < ars_col["x0"] - 5:
             concept_words.append(w["text"])
+        else:
+            warn(f"token {w['text']!r} at x={round(w['x0'])}-{round(w['x1'])} dropped "
+                 f"in line {line_text(line)!r}: aligns with no amount column")
     return " ".join(concept_words).strip(), ars, usd
 
 
@@ -423,6 +433,10 @@ def parse_transactions(pages) -> tuple[list[dict], list[dict]]:
                             and abs(w["x1"] - cols["usd"]["x1"]) <= COL_TOL:
                         usd = to_number(w["text"])
                     else:
+                        if is_amount(w["text"]):
+                            warn(f"amount-shaped token {w['text']!r} at "
+                                 f"x={round(w['x0'])}-{round(w['x1'])} in totals line "
+                                 f"{line_text(line)!r} aligns with no column; kept as concept text")
                         words.append(w["text"])
                 declared_totals.append({"concept": " ".join(words).strip(), "block": block,
                                         "ars": ars, "usd": usd})

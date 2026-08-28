@@ -6,7 +6,7 @@ const URL = "https://api.argentinadatos.com/v1/cotizaciones/dolares/bolsa";
 type Quote = { casa: string; compra: number | null; venta: number | null; fecha: string };
 
 async function main() {
-  const res = await fetch(URL);
+  const res = await fetch(URL, { signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`argentinadatos.com ${res.status} for ${URL}`);
   const rows = (await res.json()) as Quote[];
   // Monthly mean of the sell rate — every aggregate in this app is keyed by cycle month.

@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# JetBrains
+.idea/
+
 # PDFs (source statements) — folder tracked, content ignored
 pdfs/*
 !pdfs/.gitkeep
