@@ -8,14 +8,16 @@ import {
   CATEGORIES, type Category,
 } from "@/lib/categorize";
 import { Failure } from "@/lib/failure";
+import { getT } from "@/lib/locale";
 
 // Returns a message for the UI, or null on silent success. `prev` is useActionState's previous
 // state and is ignored — each run starts from the file on disk, not from the last render.
 export async function proposeCategories(_prev: string | null): Promise<string | null> {
+  const t = await getT();
   try {
     const data = loadCategoryFile();
     const todo = pendingMerchants(data, unknownMerchants(getDb()).map(m => m.merchant));
-    if (todo.length === 0) return "Nothing to classify — every unknown merchant is already proposed or rejected.";
+    if (todo.length === 0) return t("review.action.nothing");
     const batch = todo.slice(0, MAX_BATCH);
     const proposals = await classifyMerchants(batch);
     // Dedup by merchant: re-proposing one that is already pending must not grow the list.
@@ -23,10 +25,13 @@ export async function proposeCategories(_prev: string | null): Promise<string | 
     saveCategoryFile({ ...data, proposals: [...kept, ...proposals] });
     revalidatePath("/review");
     return todo.length > batch.length
-      ? `Classified ${proposals.length} of ${todo.length} — click again for the rest.`
+      ? t("review.action.partial", { done: proposals.length, total: todo.length })
       : null;
   } catch (e) {
-    if (e instanceof Failure) return e.hint ? `${e.message} ${e.hint}` : e.message;
+    if (e instanceof Failure) {
+      const { message, hint } = e.localized(t.locale);
+      return hint ? `${message} ${hint}` : message;
+    }
     throw e;
   }
 }

@@ -7,6 +7,8 @@ import { project, type ProjectionMonth } from "@/lib/projection";
 import { trailingMonthlyInflation } from "@/lib/cpi";
 import { addMonth, periodOf, type Granularity } from "@/lib/months";
 import { personalInflationIndex, type BasketPoint } from "@/lib/inflation";
+import { translate, DEFAULT_LOCALE, type MessageKey, type Vars } from "@/lib/i18n";
+import type { Category } from "@/lib/categorize";
 
 export type SpendMode = "cash" | "accrual";
 export type ValueMode = "nominal" | "real" | "usd";
@@ -394,13 +396,20 @@ export function personalInflation(
 
 const TOP_MERCHANTS = 8; // per category; the tail becomes one "<category> — other" band
 
+export type SankeyNode = {
+  name: string;
+  kind: "card" | "category" | "merchant" | "tail";
+  /** Set for the two node kinds whose label is a category name, so the UI can translate it. */
+  category?: Category;
+};
+
 // Chart 2. One netted map keyed brand|category|merchant is the whole trick: deriving both
 // link sets from the same survivors makes flow conservation automatic. Accumulating the two
 // sides separately and dropping non-positives from each breaks 6 of 19 real months.
 export function sankeyFlows(
   db: Database.Database, opts: ValueOpts, period: string, granularity: Granularity = "month"
 ) {
-  const empty = { nodes: [] as { name: string }[], links: [] as { source: number; target: number; value: number }[] };
+  const empty = { nodes: [] as SankeyNode[], links: [] as { source: number; target: number; value: number }[] };
   const all = baseRows(db);
   const ctx = amountCtx(db, all, opts);
   const brandByStatement = new Map(
@@ -430,25 +439,38 @@ export function sankeyFlows(
     perCategory.set(category, m);
   }
 
-  const names: string[] = [];
-  const idx = (name: string) => {
-    const at = names.indexOf(name);
-    return at >= 0 ? at : names.push(name) - 1;
+  // Nodes carry what they are, not just their label: a card brand and a merchant are data and
+  // render verbatim, while a category and the grouped tail are copy the page has to translate.
+  const nodes: SankeyNode[] = [];
+  const idx = (name: string, node: () => SankeyNode) => {
+    const at = nodes.findIndex(n => n.name === name);
+    return at >= 0 ? at : nodes.push(node()) - 1;
   };
+  const cardNode = (brand: string) => idx(brand, () => ({ name: brand, kind: "card" as const }));
+  const categoryNode = (category: string) =>
+    idx(category, () => ({ name: category, kind: "category" as const, category: category as Category }));
+  const merchantNode = (merchant: string) => idx(merchant, () => ({ name: merchant, kind: "merchant" as const }));
   const links: { source: number; target: number; value: number }[] = [];
   for (const [key, value] of brandToCat) {
     const [brand, category] = key.split("|");
-    links.push({ source: idx(brand), target: idx(category), value });
+    links.push({ source: cardNode(brand), target: categoryNode(category), value });
   }
   for (const [category, merchants] of perCategory) {
     const sorted = [...merchants.entries()].sort((a, b) => b[1] - a[1]);
     for (const [merchant, value] of sorted.slice(0, TOP_MERCHANTS)) {
-      links.push({ source: idx(category), target: idx(merchant), value });
+      links.push({ source: categoryNode(category), target: merchantNode(merchant), value });
     }
     const tail = sorted.slice(TOP_MERCHANTS).reduce((s, [, v]) => s + v, 0);
-    if (tail > 0) links.push({ source: idx(category), target: idx(`${category} — other`), value: tail });
+    if (tail > 0) {
+      const label = translate(DEFAULT_LOCALE, "sankey.tail", { category });
+      links.push({
+        source: categoryNode(category),
+        target: idx(label, () => ({ name: label, kind: "tail" as const, category: category as Category })),
+        value: tail,
+      });
+    }
   }
-  return { nodes: names.map(name => ({ name })), links };
+  return { nodes, links };
 }
 
 // Chart 3. Always accrual: a calendar answers "what did I buy that day", and installment rows are
@@ -494,6 +516,9 @@ export type ReviewableAlert = {
   merchant: string | null;
   amount: number | null;
   message: string;
+  /** Set only for anomalies. Integrity alerts are stored at ingest and stay in their own words. */
+  messageKey?: MessageKey;
+  messageParams?: Vars;
   state: ReviewState;
 };
 
@@ -526,6 +551,8 @@ export function reviewableAlerts(db: Database.Database, cpi: CpiTable): Reviewab
       // detectAnomalies already spells out "already reversed on the same statement" for a
       // resolved duplicate; repeating it here just doubled the sentence in the table.
       message: a.message,
+      messageKey: a.messageKey,
+      messageParams: a.messageParams,
       // A duplicate the statement already reversed is closed by the data — until a human says
       // otherwise, which is why an explicit 'open' row is stored rather than the row deleted.
       state: states.get(key) ?? (a.resolved ? "reviewed" : "open"),

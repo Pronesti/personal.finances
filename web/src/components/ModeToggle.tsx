@@ -1,5 +1,6 @@
 "use client";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useT } from "./I18nProvider";
 
 function Seg({ param, options, current }: { param: string; options: [string, string][]; current: string }) {
   const router = useRouter();
@@ -35,19 +36,23 @@ export function ModeToggle({ modes, baseMonth, spendToggle = true, taxToggle = t
   spendToggle?: boolean;
   taxToggle?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-3">
       {modes.value === "real" && baseMonth && (
-        <span className="text-xs text-ink-subtle">in {baseMonth} pesos</span>
+        <span className="text-xs text-ink-subtle">{t("mode.inPesos", { month: baseMonth })}</span>
       )}
-      {modes.value === "usd" && <span className="text-xs text-ink-subtle">at MEP</span>}
-      <Seg param="value" current={modes.value}
-        options={[["real", "Real $"], ["nominal", "Nominal $"], ["usd", "USD"]]} />
+      {modes.value === "usd" && <span className="text-xs text-ink-subtle">{t("mode.atMep")}</span>}
+      <Seg param="value" current={modes.value} options={[
+        ["real", t("mode.value.real")], ["nominal", t("mode.value.nominal")], ["usd", t("mode.value.usd")],
+      ]} />
       {spendToggle && (
-        <Seg param="spend" current={modes.spend} options={[["accrual", "Purchases"], ["cash", "As billed"]]} />
+        <Seg param="spend" current={modes.spend}
+          options={[["accrual", t("mode.spend.accrual")], ["cash", t("mode.spend.cash")]]} />
       )}
       {taxToggle && (
-        <Seg param="tax" current={modes.tax} options={[["excl", "Pre-tax"], ["incl", "True cost"]]} />
+        <Seg param="tax" current={modes.tax}
+          options={[["excl", t("mode.tax.excl")], ["incl", t("mode.tax.incl")]]} />
       )}
     </div>
   );

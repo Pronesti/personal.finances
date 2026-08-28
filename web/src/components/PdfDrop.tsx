@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useT } from "./I18nProvider";
 
 type Report = {
   file: string; brand: string; cycle_month: string; transactions: number;
@@ -10,6 +11,7 @@ type ApiError = { code: string; message: string; hint?: string };
 
 export function PdfDrop() {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
@@ -29,7 +31,10 @@ export function PdfDrop() {
           if (res.ok) setReports(r => [...r, json as Report]);
           else setErrors(e => [...e, json as ApiError]);
         } catch {
-          setErrors(e => [...e, { code: "unknown", message: `${file.name}: the server did not answer with a readable result.` }]);
+          setErrors(e => [...e, {
+            code: "unknown",
+            message: t("upload.error.unreadable", { file: file.name }),
+          }]);
         }
       }
       router.refresh();
@@ -52,7 +57,7 @@ export function PdfDrop() {
       >
         <input type="file" accept="application/pdf" multiple className="sr-only"
           onChange={e => { void send([...(e.target.files ?? [])]); e.target.value = ""; }} />
-        {busy ? "Parsing…" : "Drop statement PDFs here, or click to choose them"}
+        {busy ? t("upload.drop.busy") : t("upload.drop.idle")}
       </label>
 
       {errors.map((err, i) => (
@@ -65,16 +70,20 @@ export function PdfDrop() {
       {reports.map(report => (
         <div key={report.file} className="mt-3 rounded-xl border border-line bg-surface p-3 text-sm">
           <p>
-            <span className="font-medium">{report.file}</span> — {report.brand}, cycle {report.cycle_month},{" "}
-            {report.transactions} transactions.
+            <span className="font-medium">{report.file}</span> —{" "}
+            {t("upload.report.summary", {
+              brand: report.brand, month: report.cycle_month, count: report.transactions,
+            })}
           </p>
           {report.replaced.length > 0 && (
-            <p className="mt-1 text-ink-muted">Replaced: {report.replaced.join(", ")} (nothing was duplicated).</p>
+            <p className="mt-1 text-ink-muted">
+              {t("upload.report.replaced", { files: report.replaced.join(", ") })}
+            </p>
           )}
           {report.cpi_stale && (
             <p className="mt-1 text-warning">
-              No CPI data for {report.cycle_month} yet — real-terms views will understate it until you
-              run <code className="font-mono">npm run fetch-ipc</code>.
+              {t("upload.report.cpiStale", { month: report.cycle_month })}{" "}
+              <code className="font-mono">npm run fetch-ipc</code>.
             </p>
           )}
           {report.alerts.length > 0 ? (
@@ -82,7 +91,7 @@ export function PdfDrop() {
               {report.alerts.map((a, i) => <li key={i}>{a.kind}: {a.message}</li>)}
             </ul>
           ) : (
-            <p className="mt-1 text-ink-muted">Statement math checks out — no integrity alerts.</p>
+            <p className="mt-1 text-ink-muted">{t("upload.report.ok")}</p>
           )}
         </div>
       ))}

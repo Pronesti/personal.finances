@@ -3,7 +3,9 @@ import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { categoryDrill, coverage } from "@/lib/queries";
 import { periodOf, type Granularity } from "@/lib/months";
-import { parseModes, parseGranularity, GRANULARITIES, withModes, valueOpts } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, withModes, valueOpts } from "@/lib/params";
+import { getT } from "@/lib/locale";
+import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -31,6 +33,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   };
   const opts = valueOpts(modes);
   const { level, rows, groups } = categoryDrill(db, opts, { ...filter, granularity: g, period });
+  const tr = await getT();
 
   // Changing the scope keeps you where you drilled to, and drilling keeps the scope.
   const drilled = Object.fromEntries(
@@ -46,27 +49,33 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   return (
     <main>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Categories</h1>
+        <h1 className="text-xl font-semibold">{tr("categories.title")}</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
-      <Pills options={GRANULARITIES} current={g} href={x => granularityHref(x as Granularity)} />
+      <Pills
+        options={GRANULARITIES} current={g} href={x => granularityHref(x as Granularity)}
+        label={x => granularityLabel(x as Granularity, tr.locale)}
+      />
       {/* One bucket at "all" granularity — a period picker with a single choice is noise. */}
       {g !== "all" && <Pills options={periods} current={period} href={periodHref} />}
       <div className="mb-4 flex gap-2 text-sm">
-        <Link href={crumbHref()} className="text-accent hover:underline">all</Link>
-        {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{filter.category}</Link></>}
+        <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>
+        {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{tr(`category.${filter.category as Category}`)}</Link></>}
         {filter.subcategory && <><span>/</span><span className="font-medium">{filter.subcategory}</span></>}
         {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
       </div>
       {groups.length === 0
         ? <p className="text-sm text-ink-muted">
-            No spending in {g === "all" ? "any statement" : period || "any statement"}.
+            {tr("categories.empty", {
+              period: g === "all" ? tr("categories.empty.any") : period || tr("categories.empty.any"),
+            })}
           </p>
         : <DrillBars groups={groups} level={level} value={modes.value} />}
       {(level !== "category" || filter.merchant) && (
         <table className="w-full text-sm mt-6">
           <thead><tr className="border-b border-line text-left text-ink-muted">
-            <th className="py-1">Date</th><th>Description</th><th className="text-right">Amount</th><th className="text-right">USD</th>
+            <th className="py-1">{tr("categories.table.date")}</th><th>{tr("categories.table.description")}</th>
+            <th className="text-right">{tr("categories.table.amount")}</th><th className="text-right">{tr("categories.table.usd")}</th>
           </tr></thead>
           <tbody>
             {rows.slice(0, 200).map((r, i) => (
@@ -81,15 +90,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         </table>
       )}
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows your costs divided by category. The goal is to find where your money
-        goes in one period. Use the first row of pills to select month, quarter, year, or all,
-        which drills the whole history at once, and the second row to select the period itself. Click a bar to go down one
-        level: category, then subcategory, then merchant. The table shows the purchases of the
-        selected level. Use the path line above the chart to go back. Compare a category with
-        the same category in an earlier period. A category that grows without a known cause is
-        a signal. Examine its merchants.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("categories.footer")}</p>
     </main>
   );
 }

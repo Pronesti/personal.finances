@@ -1,5 +1,6 @@
 import { loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 import type { Granularity } from "@/lib/months";
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -14,16 +15,21 @@ export function parseGranularity(sp: SP): Granularity {
     : "month";
 }
 
+// The name of a granularity as a pill reads it: "month", "quarter", "year", "all".
+export function granularityLabel(g: Granularity, locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, `granularity.${g}`);
+}
+
 // Copy helper: "all" names a bucket, not a period, so prose that reads "each {g}" needs a
 // neutral word for it. Pages that say "the latest {g}" want `spanLabel` instead.
-export function periodWord(g: Granularity): string {
-  return g === "all" ? "period" : g;
+export function periodWord(g: Granularity, locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, `period.word.${g}`);
 }
 
 // Prose for the span one bucket covers — "the latest month", but "the whole history" for "all",
 // where there is only ever one bucket and "latest" would be meaningless.
-export function spanLabel(g: Granularity): string {
-  return g === "all" ? "the whole history" : `the latest ${g}`;
+export function spanLabel(g: Granularity, locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, `period.span.${g}`);
 }
 
 export type Modes = { spend: SpendMode; value: ValueMode; tax: TaxMode };

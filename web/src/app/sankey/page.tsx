@@ -1,7 +1,9 @@
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { sankeyFlows, coverage } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, withModes, valueOpts } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, withModes, valueOpts } from "@/lib/params";
+import { getT } from "@/lib/locale";
+import type { Granularity } from "@/lib/months";
 import { periodOf } from "@/lib/months";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -23,34 +25,27 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
     ? sp.period
     : periods.at(-1) ?? "";
   const data = sankeyFlows(db, opts, period, g);
+  const tr = await getT();
   return (
     <main>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">
-          Where {period === "all" ? "everything" : period} went
+          {tr("sankey.title", { period: period === "all" ? tr("sankey.everything") : period })}
         </h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
-      <Pills options={GRANULARITIES} current={g} href={x => withModes("/sankey", modes, { g: x })} />
+      <Pills
+        options={GRANULARITIES} current={g}
+        href={x => withModes("/sankey", modes, { g: x })}
+        label={x => granularityLabel(x as Granularity, tr.locale)}
+      />
       {g !== "all" && (
         <Pills options={periods} current={period} href={p => withModes("/sankey", modes, { g, period: p })} />
       )}
       <SankeyFlow data={data} value={modes.value} />
-      <p className="text-xs text-ink-muted mt-3">
-        Card → category → merchant for one period. Only the top 8 merchants per category get
-        their own band; the rest are grouped. Refunds net against their own merchant before the
-        flow is drawn, so every category&apos;s inflow equals its outflow.
-      </p>
+      <p className="text-xs text-ink-muted mt-3">{tr("sankey.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the flow of money for one period. The flow goes from each card, to
-        each category, to each merchant. The goal is to see the structure of one period on one
-        screen. Select month, quarter, year, or all with the first row of pills, then the period
-        itself with the second row. The width of a band shows the amount. A wide
-        band shows a large cost. Follow a band from left to right to see which merchant receives
-        the money. Use this page to find the few large flows that control the period. A period
-        with many thin bands has no single large cause.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("sankey.footer")}</p>
     </main>
   );
 }

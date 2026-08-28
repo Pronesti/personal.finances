@@ -4,6 +4,7 @@ import { unknownMerchants, rulePreview, merchantEvidence } from "@/lib/queries";
 import { loadCategoryFile, pendingMerchants, CATEGORIES } from "@/lib/categorize";
 import { fmtArs } from "@/lib/format";
 import { ProposeButton } from "@/components/ProposeButton";
+import { getT } from "@/lib/locale";
 import { acceptAction, rejectAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -15,23 +16,24 @@ export default async function Review() {
   const spend = new Map(unknown.map(u => [u.merchant, u.total]));
   const pending = pendingMerchants(data, unknown.map(u => u.merchant));
   const previews = new Map(data.proposals.map(p => [p.merchant, rulePreview(db, p.merchant)]));
+  const tr = await getT();
   return (
     <main>
-      <h1 className="mb-2 text-xl font-semibold">Review</h1>
+      <h1 className="mb-2 text-xl font-semibold">{tr("review.title")}</h1>
       <p className="mb-4 text-sm text-ink-muted">
-        {data.rules.length} rules · {data.proposals.length} awaiting review ·{" "}
+        {tr("review.summary.rules", { count: data.rules.length })} ·{" "}
+        {tr("review.summary.awaiting", { count: data.proposals.length })} ·{" "}
         <Link className="text-accent hover:underline" href="/categories?category=other">
-          {unknown.length} merchants still uncategorized
-        </Link>. Only the merchant name is ever sent — never an amount, a date, an account number or
-        your name, and any name that still looks like money is not sent at all.
+          {tr("review.summary.uncategorized", { count: unknown.length })}
+        </Link>. {tr("review.summary.privacy")}
       </p>
       <ProposeButton pending={pending.length} />
 
       {data.proposals.length > 0 && (
         <table className="mt-6 w-full text-sm">
           <thead><tr className="border-b border-line text-left text-ink-muted">
-            <th className="py-1">Merchant</th><th>Rule</th>
-            <th className="text-right">Spend</th><th className="text-right">Decide</th>
+            <th className="py-1">{tr("review.table.merchant")}</th><th>{tr("review.table.rule")}</th>
+            <th className="text-right">{tr("review.table.spend")}</th><th className="text-right">{tr("review.table.decide")}</th>
           </tr></thead>
           <tbody>
             {data.proposals.map((p, i) => {
@@ -41,11 +43,11 @@ export default async function Review() {
                 <tr key={p.merchant} className="border-t border-line align-top">
                   <td className="py-1 pr-3">
                     {p.merchant}
-                    {p.confidence === "low" && <span className="ml-2 text-xs text-warning">low confidence</span>}
-                    {p.sent !== p.merchant && <div className="text-xs text-ink-muted">sent as &ldquo;{p.sent}&rdquo;</div>}
+                    {p.confidence === "low" && <span className="ml-2 text-xs text-warning">{tr("review.lowConfidence")}</span>}
+                    {p.sent !== p.merchant && <div className="text-xs text-ink-muted">{tr("review.sentAs", { name: p.sent })}</div>}
                     {ev && (
                       <div className="text-xs text-ink-muted">
-                        {ev.count} {ev.count === 1 ? "charge" : "charges"} ·{" "}
+                        {tr.plural("review.charges", ev.count)} ·{" "}
                         {ev.firstMonth === ev.lastMonth ? ev.firstMonth : `${ev.firstMonth} – ${ev.lastMonth}`} ·{" "}
                         {ev.brands.join(", ")}
                       </div>
@@ -53,7 +55,7 @@ export default async function Review() {
                     {ev && ev.sample.length > 0 && (
                       <details className="mt-1 text-xs">
                         <summary className="cursor-pointer text-accent hover:underline">
-                          statement lines
+                          {tr("review.statementLines")}
                         </summary>
                         <table className="mt-1">
                           <tbody>
@@ -64,7 +66,10 @@ export default async function Review() {
                                   {s.description}
                                   {s.installment_count != null && (
                                     <span className="ml-1">
-                                      (installment {s.installment_number}/{s.installment_count})
+                                      {tr("review.installment", {
+                                        number: s.installment_number ?? 0,
+                                        count: s.installment_count,
+                                      })}
                                     </span>
                                   )}
                                 </td>
@@ -76,7 +81,7 @@ export default async function Review() {
                           </tbody>
                         </table>
                         {ev.count > ev.sample.length && (
-                          <div className="mt-0.5 text-ink-muted">…and {ev.count - ev.sample.length} more</div>
+                          <div className="mt-0.5 text-ink-muted">{tr("review.andMore", { count: ev.count - ev.sample.length })}</div>
                         )}
                       </details>
                     )}
@@ -86,24 +91,24 @@ export default async function Review() {
                       <input type="hidden" name="merchant" value={p.merchant} />
                       <input name="match" defaultValue={p.merchant} className="w-48 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
                       <select name="category" defaultValue={p.category} className="rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink">
-                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        {CATEGORIES.map(c => <option key={c} value={c}>{tr(`category.${c}`)}</option>)}
                       </select>
                       <input name="subcategory" defaultValue={p.subcategory} className="w-32 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
                     </form>
                     {also.length > 0 && (
                       <div className="mt-1 text-xs text-warning">
-                        This rule also claims: {also.map(r => `${r.merchant} (${r.count}×)`).join(", ")}
+                        {tr("review.alsoClaims", { merchants: also.map(r => `${r.merchant} (${r.count}×)`).join(", ") })}
                       </div>
                     )}
                   </td>
                   {/* A USD-only merchant nets 0 ARS; "$ 0" would read as "this cost nothing". */}
                   <td className="text-right">{spend.get(p.merchant) ? fmtArs(spend.get(p.merchant)!) : "—"}</td>
                   <td className="whitespace-nowrap text-right">
-                    <button form={`f-${i}`} type="submit" className="text-accent hover:underline">accept</button>
+                    <button form={`f-${i}`} type="submit" className="text-accent hover:underline">{tr("review.accept")}</button>
                     <span className="px-1">·</span>
                     <form action={rejectAction} className="inline">
                       <input type="hidden" name="merchant" value={p.merchant} />
-                      <button type="submit" className="text-ink-muted hover:text-negative hover:underline">reject</button>
+                      <button type="submit" className="text-ink-muted hover:text-negative hover:underline">{tr("review.reject")}</button>
                     </form>
                   </td>
                 </tr>
@@ -113,23 +118,9 @@ export default async function Review() {
         </table>
       )}
 
-      <p className="mt-6 text-xs text-ink-muted">
-        Accepting appends a rule to data/merchant-categories.json and applies it to the transactions
-        already loaded. Rules match by substring and are first-match-wins, so edit the rule text if it
-        would claim merchants you did not mean — the warning above the accept button lists them.
-        Accepted rules go last, so a rule you wrote by hand always beats one the model proposed.
-        Rejecting remembers the merchant so it is not sent again.
-      </p>
+      <p className="mt-6 text-xs text-ink-muted">{tr("review.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page controls how merchants get their categories. The model proposes a rule for
-        each merchant that has no category. Only the merchant name goes to the model. Examine
-        each proposal and its statement lines. Accept a correct rule. Correct the category
-        first when it is necessary. Reject a bad rule. The warning under a rule shows other
-        merchants that the rule also captures. Examine that list before you accept the rule.
-        Good categories make all the other pages exact. Many merchants without a category make
-        the category pages less exact.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("review.footer")}</p>
     </main>
   );
 }

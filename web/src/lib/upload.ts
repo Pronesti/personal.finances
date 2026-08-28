@@ -29,8 +29,7 @@ function script(): string {
 }
 
 const TIMEOUT_MS = 120_000;
-const SETUP_HINT =
-  "From the repo root: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt";
+const SETUP_HINT = "hint.pythonSetup" as const;
 
 // The system python3 deliberately does NOT count: it has no pdfplumber on this machine, and
 // silently picking it turns a fixable setup problem into an unreadable traceback.
@@ -39,7 +38,7 @@ export function resolvePython(): string {
   if (explicit) return explicit;
   const venv = path.join(REPO_ROOT, ".venv", "bin", "python3");
   if (fs.existsSync(venv)) return venv;
-  throw new Failure("python_missing", "No Python environment for the PDF pipeline.", SETUP_HINT);
+  throw new Failure("python_missing", "failure.python_missing.noEnv", {}, SETUP_HINT);
 }
 
 function tail(s: string, n = 3): string {
@@ -74,21 +73,23 @@ export async function runPipeline(pdfPath: string): Promise<string> {
     const err = e as { stderr?: string; message: string; code?: string | number; killed?: boolean };
     const stderr = tail(err.stderr ?? "");
     if (err.code === "ENOENT")
-      throw new Failure("python_missing", `Cannot run ${python}.`, SETUP_HINT);
+      throw new Failure("python_missing", "failure.python_missing.cannotRun", { python }, SETUP_HINT);
     if (stderr.includes("ModuleNotFoundError"))
-      throw new Failure("python_missing", "The Python environment is missing pdfplumber.", SETUP_HINT);
+      throw new Failure("python_missing", "failure.python_missing.pdfplumber", {}, SETUP_HINT);
     if (err.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER")
-      throw new Failure("parse_failed", "pdf_to_json.py produced more output than expected.");
+      throw new Failure("parse_failed", "failure.parse_failed.tooMuchOutput");
     if (err.killed)
-      throw new Failure("parse_failed", `pdf_to_json.py timed out after ${TIMEOUT_MS / 1000}s.`);
+      throw new Failure("parse_failed", "failure.parse_failed.timeout", { seconds: TIMEOUT_MS / 1000 });
     // Exit 2 is the script's "this is not a readable statement" contract; exit 1 is a layout it
     // does not recognise. Different messages, different advice.
     if (err.code === 2)
-      throw new Failure("not_pdf", stderr || "The file could not be read as a PDF.");
-    throw new Failure("parse_failed", stderr || err.message);
+      throw stderr
+        ? new Failure("not_pdf", "failure.parse_failed.detail", { detail: stderr })
+        : new Failure("not_pdf", "failure.not_pdf.unreadable");
+    throw new Failure("parse_failed", "failure.parse_failed.detail", { detail: stderr || err.message });
   }
   if (!fs.existsSync(target))
-    throw new Failure("parse_failed", `pdf_to_json.py produced no JSON for ${path.basename(pdfPath)}.`);
+    throw new Failure("parse_failed", "failure.parse_failed.noJson", { file: path.basename(pdfPath) });
   return target;
 }
 
@@ -109,8 +110,7 @@ export type UploadReport = IngestReport & { cpi_stale: boolean };
 export function safePdfName(raw: string): string {
   const base = path.basename(raw.trim());
   if (!NAME_RE.test(base))
-    throw new Failure("bad_name", `"${raw}" is not a usable PDF filename.`,
-      "Rename it to letters, digits, dots, dashes or underscores, ending in .pdf.");
+    throw new Failure("bad_name", "failure.bad_name", { name: raw }, "hint.badName");
   return base;
 }
 
@@ -119,9 +119,11 @@ export async function ingestUpload(
 ): Promise<UploadReport> {
   const name = safePdfName(rawName);
   if (bytes.byteLength > MAX_PDF_BYTES)
-    throw new Failure("too_large", `${name} is ${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB; the limit is ${MAX_PDF_BYTES / 1024 / 1024} MB.`);
+    throw new Failure("too_large", "failure.too_large", {
+      name, size: (bytes.byteLength / 1024 / 1024).toFixed(1), limit: MAX_PDF_BYTES / 1024 / 1024,
+    });
   if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-")
-    throw new Failure("not_pdf", `${name} does not start with %PDF- — it is not a PDF.`);
+    throw new Failure("not_pdf", "failure.not_pdf.magic", { name });
 
   fs.mkdirSync(pdfDir(), { recursive: true });
   fs.mkdirSync(jsonDir(), { recursive: true });
@@ -142,14 +144,16 @@ export async function ingestUpload(
     try {
       json = JSON.parse(fs.readFileSync(producedJson, "utf8")) as StatementJson;
     } catch (e) {
-      throw new Failure("parse_failed", `${path.basename(producedJson)} is not readable JSON: ${(e as Error).message}`);
+      throw new Failure("parse_failed", "failure.parse_failed.badJson", {
+        file: path.basename(producedJson), detail: (e as Error).message,
+      });
     }
     // The pipeline named the JSON after the temp file; the statement is named after the upload.
     json = { ...json, file: name };
     try {
       report = ingestFile(db, json, loadRules(), loadAliases());
     } catch (e) {
-      throw new Failure("ingest_failed", `${name} parsed but could not be ingested: ${(e as Error).message}`);
+      throw new Failure("ingest_failed", "failure.ingest_failed", { name, detail: (e as Error).message });
     }
   } catch (e) {
     fs.rmSync(tmpPdf, { force: true });

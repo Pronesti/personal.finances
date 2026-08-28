@@ -1,0 +1,910 @@
+// Every string the UI renders lives here, keyed once and written in both locales. English is the
+// default and the fallback: a key missing from `es` falls back to it rather than showing the key.
+//
+// What is deliberately NOT translated, because it is data and not copy: merchant names, card
+// brands, statement descriptions, tax-line concepts (RG 5617, IVA, IIBB), the ingest-time
+// integrity alerts — which quote the statement's own field names and declared totals verbatim —
+// and every number, which stays in Argentine format because the source documents are Argentine.
+export const LOCALES = ["en", "es"] as const;
+export type Locale = (typeof LOCALES)[number];
+
+export const DEFAULT_LOCALE: Locale = "en";
+
+/** Cookie the language picker writes and the server reads on every request. */
+export const LOCALE_COOKIE = "lang";
+
+/** Each language names itself — a picker that says "Spanish" is useless to a Spanish reader. */
+export const LOCALE_NAMES: Record<Locale, string> = { en: "English", es: "Español" };
+
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
+}
+
+const en = {
+  // ── chrome ────────────────────────────────────────────────────────────────
+  "app.description": "Credit card statement analysis",
+  "lang.label": "Language",
+
+  "nav.overview": "Overview",
+  "nav.trends": "Trends",
+  "nav.currency": "Currency",
+  "nav.future": "Future",
+  "nav.installments": "Installments",
+  "nav.float": "Float",
+  "nav.categories": "Categories",
+  "nav.merchants": "Merchants",
+  "nav.sankey": "Sankey",
+  "nav.calendar": "Calendar",
+  "nav.habits": "Habits",
+  "nav.recurring": "Recurring",
+  "nav.taxes": "Taxes",
+  "nav.credits": "Credits",
+  "nav.anomalies": "Alerts",
+  "nav.inflation": "Inflation",
+  "nav.compare": "Compare",
+  "nav.upload": "Upload",
+  "nav.review": "Review",
+
+  // ── granularity and period words ──────────────────────────────────────────
+  "granularity.month": "month",
+  "granularity.quarter": "quarter",
+  "granularity.year": "year",
+  "granularity.all": "all",
+  // "all" names a bucket, not a period, so prose that reads "each {g}" needs a neutral word.
+  "period.word.month": "month",
+  "period.word.quarter": "quarter",
+  "period.word.year": "year",
+  "period.word.all": "period",
+  // The span one bucket covers — "the latest month", but "the whole history" for "all".
+  "period.span.month": "the latest month",
+  "period.span.quarter": "the latest quarter",
+  "period.span.year": "the latest year",
+  "period.span.all": "the whole history",
+
+  // ── modes ─────────────────────────────────────────────────────────────────
+  "mode.inPesos": "in {month} pesos",
+  "mode.atMep": "at MEP",
+  "mode.value.real": "Real $",
+  "mode.value.nominal": "Nominal $",
+  "mode.value.usd": "USD",
+  "mode.spend.accrual": "Purchases",
+  "mode.spend.cash": "As billed",
+  "mode.tax.excl": "Pre-tax",
+  "mode.tax.incl": "True cost",
+  "value.real": "real",
+  "value.nominal": "nominal",
+  "value.usd": "USD",
+
+  // ── categories ────────────────────────────────────────────────────────────
+  "category.food": "food",
+  "category.transport": "transport",
+  "category.subscriptions": "subscriptions",
+  "category.health": "health",
+  "category.entertainment": "entertainment",
+  "category.shopping": "shopping",
+  "category.services": "services",
+  "category.travel": "travel",
+  "category.education": "education",
+  "category.taxes_fees": "taxes & fees",
+  "category.transfers": "transfers",
+  "category.other": "other",
+
+  // ── weekdays ──────────────────────────────────────────────────────────────
+  "day.Mon": "Mon",
+  "day.Tue": "Tue",
+  "day.Wed": "Wed",
+  "day.Thu": "Thu",
+  "day.Fri": "Fri",
+  "day.Sat": "Sat",
+  "day.Sun": "Sun",
+
+  // ── overview ──────────────────────────────────────────────────────────────
+  "overview.title": "Statement {date}",
+  "overview.spent": "Spent this statement ({value})",
+  "overview.spent.vsPrev": "{pct} vs last month",
+  "overview.forecast": "Next statement forecast",
+  "overview.forecast.detail": "{amount} contractual · due after {date}",
+  "overview.topCategories": "Top categories",
+  "overview.alerts": "Alerts",
+  "overview.alerts.none": "statements add up, nothing odd",
+  "overview.installments": "Installment burden (both cards)",
+  "overview.installments.detail": "over next {months} months",
+  "overview.trend": "12-month trend ({value})",
+  "overview.footer": "This page shows a summary of the latest statement. The goal is to give a fast status of your cards. Each tile shows one part of the analysis. Click a tile to open the full page for that part. The first tile compares this statement with the last statement. A small change is normal. A large increase is a signal. Examine it in Trends. The alert tile is good when it shows zero. When it shows more, open the Alerts page and examine each item.",
+
+  // ── trends ────────────────────────────────────────────────────────────────
+  "trends.title": "Spend by category",
+  "trends.footer": "This page shows your costs for each period, divided by category. The goal is to show how your costs change with time. Each colored band is one category. The height of the full area is the total of that period. Read the width of a band to see the weight of that category. A stable or thin band is good. A band that becomes wider each month is bad. It shows a category that grows. Use the real mode to remove the effect of inflation from the comparison. Use the pills to change the period: month, quarter, year, or all, which puts the whole history in one column.",
+
+  // ── currency ──────────────────────────────────────────────────────────────
+  "currency.title": "ARS vs USD spending",
+  "currency.legend.ars": "ARS-billed",
+  "currency.legend.usd": "USD-billed",
+  "currency.note": "USD-billed purchases are converted at each cycle month's average MEP rate so both bars share one unit. Foreign spending is lumpy — a travel month can dominate the year.",
+  "currency.footer": "This page compares your costs in pesos with your costs in US dollars. The goal is to show the weight of purchases in a foreign currency. The dollar amounts change to pesos at the MEP rate of each month, also when the pills group months into a quarter, a year, or all of the history. Thus the two bars have the same unit. A large dollar bar is not bad alone. It usually shows travel or purchases from other countries. But dollar purchases add the RG 5617 tax. See the Taxes page for that cost.",
+
+  // ── future ────────────────────────────────────────────────────────────────
+  "future.title": "What you will owe",
+  "future.table.month": "Month",
+  "future.table.certain": "Certain",
+  "future.table.expected": "Expected",
+  "future.table.range": "Estimated range",
+  "future.legend.certain": "Certain (installments)",
+  "future.legend.expected": "Expected (recurring)",
+  "future.legend.estimated": "Estimated (variable range)",
+  "future.note.lead": "Three layers, three certainties (spec §5).",
+  "future.note.certain": "Certain",
+  "future.note.certain.body": "is the contractual installment schedule from the newest statement of each card.",
+  "future.note.expected": "Expected",
+  "future.note.expected.body": "is your recurring charges — only those still active in the last two cycles — carried forward.",
+  "future.note.estimated": "Estimated",
+  "future.note.estimated.body": "is the range your variable spending has occupied over the last six cycles: a band, not a line, because it is a guess.",
+  "future.note.tail": "Nominal figures grow at the trailing 6-month inflation rate ({rate}%/month); real figures instead deflate the contractual installments into today's pesos.",
+  "future.footer": "This page shows an estimate of your next statements. The goal is to show the money that you must pay in the months that come. The chart has three layers. The certain layer contains the installment payments. They are an obligation. The expected layer contains the recurring charges. They continue if you do not cancel them. The estimated layer is a range for your variable purchases. It is a calculation from the last six cycles, not a promise. A small certain layer is good. It shows that you are free to change your costs. A large certain layer is bad. Your money is committed before the month starts.",
+
+  // ── installments ──────────────────────────────────────────────────────────
+  "installments.title": "Installment burden",
+  "installments.openPlans": "Open plans",
+  "installments.openPlans.detail": "on the latest statements",
+  "installments.stillToPay": "Still to pay",
+  "installments.stillToPay.detail": "at the current installment amounts",
+  "installments.share": "Installment share",
+  "installments.share.detail": "of {span}'s purchases",
+  "installments.legend.oneOff": "one-off",
+  "installments.legend.installment": "installment-billed",
+  "installments.legend.share": "installment share",
+  "installments.chartNote": "Always “as billed”: each period shows what its statements actually charged, split into installment charges (committed by past decisions) and one-off purchases. The line is the installment share — the fraction of the period you could not have avoided by spending less. For where this is headed, see",
+  "installments.none": "No open installment plans on the latest statements.",
+  "installments.table.merchant": "Merchant",
+  "installments.table.card": "Card",
+  "installments.table.progress": "Progress",
+  "installments.table.monthly": "Monthly",
+  "installments.table.monthsLeft": "Months left",
+  "installments.table.stillToPay": "Still to pay",
+  "installments.tableNote": "“Still to pay” assumes the installment stays at its current nominal amount, which Argentine plans do — in real terms each later installment is cheaper.",
+  "installments.footer": "This page shows the part of each statement that comes from installment plans. An installment plan divides one purchase into monthly payments. These payments are an obligation. You cannot stop them when you spend less. The goal of this analysis is to show how rigid your statement is. Read each bar to see one period, divided into installment charges and one-time purchases. Read the line to see the installment share of that period. A low share is good. It shows that you can decrease your costs quickly when it is necessary. A high share is bad. It shows that past decisions control a large part of your statement. The table shows each open plan and the amount that you must still pay.",
+
+  // ── float ─────────────────────────────────────────────────────────────────
+  "float.title": "Payment float",
+  "float.gain": "Inflation gain",
+  "float.gain.detail": "saved by paying later, whole history",
+  "float.gain.viaInstallments": " — {pct}% via installments",
+  "float.typical": "Typical float",
+  "float.typical.days": "{days} days",
+  "float.typical.detail": "from purchase to due date, typical {period}",
+  "float.cost": "What it cost",
+  "float.cost.detail": "financing interest paid over the same statements",
+  "float.legend.oneOff": "one-off purchases",
+  "float.legend.installments": "installments",
+  "float.legend.avg": "avg float",
+  "float.note": "Every peso on a statement is paid at the due date, weeks or months after the purchase — and in between, inflation shrinks it. Bars are the real value preserved by that delay, split into ordinary purchases (a few weeks of float) and installment plans, whose fixed nominal payments ride the full plan length. The dashed line is the amount-weighted purchase-to-due delay, weighted across every purchase in the bucket, so grouping months never averages an average. The newest month's gain is understated: its due date falls past the CPI series, so the last known index stands in. Gains are measured against the official IPC — a private-index month would move the true figure.",
+  "float.footer": "This page shows the money that inflation removes from your card debt before you pay it. You pay each purchase weeks or months after you make it. In that time, inflation decreases the real value of the payment. This is the float gain. Read the bars to see the gain of each period; the pills group them by month, quarter, year, or all. Read the dashed line to see the usual delay in days. Then compare the total gain with the interest cost in the third tile. The float is good when the gain is more than the interest. Installment plans give the largest gain, because their payments stay at the same nominal amount for many months.",
+
+  // ── categories ────────────────────────────────────────────────────────────
+  "categories.title": "Categories",
+  "categories.crumb.all": "all",
+  "categories.empty": "No spending in {period}.",
+  "categories.empty.any": "any statement",
+  "categories.table.date": "Date",
+  "categories.table.description": "Description",
+  "categories.table.amount": "Amount",
+  "categories.table.usd": "USD",
+  "categories.footer": "This page shows your costs divided by category. The goal is to find where your money goes in one period. Use the first row of pills to select month, quarter, year, or all, which drills the whole history at once, and the second row to select the period itself. Click a bar to go down one level: category, then subcategory, then merchant. The table shows the purchases of the selected level. Use the path line above the chart to go back. Compare a category with the same category in an earlier period. A category that grows without a known cause is a signal. Examine its merchants.",
+
+  // ── merchants ─────────────────────────────────────────────────────────────
+  "merchants.title": "Merchant concentration",
+  "merchants.count": "Merchants",
+  "merchants.count.all": "across the whole history",
+  "merchants.count.in": "in {period}",
+  "merchants.top5": "Top 5 take",
+  "merchants.top5.detail": "of {total} total",
+  "merchants.top20": "Top 20 take",
+  "merchants.top20.detail": "rest is the long tail",
+  "merchants.legend.total": "total",
+  "merchants.legend.cumulative": "cumulative",
+  "merchants.legend.returning": "returning merchants",
+  "merchants.legend.new": "first-time merchants",
+  "merchants.novelty.tooltip": "{amount} ({count} merchants)",
+  "merchants.paretoNote": "Bars are the top {count} merchants, colored by dominant category; the dashed line is the cumulative share of ALL spending, so where it crosses 50% tells you how few merchants take half your money. Refunds net against each merchant.",
+  "merchants.noveltyHeading": "New vs returning merchants",
+  "merchants.noveltyNote": "“First-time” means the merchant had never appeared on any earlier statement. The first covered period is structurally all first-time. A fat blue band is exploration — or a spending spree at places you don't normally shop.",
+  "merchants.topHeading": "Top {count}",
+  "merchants.table.merchant": "Merchant",
+  "merchants.table.category": "Category",
+  "merchants.table.total": "Total",
+  "merchants.table.charges": "Charges",
+  "merchants.table.share": "Share",
+  "merchants.table.active": "Active",
+  "merchants.footer": "This page shows how your money divides across merchants. The goal of this analysis is to show if a small group of merchants gets a large part of your money. Read the bars to see the top merchants by total. Read the dashed line to see the cumulative share of all your costs. The point where the line crosses 50% shows the number of merchants that get half of your money. Concentration alone is not good or bad. Concentration in merchants that you selected, for example a supermarket, is normal. Concentration in one merchant that you do not know well is a signal. Examine that merchant. The second chart compares new merchants with known merchants. A large first-time band shows exploration, or purchases that are not part of your normal pattern.",
+
+  // ── sankey ────────────────────────────────────────────────────────────────
+  "sankey.title": "Where {period} went",
+  "sankey.everything": "everything",
+  "sankey.tail": "{category} — other",
+  "sankey.empty": "No spending in this month.",
+  "sankey.note": "Card → category → merchant for one period. Only the top 8 merchants per category get their own band; the rest are grouped. Refunds net against their own merchant before the flow is drawn, so every category's inflow equals its outflow.",
+  "sankey.footer": "This page shows the flow of money for one period. The flow goes from each card, to each category, to each merchant. The goal is to see the structure of one period on one screen. Select month, quarter, year, or all with the first row of pills, then the period itself with the second row. The width of a band shows the amount. A wide band shows a large cost. Follow a band from left to right to see which merchant receives the money. Use this page to find the few large flows that control the period. A period with many thin bands has no single large cause.",
+
+  // ── calendar ──────────────────────────────────────────────────────────────
+  "calendar.title": "Daily spend",
+  "calendar.aria": "Daily spend heatmap",
+  "calendar.empty": "No dated purchases.",
+  "calendar.noPurchases": "no purchases",
+  "calendar.note": "Purchase dates, not billing dates. Installment purchases count once at full price on the day they were bought — statements re-list them every month at the original date, which would otherwise repaint the same day a dozen times. That also means the grid reaches back before the first statement: six installment series were bought in late 2024 and are still being paid off. Hover a cell for the total.",
+  "calendar.footer": "This page shows the days when you make purchases. Each cell is one day. A dark cell shows a large total. The goal is to show your time pattern, not your billing. An installment purchase counts once, on its purchase day, at the full price. Read the grid to find the days with many purchases. Some dark cells are normal. Large purchases occur on some days. Many dark cells in a short period show a time with high costs. Point to a cell to see its total.",
+
+  // ── habits ────────────────────────────────────────────────────────────────
+  "habits.title": "Spending habits",
+  "habits.busiest": "Busiest day",
+  "habits.busiest.detail": "{pct} of all spend",
+  "habits.busiest.none": "no dated purchases yet",
+  "habits.weekend": "Weekend share",
+  "habits.weekend.detail": "of spend lands on Sat–Sun",
+  "habits.median": "Median ticket",
+  "habits.median.detail": "{period} · {count} purchases",
+  "habits.median.none": "no purchases yet",
+  "habits.legend.purchases": "purchases",
+  "habits.legend.avgTicket": "average ticket",
+  "habits.legend.medianTicket": "median ticket",
+  "habits.weekHeading": "The shape of a week",
+  "habits.weekNote": "Every purchase in the history, bucketed by the day it was made — an installment plan counts once, at full price, on its purchase day. The dashed line is how many purchases each weekday has accumulated. Refunds net the bars but are not counted as visits.",
+  "habits.ticketHeading": "Price or volume?",
+  "habits.ticketNote": "Whether spend moves because of more purchases or bigger ones. Bars count purchases; lines are the average and median ticket. In real mode the tickets are inflation-adjusted, so a flat median with a rising count is genuinely buying more — not prices dragging the total up. The average far above the median means a few big tickets carry the period.",
+  "habits.footer": "This page shows when you buy and how the size of your purchases changes. The first chart divides all purchases by the day of the week. The dashed line counts the purchases of each day. The second chart shows the cause when your costs move: more purchases, or larger purchases. The bars count purchases. The lines show the average ticket and the median ticket. In real mode, a flat median with a count that increases means that you buy more things, not that prices push the total up. An average far above the median means that some large purchases control the period.",
+
+  // ── recurring ─────────────────────────────────────────────────────────────
+  "recurring.title": "Recurring charges",
+  "recurring.intro": "Nominal amounts — % change vs previous month is the inflation/price-hike signal. A charge qualifies by holding a nominal price (pegged) or by tracking CPI (indexed); a merchant that moved between ARS and USD billing is one row, not two.",
+  "recurring.none": "None.",
+  "recurring.table.merchant": "Merchant",
+  "recurring.table.currency": "Currency",
+  "recurring.table.monthsSeen": "Months seen",
+  "recurring.table.lastAmount": "Last amount",
+  "recurring.table.change": "Change",
+  "recurring.table.nextExpected": "Next expected",
+  "recurring.table.lastSeen": "Last seen",
+  "recurring.billingMoved": "billing moved {from} → {to}",
+  "recurring.regime.pegged": "pegged",
+  "recurring.regime.indexed": "indexed",
+  "recurring.regime.pegged.title": "Holds the same nominal price for months at a time",
+  "recurring.regime.indexed.title": "Repriced monthly, flat once deflated by CPI",
+  "recurring.lastSeenAgo": "{month} ({months} mo ago)",
+  "recurring.total.perMonth": "Total per month",
+  "recurring.total.lastBilled": "Total, as last billed",
+  "recurring.total.split": "{ars} + US$ {usd} at MEP",
+  "recurring.variableHeading": "Frequent, but variable",
+  "recurring.variableIntro": "Billed most months, but the amount swings too much to be a subscription — supermarkets, fuel, tolls, tips. Listed for completeness; they are budgeted as variable spend, not as fixed obligations.",
+  "recurring.lapsedHeading": "Lapsed",
+  "recurring.lapsedIntro": "Was recurring, has not billed for at least two cycles. No next charge is expected until it reappears.",
+  "recurring.footer": "This page shows the charges that come back each month. The goal is to show your fixed obligations and their price changes. The first table contains the subscriptions. The percentage change against the last month is the price signal. A change near inflation is normal. A change far above inflation is bad. Examine that merchant, or cancel the service. The second table contains frequent charges with variable amounts. They are not obligations. The last table contains charges that stopped. No new charge is expected from them. A merchant in the wrong table is a signal that its pattern changed.",
+
+  // ── taxes ─────────────────────────────────────────────────────────────────
+  "taxes.title": "Taxes & card charges",
+  "taxes.total": "Total paid",
+  "taxes.total.detail": "in taxes and charges, whole history",
+  "taxes.average": "Average overhead",
+  "taxes.average.detail": "on top of each {period}'s purchases",
+  "taxes.worst": "Worst {period}",
+  "taxes.worst.none": "no tax lines yet",
+  "taxes.legend.rg5617": "RG 5617 (30% foreign)",
+  "taxes.legend.iva": "IVA",
+  "taxes.legend.iibb": "IIBB withholding",
+  "taxes.legend.stampDuty": "stamp duty",
+  "taxes.legend.interest": "interest",
+  "taxes.legend.other": "other charges",
+  "taxes.legend.overhead": "overhead",
+  "taxes.note": "Bars are the statement's own tax and charge lines by levy; the dashed line is their total as a percentage of that period's purchases (USD purchases counted at MEP, since RG 5617 is charged on exactly those). DEVOLUCION DE SALDOS lines are balance transfers, not taxes, and are excluded. A spike in RG 5617 is a foreign-spend month, not a rate change.",
+  "taxes.footer": "This page shows the taxes and the charges that the bank adds to your card statements. These amounts are not purchases. You pay them because of the purchases you make. The goal of this analysis is to show the real extra cost of the use of the card. Read the bars to see the amount of each tax type in each period. Read the dashed line to see the total of these costs as a percentage of the purchases of the same period. A low and stable percentage is good. A percentage that increases is bad, because a larger part of your money goes to taxes and not to goods. A high RG 5617 bar is usually not bad. It shows a period with purchases in a foreign currency.",
+
+  // ── credits ───────────────────────────────────────────────────────────────
+  "credits.title": "Money back",
+  "credits.total": "Total recovered",
+  "credits.total.detail": "promos, refunds and tax reversals, whole history",
+  "credits.average": "Average give-back",
+  "credits.average.detail": "of each period's purchases came back",
+  "credits.biggest": "Biggest credit",
+  "credits.biggest.none": "no credits yet",
+  "credits.kind.promo": "bank promo",
+  "credits.kind.refund": "refund",
+  "credits.kind.taxback": "RG 5617 recovered",
+  "credits.legend.promo": "bank promos",
+  "credits.legend.refund": "refunds",
+  "credits.legend.taxback": "RG 5617 recovered",
+  "credits.legend.share": "share of spend",
+  "credits.note": "Everything the statements handed back: bank promos (BONIF / Visa Garpa lines), merchant refunds, and RG 5617 tax recovered when foreign spend was reversed. The spend pages net these against purchases silently — this is the one page where they are visible on their own. The dashed line is the give-back as a share of that period's purchases. Your own payments are never counted.",
+  "credits.largestHeading": "Largest credits",
+  "credits.none": "No credits in the history yet.",
+  "credits.table.when": "When",
+  "credits.table.merchant": "Merchant",
+  "credits.table.kind": "Kind",
+  "credits.table.amount": "Amount",
+  "credits.footer": "This page shows the money that comes back to your statements. It contains bank promotions, merchant refunds, and recovered RG 5617 tax. The other pages subtract these credits without a display. This page makes them visible. Read the bars to see the credits of each period. Read the dashed line to see the credits as a share of the purchases of that period. A high share is good. It shows that promotions and refunds decrease your real cost. Your own card payments are not counted here.",
+
+  // ── alerts ────────────────────────────────────────────────────────────────
+  "anomalies.title": "Alerts",
+  "anomalies.summary": "{open} open of {total} — statement-integrity checks (computed at ingest) and anomalies (recomputed every load).",
+  "anomalies.cleared.one": " Cleared {count} review whose alert no longer exists.",
+  "anomalies.cleared.other": " Cleared {count} reviews whose alert no longer exists.",
+  "anomalies.kind.duplicate": "Duplicate",
+  "anomalies.kind.amount_jump": "Price jump",
+  "anomalies.kind.new_merchant": "New merchant",
+  "anomalies.kind.math_mismatch": "Statement math",
+  "anomalies.kind.balance_mismatch": "Balance mismatch",
+  "anomalies.table.when": "When",
+  "anomalies.table.kind": "Kind",
+  "anomalies.table.merchant": "Merchant",
+  "anomalies.table.amount": "Amount",
+  "anomalies.table.what": "What happened",
+  "anomalies.table.review": "Review",
+  "anomalies.action.reviewed": "reviewed",
+  "anomalies.action.dismiss": "dismiss",
+  "anomalies.action.reopen": "{state} — reopen",
+  "anomalies.state.reviewed": "reviewed",
+  "anomalies.state.dismissed": "dismissed",
+  "anomalies.state.open": "open",
+  "anomalies.note": "Amounts are always the nominal pesos the card billed — that is what you would dispute. Review state is keyed to the statement and the alert's shape, not to a row id or its wording, so it survives re-uploading the statement under any name. Duplicates the statement already reversed start out reviewed; reopening one sticks. Price jumps are measured in real terms, and only for merchants billed exactly once a month, so a busier month at the supermarket is not mistaken for a price rise. Duplicate matching uses the ±2-day window Actual Budget uses for schedules, stays within one statement, and ignores installment rows.",
+  "anomalies.footer": "This page shows the results of the checks on your statements. The checks find duplicate charges, price jumps, new merchants, and errors in the statement totals. The goal is to find problems early, when a dispute with the bank is possible. The chart marks the periods with open alerts; the pills group it by month, quarter, year, or all, and the table below always lists every alert. Read the table and examine each open alert. An alert is not always an error. It is a question. Mark an alert as reviewed when the charge is correct. Dismiss it when it is not important. Zero open alerts is good. An open balance or math alert is bad. It shows that the statement numbers do not agree.",
+
+  // Detector prose. Recomputed on every load, so translating it is safe — unlike the ingest-time
+  // integrity messages, which are stored once and quote the statement's own fields.
+  "anomaly.duplicate.resolved": "charged twice on {date} — already reversed on the same statement",
+  "anomaly.duplicate": "charged twice within {days} days ({first} and {second})",
+  "anomaly.amountJump": "up {pct}% in real terms vs {month}",
+  "anomaly.newMerchant": "first charge from this merchant in {months} months of statements",
+
+  // ── inflation ─────────────────────────────────────────────────────────────
+  "inflation.title": "Your inflation vs INDEC",
+  "inflation.lead.since": "Since {month}, your recurring basket is up",
+  "inflation.lead.while": "while official IPC is up",
+  "inflation.verdict.worse": "you are paying more than average",
+  "inflation.verdict.better": "you are beating average inflation",
+  "inflation.legend.personal": "Your basket",
+  "inflation.legend.official": "INDEC IPC",
+  "inflation.firstMonth": "the first month",
+  "inflation.note": "Both indices are based at 100 in {month}. Your line reprices the {count} merchants you actually pay every month, chained month to month using only merchants charged in both — so a merchant joining or leaving never moves the index by itself, and only once-a-month charges count, so buying more does not read as paying more.",
+  "inflation.basket": "Basket: {basket}.",
+  "inflation.footer": "This page compares your personal inflation with the official INDEC index. Your line uses only the merchants that you pay each month. The goal is to show if your prices grow faster than the average prices. Both lines start at 100 in the first month. Read the gap between the lines. Your line below the official line is good. Your services increase less than the average. Your line above the official line is bad. Your own basket becomes more expensive than the average. The basket list under the chart shows the merchants in the calculation.",
+
+  // ── compare ───────────────────────────────────────────────────────────────
+  "compare.title": "Period comparison",
+  "compare.warning": "⚠ Single-card months (missing statements for one brand): {months} — comparisons across these are apples-to-oranges.",
+  "compare.footer": "This page compares the total cost of each period with the period before it. The goal is to show the direction of your costs. Select month, quarter, year, or all with the pills. Each bar is one period. The percentage above a bar is the change against the period before it, so all — a single bar for the whole history — carries no percentage. Use the real mode for this comparison. In real mode, a change near zero is good. It means that your costs are stable. Large changes in sequence show a cost that is not under control, or a special event. A period with a missing statement makes its comparison not correct. The warning under the chart lists those periods.",
+
+  // ── upload ────────────────────────────────────────────────────────────────
+  "upload.title": "Upload",
+  "upload.table.statement": "Statement",
+  "upload.table.card": "Card",
+  "upload.table.cycle": "Cycle",
+  "upload.table.closed": "Closed",
+  "upload.table.transactions": "Transactions",
+  "upload.table.alerts": "Alerts",
+  "upload.drop.busy": "Parsing…",
+  "upload.drop.idle": "Drop statement PDFs here, or click to choose them",
+  "upload.report.summary": "{brand}, cycle {month}, {count} transactions.",
+  "upload.report.replaced": "Replaced: {files} (nothing was duplicated).",
+  "upload.report.cpiStale": "No CPI data for {month} yet — real-terms views will understate it until you run",
+  "upload.report.ok": "Statement math checks out — no integrity alerts.",
+  "upload.error.unreadable": "{file}: the server did not answer with a readable result.",
+  "upload.note": "Uploading a statement you already have replaces it — the same cycle never lands twice, whatever the file is called, and the superseded PDF is kept in pdfs/.superseded. The PDF is parsed locally by scripts/pdf_to_json.py; nothing about it leaves this machine.",
+  "upload.footer": "This page receives the PDF statements and shows the statements in the database. Drop a PDF file in the zone above. The parser reads the file on this machine. No data goes out of this machine. When you load a cycle again, the new file replaces the old file. The table shows each statement, its card, its cycle, and its alerts. A cycle that is not in the table is a hole in the history. The pages that compare periods are less exact when holes exist. Load the missing statements to close the holes.",
+
+  // ── review ────────────────────────────────────────────────────────────────
+  "review.title": "Review",
+  "review.summary.rules": "{count} rules",
+  "review.summary.awaiting": "{count} awaiting review",
+  "review.summary.uncategorized": "{count} merchants still uncategorized",
+  "review.summary.privacy": "Only the merchant name is ever sent — never an amount, a date, an account number or your name, and any name that still looks like money is not sent at all.",
+  "review.propose.busy": "Asking Claude…",
+  "review.propose.label.one": "Classify {count} unknown merchant",
+  "review.propose.label.other": "Classify {count} unknown merchants",
+  "review.table.merchant": "Merchant",
+  "review.table.rule": "Rule",
+  "review.table.spend": "Spend",
+  "review.table.decide": "Decide",
+  "review.lowConfidence": "low confidence",
+  "review.sentAs": "sent as “{name}”",
+  "review.charges.one": "{count} charge",
+  "review.charges.other": "{count} charges",
+  "review.statementLines": "statement lines",
+  "review.installment": "(installment {number}/{count})",
+  "review.andMore": "…and {count} more",
+  "review.alsoClaims": "This rule also claims: {merchants}",
+  "review.accept": "accept",
+  "review.reject": "reject",
+  "review.action.nothing": "Nothing to classify — every unknown merchant is already proposed or rejected.",
+  "review.action.partial": "Classified {done} of {total} — click again for the rest.",
+  "review.note": "Accepting appends a rule to data/merchant-categories.json and applies it to the transactions already loaded. Rules match by substring and are first-match-wins, so edit the rule text if it would claim merchants you did not mean — the warning above the accept button lists them. Accepted rules go last, so a rule you wrote by hand always beats one the model proposed. Rejecting remembers the merchant so it is not sent again.",
+  "review.footer": "This page controls how merchants get their categories. The model proposes a rule for each merchant that has no category. Only the merchant name goes to the model. Examine each proposal and its statement lines. Accept a correct rule. Correct the category first when it is necessary. Reject a bad rule. The warning under a rule shows other merchants that the rule also captures. Examine that list before you accept the rule. Good categories make all the other pages exact. Many merchants without a category make the category pages less exact.",
+  // ── failures ──────────────────────────────────────────────────────────────
+  // Surfaced in the upload drop zone and the review page. `{detail}` carries a Python traceback
+  // or a parser message through untranslated — that text belongs to the tool that produced it.
+  "failure.noFile": "The request carried no file.",
+  "failure.bad_name": "“{name}” is not a usable PDF filename.",
+  "failure.too_large": "{name} is {size} MB; the limit is {limit} MB.",
+  "failure.not_pdf.magic": "{name} does not start with %PDF- — it is not a PDF.",
+  "failure.not_pdf.unreadable": "The file could not be read as a PDF.",
+  "failure.python_missing.noEnv": "No Python environment for the PDF pipeline.",
+  "failure.python_missing.cannotRun": "Cannot run {python}.",
+  "failure.python_missing.pdfplumber": "The Python environment is missing pdfplumber.",
+  "failure.parse_failed.tooMuchOutput": "pdf_to_json.py produced more output than expected.",
+  "failure.parse_failed.timeout": "pdf_to_json.py timed out after {seconds}s.",
+  "failure.parse_failed.noJson": "pdf_to_json.py produced no JSON for {file}.",
+  "failure.parse_failed.badJson": "{file} is not readable JSON: {detail}",
+  "failure.parse_failed.detail": "{detail}",
+  "failure.ingest_failed": "{name} parsed but could not be ingested: {detail}",
+  "failure.llm_unavailable": "ANTHROPIC_API_KEY is not set, so merchants cannot be classified.",
+  "failure.llm_failed.noTool": "The model replied without classifying anything.",
+  "failure.llm_failed.noItems": "The model's answer had no items array.",
+  "failure.llm_failed.unusable": "The model returned {count} classifications and none were usable.",
+  "hint.pythonSetup": "From the repo root: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+  "hint.badName": "Rename it to letters, digits, dots, dashes or underscores, ending in .pdf.",
+  "hint.apiKey": "Put ANTHROPIC_API_KEY=sk-ant-... in web/.env.local and restart npm run dev.",
+};
+
+
+export type MessageKey = keyof typeof en;
+
+type Dictionary = Record<MessageKey, string>;
+
+const es: Dictionary = {
+  // ── chrome ────────────────────────────────────────────────────────────────
+  "app.description": "Análisis de resúmenes de tarjeta de crédito",
+  "lang.label": "Idioma",
+
+  "nav.overview": "Resumen",
+  "nav.trends": "Tendencias",
+  "nav.currency": "Moneda",
+  "nav.future": "Futuro",
+  "nav.installments": "Cuotas",
+  "nav.float": "Flotación",
+  "nav.categories": "Categorías",
+  "nav.merchants": "Comercios",
+  "nav.sankey": "Sankey",
+  "nav.calendar": "Calendario",
+  "nav.habits": "Hábitos",
+  "nav.recurring": "Recurrentes",
+  "nav.taxes": "Impuestos",
+  "nav.credits": "Créditos",
+  "nav.anomalies": "Alertas",
+  "nav.inflation": "Inflación",
+  "nav.compare": "Comparar",
+  "nav.upload": "Cargar",
+  "nav.review": "Revisión",
+
+  // ── granularidad y períodos ───────────────────────────────────────────────
+  "granularity.month": "mes",
+  "granularity.quarter": "trimestre",
+  "granularity.year": "año",
+  "granularity.all": "todo",
+  "period.word.month": "mes",
+  "period.word.quarter": "trimestre",
+  "period.word.year": "año",
+  "period.word.all": "período",
+  "period.span.month": "el último mes",
+  "period.span.quarter": "el último trimestre",
+  "period.span.year": "el último año",
+  "period.span.all": "toda la historia",
+
+  // ── modos ─────────────────────────────────────────────────────────────────
+  "mode.inPesos": "en pesos de {month}",
+  "mode.atMep": "al MEP",
+  "mode.value.real": "$ reales",
+  "mode.value.nominal": "$ nominales",
+  "mode.value.usd": "USD",
+  "mode.spend.accrual": "Compras",
+  "mode.spend.cash": "Como se facturó",
+  "mode.tax.excl": "Sin impuestos",
+  "mode.tax.incl": "Costo real",
+  "value.real": "reales",
+  "value.nominal": "nominales",
+  "value.usd": "USD",
+
+  // ── categorías ────────────────────────────────────────────────────────────
+  "category.food": "comida",
+  "category.transport": "transporte",
+  "category.subscriptions": "suscripciones",
+  "category.health": "salud",
+  "category.entertainment": "entretenimiento",
+  "category.shopping": "compras",
+  "category.services": "servicios",
+  "category.travel": "viajes",
+  "category.education": "educación",
+  "category.taxes_fees": "impuestos y cargos",
+  "category.transfers": "transferencias",
+  "category.other": "otros",
+
+  // ── días ──────────────────────────────────────────────────────────────────
+  "day.Mon": "Lun",
+  "day.Tue": "Mar",
+  "day.Wed": "Mié",
+  "day.Thu": "Jue",
+  "day.Fri": "Vie",
+  "day.Sat": "Sáb",
+  "day.Sun": "Dom",
+
+  // ── resumen ───────────────────────────────────────────────────────────────
+  "overview.title": "Resumen al {date}",
+  "overview.spent": "Gastado en este resumen ({value})",
+  "overview.spent.vsPrev": "{pct} contra el mes pasado",
+  "overview.forecast": "Pronóstico del próximo resumen",
+  "overview.forecast.detail": "{amount} contractual · vence después del {date}",
+  "overview.topCategories": "Categorías principales",
+  "overview.alerts": "Alertas",
+  "overview.alerts.none": "los resúmenes cierran, nada raro",
+  "overview.installments": "Carga de cuotas (ambas tarjetas)",
+  "overview.installments.detail": "en los próximos {months} meses",
+  "overview.trend": "Tendencia de 12 meses ({value})",
+  "overview.footer": "Esta página muestra un resumen del último estado de cuenta. El objetivo es dar un estado rápido de tus tarjetas. Cada recuadro muestra una parte del análisis. Hacé clic en un recuadro para abrir la página completa de esa parte. El primer recuadro compara este resumen con el resumen anterior. Un cambio chico es normal. Un aumento grande es una señal. Examinalo en Tendencias. El recuadro de alertas está bien cuando muestra cero. Cuando muestra más, abrí la página de Alertas y examiná cada ítem.",
+
+  // ── tendencias ────────────────────────────────────────────────────────────
+  "trends.title": "Gasto por categoría",
+  "trends.footer": "Esta página muestra tus costos de cada período, divididos por categoría. El objetivo es mostrar cómo cambian tus costos con el tiempo. Cada banda de color es una categoría. La altura del área completa es el total de ese período. Mirá el ancho de una banda para ver el peso de esa categoría. Una banda estable o fina es buena. Una banda que se ensancha cada mes es mala. Muestra una categoría que crece. Usá el modo real para sacar el efecto de la inflación de la comparación. Usá las pastillas para cambiar el período: mes, trimestre, año o todo, que pone toda la historia en una sola columna.",
+
+  // ── moneda ────────────────────────────────────────────────────────────────
+  "currency.title": "Gasto en ARS contra USD",
+  "currency.legend.ars": "Facturado en ARS",
+  "currency.legend.usd": "Facturado en USD",
+  "currency.note": "Las compras facturadas en USD se convierten al MEP promedio del mes de cada ciclo, así las dos barras comparten una unidad. El gasto en el exterior es irregular: un mes de viaje puede dominar el año.",
+  "currency.footer": "Esta página compara tus costos en pesos con tus costos en dólares. El objetivo es mostrar el peso de las compras en moneda extranjera. Los montos en dólares pasan a pesos al MEP de cada mes, también cuando las pastillas agrupan meses en un trimestre, un año o toda la historia. Así las dos barras tienen la misma unidad. Una barra grande de dólares no es mala por sí sola. Suele mostrar viajes o compras en otros países. Pero las compras en dólares suman el impuesto RG 5617. Mirá la página de Impuestos para ese costo.",
+
+  // ── futuro ────────────────────────────────────────────────────────────────
+  "future.title": "Lo que vas a deber",
+  "future.table.month": "Mes",
+  "future.table.certain": "Seguro",
+  "future.table.expected": "Esperado",
+  "future.table.range": "Rango estimado",
+  "future.legend.certain": "Seguro (cuotas)",
+  "future.legend.expected": "Esperado (recurrentes)",
+  "future.legend.estimated": "Estimado (rango variable)",
+  "future.note.lead": "Tres capas, tres certezas (spec §5).",
+  "future.note.certain": "Seguro",
+  "future.note.certain.body": "es el plan contractual de cuotas del resumen más nuevo de cada tarjeta.",
+  "future.note.expected": "Esperado",
+  "future.note.expected.body": "son tus cargos recurrentes —solo los que siguen activos en los últimos dos ciclos— proyectados hacia adelante.",
+  "future.note.estimated": "Estimado",
+  "future.note.estimated.body": "es el rango que ocupó tu gasto variable en los últimos seis ciclos: una banda, no una línea, porque es una estimación.",
+  "future.note.tail": "Las cifras nominales crecen a la inflación de los últimos 6 meses ({rate}%/mes); las cifras reales, en cambio, deflactan las cuotas contractuales a pesos de hoy.",
+  "future.footer": "Esta página muestra una estimación de tus próximos resúmenes. El objetivo es mostrar la plata que tenés que pagar en los meses que vienen. El gráfico tiene tres capas. La capa segura contiene los pagos de cuotas. Son una obligación. La capa esperada contiene los cargos recurrentes. Siguen si no los cancelás. La capa estimada es un rango para tus compras variables. Es un cálculo de los últimos seis ciclos, no una promesa. Una capa segura chica es buena. Muestra que sos libre de cambiar tus costos. Una capa segura grande es mala. Tu plata está comprometida antes de que empiece el mes.",
+
+  // ── cuotas ────────────────────────────────────────────────────────────────
+  "installments.title": "Carga de cuotas",
+  "installments.openPlans": "Planes abiertos",
+  "installments.openPlans.detail": "en los últimos resúmenes",
+  "installments.stillToPay": "Falta pagar",
+  "installments.stillToPay.detail": "a los montos de cuota actuales",
+  "installments.share": "Participación de cuotas",
+  "installments.share.detail": "de las compras de {span}",
+  "installments.legend.oneOff": "compra única",
+  "installments.legend.installment": "facturado en cuotas",
+  "installments.legend.share": "participación de cuotas",
+  "installments.chartNote": "Siempre “como se facturó”: cada período muestra lo que sus resúmenes cobraron realmente, dividido en cargos de cuotas (comprometidos por decisiones pasadas) y compras únicas. La línea es la participación de cuotas, la fracción del período que no podrías haber evitado gastando menos. Para ver hacia dónde va esto, mirá",
+  "installments.none": "No hay planes de cuotas abiertos en los últimos resúmenes.",
+  "installments.table.merchant": "Comercio",
+  "installments.table.card": "Tarjeta",
+  "installments.table.progress": "Avance",
+  "installments.table.monthly": "Mensual",
+  "installments.table.monthsLeft": "Meses restantes",
+  "installments.table.stillToPay": "Falta pagar",
+  "installments.tableNote": "“Falta pagar” supone que la cuota queda en su monto nominal actual, que es lo que hacen los planes argentinos: en términos reales cada cuota posterior es más barata.",
+  "installments.footer": "Esta página muestra la parte de cada resumen que viene de planes de cuotas. Un plan de cuotas divide una compra en pagos mensuales. Esos pagos son una obligación. No podés frenarlos cuando gastás menos. El objetivo de este análisis es mostrar qué tan rígido es tu resumen. Mirá cada barra para ver un período, dividido en cargos de cuotas y compras únicas. Mirá la línea para ver la participación de cuotas de ese período. Una participación baja es buena. Muestra que podés bajar tus costos rápido cuando hace falta. Una participación alta es mala. Muestra que decisiones pasadas controlan una parte grande de tu resumen. La tabla muestra cada plan abierto y el monto que todavía tenés que pagar.",
+
+  // ── flotación ─────────────────────────────────────────────────────────────
+  "float.title": "Flotación de pago",
+  "float.gain": "Ganancia por inflación",
+  "float.gain.detail": "ahorrado por pagar después, toda la historia",
+  "float.gain.viaInstallments": " — {pct}% por cuotas",
+  "float.typical": "Flotación típica",
+  "float.typical.days": "{days} días",
+  "float.typical.detail": "de la compra al vencimiento, {period} típico",
+  "float.cost": "Lo que costó",
+  "float.cost.detail": "intereses de financiación pagados en los mismos resúmenes",
+  "float.legend.oneOff": "compras únicas",
+  "float.legend.installments": "cuotas",
+  "float.legend.avg": "flotación promedio",
+  "float.note": "Cada peso de un resumen se paga en la fecha de vencimiento, semanas o meses después de la compra, y en el medio la inflación lo achica. Las barras son el valor real preservado por esa demora, dividido en compras comunes (unas pocas semanas de flotación) y planes de cuotas, cuyos pagos nominales fijos recorren todo el largo del plan. La línea punteada es la demora de compra a vencimiento ponderada por monto, calculada sobre cada compra del grupo, así agrupar meses nunca promedia un promedio. La ganancia del mes más nuevo queda subestimada: su vencimiento cae después de la serie de IPC, así que se usa el último índice conocido. Las ganancias se miden contra el IPC oficial; un mes con índice privado movería la cifra real.",
+  "float.footer": "Esta página muestra la plata que la inflación le saca a tu deuda de tarjeta antes de que la pagues. Pagás cada compra semanas o meses después de hacerla. En ese tiempo, la inflación baja el valor real del pago. Esa es la ganancia de flotación. Mirá las barras para ver la ganancia de cada período; las pastillas las agrupan por mes, trimestre, año o todo. Mirá la línea punteada para ver la demora habitual en días. Después compará la ganancia total con el costo de intereses del tercer recuadro. La flotación es buena cuando la ganancia supera a los intereses. Los planes de cuotas dan la ganancia más grande, porque sus pagos quedan en el mismo monto nominal por muchos meses.",
+
+  // ── categorías ────────────────────────────────────────────────────────────
+  "categories.title": "Categorías",
+  "categories.crumb.all": "todo",
+  "categories.empty": "Sin gasto en {period}.",
+  "categories.empty.any": "ningún resumen",
+  "categories.table.date": "Fecha",
+  "categories.table.description": "Descripción",
+  "categories.table.amount": "Monto",
+  "categories.table.usd": "USD",
+  "categories.footer": "Esta página muestra tus costos divididos por categoría. El objetivo es encontrar adónde va tu plata en un período. Usá la primera fila de pastillas para elegir mes, trimestre, año o todo, que abre toda la historia de una vez, y la segunda fila para elegir el período. Hacé clic en una barra para bajar un nivel: categoría, después subcategoría, después comercio. La tabla muestra las compras del nivel elegido. Usá la línea de ruta arriba del gráfico para volver. Compará una categoría con la misma categoría en un período anterior. Una categoría que crece sin una causa conocida es una señal. Examiná sus comercios.",
+
+  // ── comercios ─────────────────────────────────────────────────────────────
+  "merchants.title": "Concentración de comercios",
+  "merchants.count": "Comercios",
+  "merchants.count.all": "en toda la historia",
+  "merchants.count.in": "en {period}",
+  "merchants.top5": "Los 5 primeros se llevan",
+  "merchants.top5.detail": "de {total} en total",
+  "merchants.top20": "Los 20 primeros se llevan",
+  "merchants.top20.detail": "el resto es la cola larga",
+  "merchants.legend.total": "total",
+  "merchants.legend.cumulative": "acumulado",
+  "merchants.legend.returning": "comercios conocidos",
+  "merchants.legend.new": "comercios nuevos",
+  "merchants.novelty.tooltip": "{amount} ({count} comercios)",
+  "merchants.paretoNote": "Las barras son los {count} comercios principales, coloreados por categoría dominante; la línea punteada es la participación acumulada de TODO el gasto, así que donde cruza el 50% te dice con qué pocos comercios se va la mitad de tu plata. Los reintegros se netean contra cada comercio.",
+  "merchants.noveltyHeading": "Comercios nuevos contra conocidos",
+  "merchants.noveltyNote": "“Nuevo” significa que el comercio nunca había aparecido en un resumen anterior. El primer período cubierto es, por construcción, todo nuevo. Una banda azul ancha es exploración, o una racha de gastos en lugares donde no comprás habitualmente.",
+  "merchants.topHeading": "Los {count} principales",
+  "merchants.table.merchant": "Comercio",
+  "merchants.table.category": "Categoría",
+  "merchants.table.total": "Total",
+  "merchants.table.charges": "Cargos",
+  "merchants.table.share": "Participación",
+  "merchants.table.active": "Activo",
+  "merchants.footer": "Esta página muestra cómo se reparte tu plata entre comercios. El objetivo de este análisis es mostrar si un grupo chico de comercios se lleva una parte grande de tu plata. Mirá las barras para ver los comercios principales por total. Mirá la línea punteada para ver la participación acumulada de todos tus costos. El punto donde la línea cruza el 50% muestra la cantidad de comercios que se lleva la mitad de tu plata. La concentración sola no es buena ni mala. La concentración en comercios que elegiste, por ejemplo un supermercado, es normal. La concentración en un comercio que no conocés bien es una señal. Examiná ese comercio. El segundo gráfico compara comercios nuevos con comercios conocidos. Una banda grande de comercios nuevos muestra exploración, o compras que no son parte de tu patrón normal.",
+
+  // ── sankey ────────────────────────────────────────────────────────────────
+  "sankey.title": "Adónde fue {period}",
+  "sankey.everything": "todo",
+  "sankey.tail": "{category} — otros",
+  "sankey.empty": "Sin gasto en este mes.",
+  "sankey.note": "Tarjeta → categoría → comercio para un período. Solo los 8 comercios principales de cada categoría tienen su propia banda; el resto se agrupa. Los reintegros se netean contra su propio comercio antes de dibujar el flujo, así que el ingreso de cada categoría es igual a su salida.",
+  "sankey.footer": "Esta página muestra el flujo de la plata en un período. El flujo va de cada tarjeta, a cada categoría, a cada comercio. El objetivo es ver la estructura de un período en una sola pantalla. Elegí mes, trimestre, año o todo con la primera fila de pastillas, y después el período con la segunda fila. El ancho de una banda muestra el monto. Una banda ancha muestra un costo grande. Seguí una banda de izquierda a derecha para ver qué comercio recibe la plata. Usá esta página para encontrar los pocos flujos grandes que controlan el período. Un período con muchas bandas finas no tiene una única causa grande.",
+
+  // ── calendario ────────────────────────────────────────────────────────────
+  "calendar.title": "Gasto diario",
+  "calendar.aria": "Mapa de calor de gasto diario",
+  "calendar.empty": "No hay compras con fecha.",
+  "calendar.noPurchases": "sin compras",
+  "calendar.note": "Fechas de compra, no de facturación. Las compras en cuotas cuentan una sola vez, a precio completo, el día en que se hicieron: los resúmenes las vuelven a listar todos los meses con la fecha original, lo que repintaría el mismo día una docena de veces. Eso también significa que la grilla llega hasta antes del primer resumen: seis series de cuotas se compraron a fines de 2024 y todavía se están pagando. Pasá el mouse por una celda para ver el total.",
+  "calendar.footer": "Esta página muestra los días en que hacés compras. Cada celda es un día. Una celda oscura muestra un total grande. El objetivo es mostrar tu patrón temporal, no tu facturación. Una compra en cuotas cuenta una sola vez, el día de la compra, a precio completo. Mirá la grilla para encontrar los días con muchas compras. Algunas celdas oscuras son normales. Hay compras grandes en algunos días. Muchas celdas oscuras en poco tiempo muestran una etapa de costos altos. Apuntá a una celda para ver su total.",
+
+  // ── hábitos ───────────────────────────────────────────────────────────────
+  "habits.title": "Hábitos de gasto",
+  "habits.busiest": "Día más activo",
+  "habits.busiest.detail": "{pct} de todo el gasto",
+  "habits.busiest.none": "todavía no hay compras con fecha",
+  "habits.weekend": "Participación del fin de semana",
+  "habits.weekend.detail": "del gasto cae en sábado y domingo",
+  "habits.median": "Ticket mediano",
+  "habits.median.detail": "{period} · {count} compras",
+  "habits.median.none": "todavía no hay compras",
+  "habits.legend.purchases": "cantidad de compras",
+  "habits.legend.avgTicket": "ticket promedio",
+  "habits.legend.medianTicket": "ticket mediano",
+  "habits.weekHeading": "La forma de una semana",
+  "habits.weekNote": "Todas las compras de la historia, agrupadas por el día en que se hicieron: un plan de cuotas cuenta una sola vez, a precio completo, el día de la compra. La línea punteada es cuántas compras acumuló cada día de la semana. Los reintegros netean las barras pero no cuentan como visitas.",
+  "habits.ticketHeading": "¿Precio o volumen?",
+  "habits.ticketNote": "Si el gasto se mueve por más compras o por compras más grandes. Las barras cuentan compras; las líneas son el ticket promedio y el mediano. En modo real los tickets están ajustados por inflación, así que un mediano plano con una cuenta que sube es genuinamente comprar más, no precios que empujan el total. Un promedio muy por encima del mediano significa que unos pocos tickets grandes cargan el período.",
+  "habits.footer": "Esta página muestra cuándo comprás y cómo cambia el tamaño de tus compras. El primer gráfico divide todas las compras por día de la semana. La línea punteada cuenta las compras de cada día. El segundo gráfico muestra la causa cuando tus costos se mueven: más compras, o compras más grandes. Las barras cuentan compras. Las líneas muestran el ticket promedio y el ticket mediano. En modo real, un mediano plano con una cuenta que sube significa que comprás más cosas, no que los precios empujan el total. Un promedio muy por encima del mediano significa que algunas compras grandes controlan el período.",
+
+  // ── recurrentes ───────────────────────────────────────────────────────────
+  "recurring.title": "Cargos recurrentes",
+  "recurring.intro": "Montos nominales: el % de cambio contra el mes anterior es la señal de inflación o de aumento de precio. Un cargo califica por mantener un precio nominal (fijo) o por seguir al IPC (indexado); un comercio que pasó de facturar en ARS a USD es una sola fila, no dos.",
+  "recurring.none": "Ninguno.",
+  "recurring.table.merchant": "Comercio",
+  "recurring.table.currency": "Moneda",
+  "recurring.table.monthsSeen": "Meses vistos",
+  "recurring.table.lastAmount": "Último monto",
+  "recurring.table.change": "Cambio",
+  "recurring.table.nextExpected": "Próximo esperado",
+  "recurring.table.lastSeen": "Visto por última vez",
+  "recurring.billingMoved": "la facturación pasó de {from} → {to}",
+  "recurring.regime.pegged": "fijo",
+  "recurring.regime.indexed": "indexado",
+  "recurring.regime.pegged.title": "Mantiene el mismo precio nominal durante meses seguidos",
+  "recurring.regime.indexed.title": "Se reprecia todos los meses, plano una vez deflactado por IPC",
+  "recurring.lastSeenAgo": "{month} (hace {months} meses)",
+  "recurring.total.perMonth": "Total por mes",
+  "recurring.total.lastBilled": "Total, como se facturó por última vez",
+  "recurring.total.split": "{ars} + US$ {usd} al MEP",
+  "recurring.variableHeading": "Frecuentes, pero variables",
+  "recurring.variableIntro": "Se facturan casi todos los meses, pero el monto varía demasiado para ser una suscripción: supermercados, combustible, peajes, propinas. Se listan para que el cuadro esté completo; se presupuestan como gasto variable, no como obligaciones fijas.",
+  "recurring.lapsedHeading": "Discontinuados",
+  "recurring.lapsedIntro": "Era recurrente y no factura desde hace al menos dos ciclos. No se espera un próximo cargo hasta que vuelva a aparecer.",
+  "recurring.footer": "Esta página muestra los cargos que vuelven cada mes. El objetivo es mostrar tus obligaciones fijas y sus cambios de precio. La primera tabla contiene las suscripciones. El cambio porcentual contra el mes anterior es la señal de precio. Un cambio cercano a la inflación es normal. Un cambio muy por encima de la inflación es malo. Examiná ese comercio, o cancelá el servicio. La segunda tabla contiene cargos frecuentes con montos variables. No son obligaciones. La última tabla contiene cargos que se cortaron. No se espera un cargo nuevo de ellos. Un comercio en la tabla equivocada es una señal de que su patrón cambió.",
+
+  // ── impuestos ─────────────────────────────────────────────────────────────
+  "taxes.title": "Impuestos y cargos de tarjeta",
+  "taxes.total": "Total pagado",
+  "taxes.total.detail": "en impuestos y cargos, toda la historia",
+  "taxes.average": "Sobrecosto promedio",
+  "taxes.average.detail": "arriba de las compras de cada {period}",
+  "taxes.worst": "Peor {period}",
+  "taxes.worst.none": "todavía no hay líneas de impuestos",
+  "taxes.legend.rg5617": "RG 5617 (30% exterior)",
+  "taxes.legend.iva": "IVA",
+  "taxes.legend.iibb": "retención IIBB",
+  "taxes.legend.stampDuty": "sellos",
+  "taxes.legend.interest": "intereses",
+  "taxes.legend.other": "otros cargos",
+  "taxes.legend.overhead": "sobrecosto",
+  "taxes.note": "Las barras son las propias líneas de impuestos y cargos del resumen, por tributo; la línea punteada es su total como porcentaje de las compras de ese período (las compras en USD se cuentan al MEP, porque la RG 5617 se cobra justamente sobre esas). Las líneas DEVOLUCION DE SALDOS son transferencias de saldo, no impuestos, y quedan excluidas. Un pico de RG 5617 es un mes con gasto en el exterior, no un cambio de alícuota.",
+  "taxes.footer": "Esta página muestra los impuestos y los cargos que el banco suma a tus resúmenes. Esos montos no son compras. Los pagás por las compras que hacés. El objetivo de este análisis es mostrar el costo extra real del uso de la tarjeta. Mirá las barras para ver el monto de cada tipo de impuesto en cada período. Mirá la línea punteada para ver el total de esos costos como porcentaje de las compras del mismo período. Un porcentaje bajo y estable es bueno. Un porcentaje que sube es malo, porque una parte más grande de tu plata va a impuestos y no a bienes. Una barra alta de RG 5617 en general no es mala. Muestra un período con compras en moneda extranjera.",
+
+  // ── créditos ──────────────────────────────────────────────────────────────
+  "credits.title": "Plata que vuelve",
+  "credits.total": "Total recuperado",
+  "credits.total.detail": "promociones, reintegros y reversas de impuestos, toda la historia",
+  "credits.average": "Devolución promedio",
+  "credits.average.detail": "de las compras de cada período volvió",
+  "credits.biggest": "Crédito más grande",
+  "credits.biggest.none": "todavía no hay créditos",
+  "credits.kind.promo": "promoción bancaria",
+  "credits.kind.refund": "reintegro",
+  "credits.kind.taxback": "RG 5617 recuperada",
+  "credits.legend.promo": "promociones bancarias",
+  "credits.legend.refund": "reintegros",
+  "credits.legend.taxback": "RG 5617 recuperada",
+  "credits.legend.share": "participación del gasto",
+  "credits.note": "Todo lo que los resúmenes devolvieron: promociones del banco (líneas BONIF / Visa Garpa), reintegros de comercios e impuesto RG 5617 recuperado cuando se revirtió gasto en el exterior. Las páginas de gasto netean esto contra las compras en silencio; esta es la única página donde se ve por separado. La línea punteada es la devolución como participación de las compras de ese período. Tus propios pagos nunca se cuentan.",
+  "credits.largestHeading": "Créditos más grandes",
+  "credits.none": "Todavía no hay créditos en la historia.",
+  "credits.table.when": "Cuándo",
+  "credits.table.merchant": "Comercio",
+  "credits.table.kind": "Tipo",
+  "credits.table.amount": "Monto",
+  "credits.footer": "Esta página muestra la plata que vuelve a tus resúmenes. Contiene promociones bancarias, reintegros de comercios e impuesto RG 5617 recuperado. Las otras páginas restan esos créditos sin mostrarlos. Esta página los hace visibles. Mirá las barras para ver los créditos de cada período. Mirá la línea punteada para ver los créditos como participación de las compras de ese período. Una participación alta es buena. Muestra que las promociones y los reintegros bajan tu costo real. Tus propios pagos de tarjeta no se cuentan acá.",
+
+  // ── alertas ───────────────────────────────────────────────────────────────
+  "anomalies.title": "Alertas",
+  "anomalies.summary": "{open} abiertas de {total} — controles de integridad del resumen (calculados al ingerir) y anomalías (recalculadas en cada carga).",
+  "anomalies.cleared.one": " Se limpió {count} revisión cuya alerta ya no existe.",
+  "anomalies.cleared.other": " Se limpiaron {count} revisiones cuyas alertas ya no existen.",
+  "anomalies.kind.duplicate": "Duplicado",
+  "anomalies.kind.amount_jump": "Salto de precio",
+  "anomalies.kind.new_merchant": "Comercio nuevo",
+  "anomalies.kind.math_mismatch": "Suma del resumen",
+  "anomalies.kind.balance_mismatch": "Saldo que no cuadra",
+  "anomalies.table.when": "Cuándo",
+  "anomalies.table.kind": "Tipo",
+  "anomalies.table.merchant": "Comercio",
+  "anomalies.table.amount": "Monto",
+  "anomalies.table.what": "Qué pasó",
+  "anomalies.table.review": "Revisión",
+  "anomalies.action.reviewed": "revisada",
+  "anomalies.action.dismiss": "descartar",
+  "anomalies.action.reopen": "{state} — reabrir",
+  "anomalies.state.reviewed": "revisada",
+  "anomalies.state.dismissed": "descartada",
+  "anomalies.state.open": "abierta",
+  "anomalies.note": "Los montos son siempre los pesos nominales que cobró la tarjeta: eso es lo que reclamarías. El estado de revisión se indexa por el resumen y la forma de la alerta, no por el id de una fila ni por su redacción, así que sobrevive a volver a cargar el resumen con cualquier nombre. Los duplicados que el resumen ya revirtió arrancan como revisados; si reabrís uno, queda reabierto. Los saltos de precio se miden en términos reales, y solo para comercios facturados exactamente una vez por mes, así que un mes con más visitas al supermercado no se confunde con una suba de precio. La detección de duplicados usa la ventana de ±2 días que usa Actual Budget para sus programaciones, se queda dentro de un mismo resumen e ignora las filas de cuotas.",
+  "anomalies.footer": "Esta página muestra los resultados de los controles sobre tus resúmenes. Los controles encuentran cargos duplicados, saltos de precio, comercios nuevos y errores en los totales del resumen. El objetivo es encontrar problemas temprano, cuando todavía es posible un reclamo al banco. El gráfico marca los períodos con alertas abiertas; las pastillas lo agrupan por mes, trimestre, año o todo, y la tabla de abajo siempre lista todas las alertas. Leé la tabla y examiná cada alerta abierta. Una alerta no siempre es un error. Es una pregunta. Marcá una alerta como revisada cuando el cargo es correcto. Descartala cuando no es importante. Cero alertas abiertas es bueno. Una alerta abierta de saldo o de suma es mala. Muestra que los números del resumen no coinciden.",
+
+  "anomaly.duplicate.resolved": "cobrado dos veces el {date} — ya revertido en el mismo resumen",
+  "anomaly.duplicate": "cobrado dos veces en {days} días ({first} y {second})",
+  "anomaly.amountJump": "subió {pct}% en términos reales contra {month}",
+  "anomaly.newMerchant": "primer cargo de este comercio en {months} meses de resúmenes",
+
+  // ── inflación ─────────────────────────────────────────────────────────────
+  "inflation.title": "Tu inflación contra el INDEC",
+  "inflation.lead.since": "Desde {month}, tu canasta recurrente subió",
+  "inflation.lead.while": "mientras que el IPC oficial subió",
+  "inflation.verdict.worse": "estás pagando más que el promedio",
+  "inflation.verdict.better": "le estás ganando a la inflación promedio",
+  "inflation.legend.personal": "Tu canasta",
+  "inflation.legend.official": "IPC del INDEC",
+  "inflation.firstMonth": "el primer mes",
+  "inflation.note": "Los dos índices tienen base 100 en {month}. Tu línea reprecia los {count} comercios que realmente pagás todos los meses, encadenados mes a mes usando solo los comercios cobrados en ambos, así que un comercio que entra o sale nunca mueve el índice por sí solo, y solo cuentan los cargos de una vez por mes, así que comprar más no se lee como pagar más.",
+  "inflation.basket": "Canasta: {basket}.",
+  "inflation.footer": "Esta página compara tu inflación personal con el índice oficial del INDEC. Tu línea usa solo los comercios que pagás todos los meses. El objetivo es mostrar si tus precios crecen más rápido que los precios promedio. Las dos líneas arrancan en 100 en el primer mes. Mirá la brecha entre las líneas. Tu línea por debajo de la oficial es buena. Tus servicios aumentan menos que el promedio. Tu línea por encima de la oficial es mala. Tu propia canasta se vuelve más cara que el promedio. La lista de canasta debajo del gráfico muestra los comercios del cálculo.",
+
+  // ── comparar ──────────────────────────────────────────────────────────────
+  "compare.title": "Comparación de períodos",
+  "compare.warning": "⚠ Meses con una sola tarjeta (falta el resumen de una marca): {months} — comparar contra estos es comparar peras con manzanas.",
+  "compare.footer": "Esta página compara el costo total de cada período con el período anterior. El objetivo es mostrar la dirección de tus costos. Elegí mes, trimestre, año o todo con las pastillas. Cada barra es un período. El porcentaje arriba de una barra es el cambio contra el período anterior, así que todo —una sola barra para toda la historia— no lleva porcentaje. Usá el modo real para esta comparación. En modo real, un cambio cercano a cero es bueno. Significa que tus costos están estables. Cambios grandes seguidos muestran un costo que no está bajo control, o un evento especial. Un período con un resumen faltante hace que su comparación no sea correcta. La advertencia debajo del gráfico lista esos períodos.",
+
+  // ── carga ─────────────────────────────────────────────────────────────────
+  "upload.title": "Cargar",
+  "upload.table.statement": "Resumen",
+  "upload.table.card": "Tarjeta",
+  "upload.table.cycle": "Ciclo",
+  "upload.table.closed": "Cierre",
+  "upload.table.transactions": "Transacciones",
+  "upload.table.alerts": "Alertas",
+  "upload.drop.busy": "Procesando…",
+  "upload.drop.idle": "Soltá acá los PDF de los resúmenes, o hacé clic para elegirlos",
+  "upload.report.summary": "{brand}, ciclo {month}, {count} transacciones.",
+  "upload.report.replaced": "Reemplazado: {files} (no se duplicó nada).",
+  "upload.report.cpiStale": "Todavía no hay datos de IPC para {month}: las vistas en términos reales lo van a subestimar hasta que corras",
+  "upload.report.ok": "Las sumas del resumen cierran, sin alertas de integridad.",
+  "upload.error.unreadable": "{file}: el servidor no respondió con un resultado legible.",
+  "upload.note": "Cargar un resumen que ya tenés lo reemplaza: el mismo ciclo nunca entra dos veces, sin importar cómo se llame el archivo, y el PDF reemplazado queda guardado en pdfs/.superseded. El PDF se procesa localmente con scripts/pdf_to_json.py; nada de él sale de esta máquina.",
+  "upload.footer": "Esta página recibe los resúmenes en PDF y muestra los resúmenes que están en la base. Soltá un archivo PDF en la zona de arriba. El procesador lee el archivo en esta máquina. Ningún dato sale de esta máquina. Cuando cargás un ciclo de nuevo, el archivo nuevo reemplaza al viejo. La tabla muestra cada resumen, su tarjeta, su ciclo y sus alertas. Un ciclo que no está en la tabla es un agujero en la historia. Las páginas que comparan períodos son menos exactas cuando hay agujeros. Cargá los resúmenes que faltan para cerrar los agujeros.",
+
+  // ── revisión ──────────────────────────────────────────────────────────────
+  "review.title": "Revisión",
+  "review.summary.rules": "{count} reglas",
+  "review.summary.awaiting": "{count} esperando revisión",
+  "review.summary.uncategorized": "{count} comercios sin categoría",
+  "review.summary.privacy": "Solo se envía el nombre del comercio: nunca un monto, una fecha, un número de cuenta ni tu nombre, y cualquier nombre que todavía parezca plata directamente no se envía.",
+  "review.propose.busy": "Consultando a Claude…",
+  "review.propose.label.one": "Clasificar {count} comercio desconocido",
+  "review.propose.label.other": "Clasificar {count} comercios desconocidos",
+  "review.table.merchant": "Comercio",
+  "review.table.rule": "Regla",
+  "review.table.spend": "Gasto",
+  "review.table.decide": "Decidir",
+  "review.lowConfidence": "confianza baja",
+  "review.sentAs": "enviado como “{name}”",
+  "review.charges.one": "{count} cargo",
+  "review.charges.other": "{count} cargos",
+  "review.statementLines": "líneas del resumen",
+  "review.installment": "(cuota {number}/{count})",
+  "review.andMore": "…y {count} más",
+  "review.alsoClaims": "Esta regla también captura: {merchants}",
+  "review.accept": "aceptar",
+  "review.reject": "rechazar",
+  "review.action.nothing": "No hay nada para clasificar: todos los comercios desconocidos ya están propuestos o rechazados.",
+  "review.action.partial": "Se clasificaron {done} de {total} — hacé clic de nuevo para el resto.",
+  "review.note": "Aceptar agrega una regla a data/merchant-categories.json y la aplica a las transacciones ya cargadas. Las reglas coinciden por subcadena y gana la primera, así que editá el texto de la regla si fuera a capturar comercios que no querías: la advertencia arriba del botón de aceptar los lista. Las reglas aceptadas van al final, así que una regla escrita a mano siempre le gana a una propuesta por el modelo. Rechazar recuerda el comercio para no volver a enviarlo.",
+  "review.footer": "Esta página controla cómo los comercios reciben su categoría. El modelo propone una regla para cada comercio que no tiene categoría. Solo el nombre del comercio va al modelo. Examiná cada propuesta y sus líneas del resumen. Aceptá una regla correcta. Corregí primero la categoría cuando haga falta. Rechazá una regla mala. La advertencia debajo de una regla muestra otros comercios que la regla también captura. Examiná esa lista antes de aceptar la regla. Las categorías buenas hacen exactas a todas las otras páginas. Muchos comercios sin categoría hacen menos exactas a las páginas de categorías.",
+  // ── fallas ────────────────────────────────────────────────────────────────
+  "failure.noFile": "La consulta no traía ningún archivo.",
+  "failure.bad_name": "“{name}” no es un nombre de archivo PDF utilizable.",
+  "failure.too_large": "{name} pesa {size} MB; el límite es {limit} MB.",
+  "failure.not_pdf.magic": "{name} no empieza con %PDF-: no es un PDF.",
+  "failure.not_pdf.unreadable": "No se pudo leer el archivo como PDF.",
+  "failure.python_missing.noEnv": "No hay entorno de Python para el procesamiento de PDF.",
+  "failure.python_missing.cannotRun": "No se puede ejecutar {python}.",
+  "failure.python_missing.pdfplumber": "Al entorno de Python le falta pdfplumber.",
+  "failure.parse_failed.tooMuchOutput": "pdf_to_json.py produjo más salida de la esperada.",
+  "failure.parse_failed.timeout": "pdf_to_json.py excedió el tiempo límite de {seconds}s.",
+  "failure.parse_failed.noJson": "pdf_to_json.py no produjo JSON para {file}.",
+  "failure.parse_failed.badJson": "{file} no es JSON legible: {detail}",
+  "failure.parse_failed.detail": "{detail}",
+  "failure.ingest_failed": "{name} se procesó pero no se pudo ingerir: {detail}",
+  "failure.llm_unavailable": "ANTHROPIC_API_KEY no está definida, así que no se pueden clasificar comercios.",
+  "failure.llm_failed.noTool": "El modelo respondió sin clasificar nada.",
+  "failure.llm_failed.noItems": "La respuesta del modelo no tenía un array items.",
+  "failure.llm_failed.unusable": "El modelo devolvió {count} clasificaciones y ninguna era utilizable.",
+  "hint.pythonSetup": "Desde la raíz del repo: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+  "hint.badName": "Renombralo con letras, dígitos, puntos, guiones o guiones bajos, terminado en .pdf.",
+  "hint.apiKey": "Poné ANTHROPIC_API_KEY=sk-ant-... en web/.env.local y reiniciá npm run dev.",
+};
+
+export const DICTIONARIES: Record<Locale, Dictionary> = { en, es };
+
+export type Vars = Record<string, string | number>;
+
+/** Bases of the `<base>.one` / `<base>.other` pairs — the only keys `plural()` accepts. */
+type StripOne<K> = K extends `${infer Base}.one` ? Base : never;
+export type PluralKey = StripOne<MessageKey>;
+
+const PLACEHOLDER = /\{(\w+)\}/g;
+
+export function translate(locale: Locale, key: MessageKey, vars?: Vars): string {
+  // A key missing from a non-default dictionary falls back to English rather than to the key
+  // itself: a reader who hits a gap sees a real sentence in the wrong language, not "foo.bar".
+  const raw = DICTIONARIES[locale][key] ?? DICTIONARIES[DEFAULT_LOCALE][key] ?? key;
+  if (!vars) return raw;
+  return raw.replace(PLACEHOLDER, (whole, name: string) =>
+    name in vars ? String(vars[name]) : whole
+  );
+}
+
+export function translatePlural(locale: Locale, key: PluralKey, count: number, vars?: Vars): string {
+  // English and Spanish share the same one/other split, so a single rule covers both.
+  const suffixed = `${key}.${count === 1 ? "one" : "other"}` as MessageKey;
+  return translate(locale, suffixed, { count, ...vars });
+}
+
+/**
+ * A bound translator. Server components build one from `getLocale()`; client components take
+ * theirs from `useT()`, so neither has to thread the locale through every call.
+ */
+export type Translator = {
+  (key: MessageKey, vars?: Vars): string;
+  readonly locale: Locale;
+  plural(key: PluralKey, count: number, vars?: Vars): string;
+};
+
+export function translator(locale: Locale): Translator {
+  const t = ((key: MessageKey, vars?: Vars) => translate(locale, key, vars)) as {
+    (key: MessageKey, vars?: Vars): string;
+    locale: Locale;
+    plural(key: PluralKey, count: number, vars?: Vars): string;
+  };
+  t.locale = locale;
+  t.plural = (key, count, vars) => translatePlural(locale, key, count, vars);
+  return t;
+}
+

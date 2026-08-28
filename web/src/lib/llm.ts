@@ -98,8 +98,7 @@ export function buildRequest(merchants: string[]): Anthropic.MessageCreateParams
 
 function defaultClient(): LlmClient {
   if (!process.env.ANTHROPIC_API_KEY)
-    throw new Failure("llm_unavailable", "ANTHROPIC_API_KEY is not set, so merchants cannot be classified.",
-      "Put ANTHROPIC_API_KEY=sk-ant-... in web/.env.local and restart npm run dev.");
+    throw new Failure("llm_unavailable", "failure.llm_unavailable", {}, "hint.apiKey");
   return new Anthropic();
 }
 
@@ -110,12 +109,12 @@ export async function classifyMerchants(merchants: string[], client?: LlmClient)
   if (map.size === 0) return [];
   const response = await (client ?? defaultClient()).messages.create(buildRequest(merchants));
   const call = response.content.find(b => b.type === "tool_use");
-  if (!call) throw new Failure("llm_failed", "The model replied without classifying anything.");
+  if (!call) throw new Failure("llm_failed", "failure.llm_failed.noTool");
   // `strict: true` is a server-side promise; the client still validates. A truncated or refused
   // response otherwise yields `undefined` here and a TypeError two frames up.
   const items: unknown = (call.input as { items?: unknown }).items;
   if (!Array.isArray(items))
-    throw new Failure("llm_failed", "The model's answer had no items array.");
+    throw new Failure("llm_failed", "failure.llm_failed.noItems");
   const out: Proposal[] = [];
   for (const raw of items as RawItem[]) {
     const sent = typeof raw.merchant === "string" ? raw.merchant : "";
@@ -131,6 +130,6 @@ export async function classifyMerchants(merchants: string[], client?: LlmClient)
     });
   }
   if (out.length === 0)
-    throw new Failure("llm_failed", `The model returned ${items.length} classifications and none were usable.`);
+    throw new Failure("llm_failed", "failure.llm_failed.unusable", { count: items.length });
   return out;
 }

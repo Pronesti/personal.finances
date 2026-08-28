@@ -2,6 +2,7 @@ import { getDb } from "@/lib/db";
 import { loadCpi } from "@/lib/cpi";
 import { personalInflation } from "@/lib/queries";
 import { InflationLines } from "@/components/InflationLines";
+import { getT } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
@@ -9,37 +10,30 @@ export default async function Inflation() {
   const { points, basket } = personalInflation(getDb(), loadCpi());
   const last = points.at(-1);
   const gap = last ? last.personal - last.official : 0;
+  const tr = await getT();
   return (
     <main>
-      <h1 className="text-xl font-semibold mb-2">Your inflation vs INDEC</h1>
+      <h1 className="text-xl font-semibold mb-2">{tr("inflation.title")}</h1>
       {last && (
         <p className="text-sm mb-4">
-          Since {points[0].month}, your recurring basket is up{" "}
-          <strong>{(last.personal - 100).toFixed(1)}%</strong> while official IPC is up{" "}
+          {tr("inflation.lead.since", { month: points[0].month })}{" "}
+          <strong>{(last.personal - 100).toFixed(1)}%</strong> {tr("inflation.lead.while")}{" "}
           <strong>{(last.official - 100).toFixed(1)}%</strong> —{" "}
           <span className={gap > 0 ? "text-negative font-medium" : "text-positive font-medium"}>
-            {gap > 0 ? "you are paying more than average" : "you are beating average inflation"}
+            {tr(gap > 0 ? "inflation.verdict.worse" : "inflation.verdict.better")}
           </span>.
         </p>
       )}
       <InflationLines data={points} />
       <p className="text-xs text-ink-muted mt-3">
-        Both indices are based at 100 in {points[0]?.month ?? "the first month"}. Your line reprices
-        the {basket.length} merchants you actually pay every month, chained month to month using only
-        merchants charged in both — so a merchant joining or leaving never moves the index by itself,
-        and only once-a-month charges count, so buying more does not read as paying more.
-        Basket: {basket.join(", ")}.
+        {tr("inflation.note", {
+          month: points[0]?.month ?? tr("inflation.firstMonth"),
+          count: basket.length,
+        })}{" "}
+        {tr("inflation.basket", { basket: basket.join(", ") })}
       </p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page compares your personal inflation with the official INDEC index. Your line uses
-        only the merchants that you pay each month. The goal is to show if your prices grow
-        faster than the average prices. Both lines start at 100 in the first month. Read the gap
-        between the lines. Your line below the official line is good. Your services increase
-        less than the average. Your line above the official line is bad. Your own basket becomes
-        more expensive than the average. The basket list under the chart shows the merchants in
-        the calculation.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("inflation.footer")}</p>
     </main>
   );
 }

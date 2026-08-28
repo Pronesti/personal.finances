@@ -2,7 +2,10 @@ import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { merchantConcentration, merchantNovelty, coverage } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
+import { getT } from "@/lib/locale";
+import type { Category } from "@/lib/categorize";
+import type { Granularity } from "@/lib/months";
 import { periodOf, ALL_PERIOD } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -30,14 +33,19 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const scope = period === ALL_PERIOD ? undefined : { granularity: g, period };
   const { merchants, totalSpend } = merchantConcentration(db, opts, scope);
   const novelty = merchantNovelty(db, opts, g);
+  const tr = await getT();
   return (
     <main>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Merchant concentration</h1>
+        <h1 className="text-xl font-semibold">{tr("merchants.title")}</h1>
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       </div>
 
-      <Pills options={GRANULARITIES} current={g} href={x => withModes("/merchants", modes, { g: x })} />
+      <Pills
+        options={GRANULARITIES} current={g}
+        href={x => withModes("/merchants", modes, { g: x })}
+        label={x => granularityLabel(x as Granularity, tr.locale)}
+      />
       {/* At "all" granularity every month is already one bucket, so the scope row would offer
           "all" and nothing else — the granularity pill has said it. */}
       {g !== "all" && (
@@ -45,49 +53,42 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
           options={[ALL_PERIOD, ...periods]}
           current={period}
           href={p => withModes("/merchants", modes, p === ALL_PERIOD ? { g } : { g, period: p })}
+          label={p => (p === ALL_PERIOD ? granularityLabel("all", tr.locale) : p)}
         />
       )}
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Merchants</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.count")}</div>
           <div className="text-2xl font-bold">{merchants.length}</div>
-          <div className="text-sm text-ink-muted">{period === ALL_PERIOD ? "across the whole history" : `in ${period}`}</div>
+          <div className="text-sm text-ink-muted">{period === ALL_PERIOD ? tr("merchants.count.all") : tr("merchants.count.in", { period })}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Top 5 take</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.top5")}</div>
           <div className="text-2xl font-bold">{merchants.length >= 5 ? pct(merchants[4].cumShare) : "—"}</div>
-          <div className="text-sm text-ink-muted">of {fmtMoney(totalSpend, modes.value)} total</div>
+          <div className="text-sm text-ink-muted">{tr("merchants.top5.detail", { total: fmtMoney(totalSpend, modes.value) })}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Top 20 take</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("merchants.top20")}</div>
           <div className="text-2xl font-bold">{merchants.length >= 20 ? pct(merchants[19].cumShare) : "—"}</div>
-          <div className="text-sm text-ink-muted">rest is the long tail</div>
+          <div className="text-sm text-ink-muted">{tr("merchants.top20.detail")}</div>
         </div>
       </div>
 
       <ParetoBars data={merchants.slice(0, TOP_CHART)} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">
-        Bars are the top {TOP_CHART} merchants, colored by dominant category; the dashed line is the
-        cumulative share of ALL spending, so where it crosses 50% tells you how few merchants take
-        half your money. Refunds net against each merchant.
-      </p>
+      <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("merchants.paretoNote", { count: TOP_CHART })}</p>
 
-      <h2 className="mb-3 text-lg font-semibold">New vs returning merchants</h2>
+      <h2 className="mb-3 text-lg font-semibold">{tr("merchants.noveltyHeading")}</h2>
       <NoveltyBars data={novelty} value={modes.value} />
-      <p className="mb-8 mt-3 text-xs text-ink-muted">
-        &ldquo;First-time&rdquo; means the merchant had never appeared on any earlier statement. The
-        first covered period is structurally all first-time. A fat blue band is exploration —
-        or a spending spree at places you don&apos;t normally shop.
-      </p>
+      <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("merchants.noveltyNote")}</p>
 
-      <h2 className="mb-3 text-lg font-semibold">Top {TOP_TABLE}</h2>
+      <h2 className="mb-3 text-lg font-semibold">{tr("merchants.topHeading", { count: TOP_TABLE })}</h2>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
-            <th className="py-1 pr-3">Merchant</th><th className="pr-3">Category</th>
-            <th className="pr-3 text-right">Total</th><th className="pr-3 text-right">Charges</th>
-            <th className="pr-3 text-right">Share</th><th className="pr-3">Active</th>
+            <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
+            <th className="pr-3 text-right">{tr("merchants.table.total")}</th><th className="pr-3 text-right">{tr("merchants.table.charges")}</th>
+            <th className="pr-3 text-right">{tr("merchants.table.share")}</th><th className="pr-3">{tr("merchants.table.active")}</th>
           </tr>
         </thead>
         <tbody>
@@ -98,7 +99,7 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
                   {m.merchant}
                 </Link>
               </td>
-              <td className="pr-3 text-ink-muted">{m.category}</td>
+              <td className="pr-3 text-ink-muted">{tr(`category.${m.category as Category}`)}</td>
               <td className="pr-3 text-right">{fmtMoney(m.total, modes.value)}</td>
               <td className="pr-3 text-right">{m.count}</td>
               <td className="pr-3 text-right">{pct(m.share)}</td>
@@ -110,17 +111,7 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
         </tbody>
       </table>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows how your money divides across merchants. The goal of this analysis is to
-        show if a small group of merchants gets a large part of your money. Read the bars to see
-        the top merchants by total. Read the dashed line to see the cumulative share of all your
-        costs. The point where the line crosses 50% shows the number of merchants that get half
-        of your money. Concentration alone is not good or bad. Concentration in merchants that
-        you selected, for example a supermarket, is normal. Concentration in one merchant that
-        you do not know well is a signal. Examine that merchant. The second chart compares new
-        merchants with known merchants. A large first-time band shows exploration, or purchases
-        that are not part of your normal pattern.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
     </main>
   );
 }

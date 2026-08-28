@@ -5,6 +5,7 @@ import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
 import { useChartTheme, axisProps, tooltipProps, gridProps } from "./chart";
+import { useT } from "./I18nProvider";
 
 export function DrillBars({ groups, level, value }: {
   groups: { key: string; amount: number }[];
@@ -12,6 +13,7 @@ export function DrillBars({ groups, level, value }: {
   value: ValueMode;
 }) {
   const t = useChartTheme();
+  const tr = useT();
   const router = useRouter();
   const sp = useSearchParams();
   const onClick = (key: string) => {
@@ -25,7 +27,12 @@ export function DrillBars({ groups, level, value }: {
       <BarChart data={groups} layout="vertical">
         <CartesianGrid {...gridProps(t)} vertical horizontal={false} />
         <XAxis type="number" tickFormatter={(v: number) => fmtMoney(v, value)} {...axisProps(t)} />
-        <YAxis type="category" dataKey="key" width={180} {...axisProps(t)} />
+        {/* Only the top level's keys are category names; below it they are subcategories and
+            merchant names, which are data and stay exactly as the statement spelled them. */}
+        <YAxis
+          type="category" dataKey="key" width={180} {...axisProps(t)}
+          tickFormatter={(k: string) => (level === "category" ? tr(`category.${k as Category}`) : k)}
+        />
         <Tooltip formatter={(v) => fmtMoney(Number(v), value)} {...tooltipProps(t)} />
         {/* Recharts' onClick payload typings are unusable; single narrow cast, blame recharts */}
         <Bar dataKey="amount" onClick={(d) => onClick((d as { key: string }).key)} cursor={level === "merchant" ? "default" : "pointer"}>

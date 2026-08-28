@@ -2,6 +2,7 @@
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
 import { useChartTheme } from "./chart";
+import { useT } from "./I18nProvider";
 
 const CELL = 13, GAP = 2, WEEK = CELL + GAP;
 
@@ -9,7 +10,8 @@ export function CalendarHeatmap({ data, value }: {
   data: { date: string; amount: number }[]; value: ValueMode;
 }) {
   const t = useChartTheme();
-  if (data.length === 0) return <p className="text-sm text-ink-muted">No dated purchases.</p>;
+  const tr = useT();
+  if (data.length === 0) return <p className="text-sm text-ink-muted">{tr("calendar.empty")}</p>;
   const max = Math.max(...data.map(d => d.amount));
   const byDate = new Map(data.map(d => [d.date, d.amount]));
   const start = new Date(`${data[0].date}T00:00:00Z`);
@@ -36,7 +38,7 @@ export function CalendarHeatmap({ data, value }: {
   // dark canvas, and anything darker than the canvas reads as a *large* value, not a missing one.
   return (
     <div className="overflow-x-auto">
-      <svg width={weeks * WEEK + 8} height={7 * WEEK + 22} role="img" aria-label="Daily spend heatmap">
+      <svg width={weeks * WEEK + 8} height={7 * WEEK + 22} role="img" aria-label={tr("calendar.aria")}>
         {labels.map(l => (
           <text key={l.text} x={l.x} y={8} fontSize={8} fill={t.inkMuted}>{l.text}</text>
         ))}
@@ -46,7 +48,7 @@ export function CalendarHeatmap({ data, value }: {
             stroke={t.grid}
             strokeWidth={0.5}
             fillOpacity={c.amount > 0 ? 0.25 + 0.75 * (c.amount / max) : 1}>
-            <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : "no purchases"}`}</title>
+            <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : tr("calendar.noPurchases")}`}</title>
           </rect>
         ))}
       </svg>

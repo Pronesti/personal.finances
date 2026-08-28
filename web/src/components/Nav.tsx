@@ -1,19 +1,26 @@
 "use client";
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
+import type { MessageKey } from "@/lib/i18n";
+import { useT } from "./I18nProvider";
+import { LangToggle } from "./LangToggle";
 
-const links = [
-  ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/installments", "Installments"], ["/float", "Float"], ["/categories", "Categories"], ["/merchants", "Merchants"], ["/sankey", "Sankey"], ["/calendar", "Calendar"], ["/habits", "Habits"],
-  ["/recurring", "Recurring"], ["/taxes", "Taxes"], ["/credits", "Credits"], ["/anomalies", "Alerts"], ["/inflation", "Inflation"], ["/compare", "Compare"], ["/upload", "Upload"], ["/review", "Review"],
+const links: readonly (readonly [string, MessageKey])[] = [
+  ["/", "nav.overview"], ["/trends", "nav.trends"], ["/currency", "nav.currency"], ["/future", "nav.future"],
+  ["/installments", "nav.installments"], ["/float", "nav.float"], ["/categories", "nav.categories"],
+  ["/merchants", "nav.merchants"], ["/sankey", "nav.sankey"], ["/calendar", "nav.calendar"], ["/habits", "nav.habits"],
+  ["/recurring", "nav.recurring"], ["/taxes", "nav.taxes"], ["/credits", "nav.credits"], ["/anomalies", "nav.anomalies"],
+  ["/inflation", "nav.inflation"], ["/compare", "nav.compare"], ["/upload", "nav.upload"], ["/review", "nav.review"],
 ] as const;
 
 export function Nav() {
   const sp = useSearchParams();
   const pathname = usePathname();
+  const t = useT();
   const qs = sp.toString();
   return (
-    <nav className="mb-6 flex flex-wrap gap-1 border-b border-line py-3">
-      {links.map(([href, label]) => {
+    <nav className="mb-6 flex flex-wrap items-center gap-1 border-b border-line py-3">
+      {links.map(([href, key]) => {
         const active = pathname === href;
         return (
           <Link
@@ -26,10 +33,11 @@ export function Nav() {
                 : "text-ink-muted hover:bg-surface-2 hover:text-ink"
             }`}
           >
-            {label}
+            {t(key)}
           </Link>
         );
       })}
+      <LangToggle />
     </nav>
   );
 }

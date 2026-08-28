@@ -2,7 +2,9 @@ import { getDb } from "@/lib/db";
 import { loadCpi, latestMonth } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
 import { paymentFloat, taxBurden } from "@/lib/queries";
-import { parseGranularity, GRANULARITIES, periodWord } from "@/lib/params";
+import { parseGranularity, GRANULARITIES, granularityLabel, periodWord } from "@/lib/params";
+import { getT } from "@/lib/locale";
+import type { Granularity } from "@/lib/months";
 import { fmtArs } from "@/lib/format";
 import { Pills } from "@/components/Pills";
 import { FloatChart } from "@/components/FloatChart";
@@ -25,58 +27,47 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
   // What the float cost, for the same window: the card's own financing interest, in real terms.
   const interest = taxBurden(db, { spend: "cash", value: "real", tax: "excl", cpi, mep: loadMep() })
     .reduce((s, m) => s + m.interest, 0);
+  const tr = await getT();
 
   return (
     <main>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Payment float</h1>
-        <span className="text-xs text-ink-subtle">in {base} pesos</span>
+        <h1 className="text-xl font-semibold">{tr("float.title")}</h1>
+        <span className="text-xs text-ink-subtle">{tr("mode.inPesos", { month: base })}</span>
       </div>
 
-      <Pills options={GRANULARITIES} current={g} href={x => `/float?g=${x}`} />
+      <Pills
+        options={GRANULARITIES} current={g} href={x => `/float?g=${x}`}
+        label={x => granularityLabel(x as Granularity, tr.locale)}
+      />
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Inflation gain</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.gain")}</div>
           <div className="text-2xl font-bold">{fmtArs(totalGain)}</div>
           <div className="text-sm text-ink-muted">
-            saved by paying later, whole history
-            {totalGain > 0 && ` — ${((installmentGain / totalGain) * 100).toFixed(0).replace(".", ",")}% via installments`}
+            {tr("float.gain.detail")}
+            {totalGain > 0 && tr("float.gain.viaInstallments", {
+              pct: ((installmentGain / totalGain) * 100).toFixed(0).replace(".", ","),
+            })}
           </div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Typical float</div>
-          <div className="text-2xl font-bold">{avgDays != null ? `${avgDays.toFixed(0)} days` : "—"}</div>
-          <div className="text-sm text-ink-muted">from purchase to due date, typical {periodWord(g)}</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.typical")}</div>
+          <div className="text-2xl font-bold">{avgDays != null ? tr("float.typical.days", { days: avgDays.toFixed(0) }) : "—"}</div>
+          <div className="text-sm text-ink-muted">{tr("float.typical.detail", { period: periodWord(g, tr.locale) })}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">What it cost</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("float.cost")}</div>
           <div className="text-2xl font-bold">{fmtArs(interest)}</div>
-          <div className="text-sm text-ink-muted">financing interest paid over the same statements</div>
+          <div className="text-sm text-ink-muted">{tr("float.cost.detail")}</div>
         </div>
       </div>
 
       <FloatChart data={periods} />
-      <p className="mt-3 text-xs text-ink-muted">
-        Every peso on a statement is paid at the due date, weeks or months after the purchase — and
-        in between, inflation shrinks it. Bars are the real value preserved by that delay, split into
-        ordinary purchases (a few weeks of float) and installment plans, whose fixed nominal payments
-        ride the full plan length. The dashed line is the amount-weighted purchase-to-due delay,
-        weighted across every purchase in the bucket, so grouping months never averages an average.
-        The newest month&apos;s gain is understated: its due date falls past the CPI series, so the last
-        known index stands in. Gains are measured against the official IPC — a private-index month
-        would move the true figure.
-      </p>
+      <p className="mt-3 text-xs text-ink-muted">{tr("float.note")}</p>
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the money that inflation removes from your card debt before you pay it.
-        You pay each purchase weeks or months after you make it. In that time, inflation
-        decreases the real value of the payment. This is the float gain. Read the bars to see
-        the gain of each period; the pills group them by month, quarter, year, or all. Read the dashed line to see the usual delay in days. Then
-        compare the total gain with the interest cost in the third tile. The float is good when
-        the gain is more than the interest. Installment plans give the largest gain, because
-        their payments stay at the same nominal amount for many months.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("float.footer")}</p>
     </main>
   );
 }

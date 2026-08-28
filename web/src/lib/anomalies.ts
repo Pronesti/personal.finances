@@ -1,5 +1,6 @@
 import { toReal, type CpiTable } from "@/lib/cpi";
 import { detectRecurring } from "@/lib/recurring";
+import { DEFAULT_LOCALE, translate, type MessageKey, type Vars } from "@/lib/i18n";
 
 // Structural subset of queries.ts' BaseRow, so baseRows(db) passes straight in.
 export type AnomalyRow = {
@@ -18,9 +19,18 @@ export type Anomaly = {
   month: string;
   date: string | null;
   amount: number;
+  /** English prose, for callers that only want a string. The UI renders `messageKey` instead. */
   message: string;
+  /** The same sentence as a dictionary key, so the page can render it in the reader's language. */
+  messageKey: MessageKey;
+  messageParams: Vars;
   resolved: boolean;
 };
+
+// One place builds both halves, so the English text and the localisable key can never drift.
+function say(messageKey: MessageKey, messageParams: Vars) {
+  return { messageKey, messageParams, message: translate(DEFAULT_LOCALE, messageKey, messageParams) };
+}
 
 // Tuned to this dataset, not knobs — see the plan's Task 6 header for what each one removes.
 const MIN_AMOUNT = 10_000; // kills the PedidosYa tip pairs; smallest real hit is 57,613
@@ -56,9 +66,9 @@ function duplicates(rows: AnomalyRow[]): Anomaly[] {
       out.push({
         kind: "duplicate", merchant: a.merchant, month: b.month, date: b.date,
         amount: a.ars!, resolved,
-        message: resolved
-          ? `charged twice on ${b.date} — already reversed on the same statement`
-          : `charged twice within ${DAY_WINDOW} days (${a.date} and ${b.date})`,
+        ...(resolved
+          ? say("anomaly.duplicate.resolved", { date: b.date! })
+          : say("anomaly.duplicate", { days: DAY_WINDOW, first: a.date!, second: b.date! })),
       });
       break;
     }
@@ -98,7 +108,7 @@ function amountJumps(rows: AnomalyRow[], cpi: CpiTable): Anomaly[] {
       out.push({
         kind: "amount_jump", merchant, month: cm, date: null,
         amount: months.get(cm)!, resolved: false,
-        message: `up ${pct.toFixed(1)}% in real terms vs ${pm}`,
+        ...say("anomaly.amountJump", { pct: pct.toFixed(1), month: pm }),
       });
     }
   }
@@ -124,7 +134,7 @@ function newMerchants(rows: AnomalyRow[]): Anomaly[] {
     .map(([merchant, amount]) => ({
       kind: "new_merchant" as const, merchant, month: latest, date: null,
       amount, resolved: false,
-      message: `first charge from this merchant in ${months.length} months of statements`,
+      ...say("anomaly.newMerchant", { months: months.length }),
     }));
 }
 

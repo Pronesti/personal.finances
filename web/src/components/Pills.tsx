@@ -2,10 +2,12 @@ import Link from "next/link";
 
 // Server-rendered pill row for granularity/period pickers — the same look /compare and
 // /categories inline, shared by the pages added later.
-export function Pills({ options, current, href }: {
+export function Pills({ options, current, href, label }: {
   options: readonly string[];
   current: string;
   href: (option: string) => string;
+  /** Display text for an option. Period rows are dates and pass nothing; granularity rows translate. */
+  label?: (option: string) => string;
 }) {
   return (
     <div className="mb-4 flex flex-wrap gap-1 text-sm">
@@ -19,7 +21,7 @@ export function Pills({ options, current, href }: {
               : "text-ink-muted hover:bg-surface-2 hover:text-ink"
           }`}
         >
-          {x}
+          {label ? label(x) : x}
         </Link>
       ))}
     </div>

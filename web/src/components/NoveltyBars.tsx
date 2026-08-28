@@ -3,12 +3,15 @@ import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Responsive
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
 import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidth } from "./chart";
+import { useT } from "./I18nProvider";
 
 export function NoveltyBars({ data, value }: {
   data: { period: string; newSpend: number; returningSpend: number; newMerchants: number }[];
   value: ValueMode;
 }) {
   const t = useChartTheme();
+  const tr = useT();
+  const newName = tr("merchants.legend.new");
   return (
     <ResponsiveContainer width="100%" height={360}>
       <BarChart data={data}>
@@ -19,14 +22,17 @@ export function NoveltyBars({ data, value }: {
           {...tooltipProps(t)}
           formatter={(v, name, item) => {
             const label = fmtMoney(Number(v), value);
-            return name === "first-time merchants"
-              ? `${label} (${(item.payload as { newMerchants: number }).newMerchants} merchants)`
+            return name === newName
+              ? tr("merchants.novelty.tooltip", {
+                  amount: label,
+                  count: (item.payload as { newMerchants: number }).newMerchants,
+                })
               : label;
           }}
         />
         <Legend {...legendProps(t)} />
-        <Bar dataKey="returningSpend" name="returning merchants" stackId="1" fill={t.series.neutral} {...barWidth(data.length)} />
-        <Bar dataKey="newSpend" name="first-time merchants" stackId="1" fill={t.series.primary} radius={[3, 3, 0, 0]} {...barWidth(data.length)} />
+        <Bar dataKey="returningSpend" name={tr("merchants.legend.returning")} stackId="1" fill={t.series.neutral} {...barWidth(data.length)} />
+        <Bar dataKey="newSpend" name={newName} stackId="1" fill={t.series.primary} radius={[3, 3, 0, 0]} {...barWidth(data.length)} />
       </BarChart>
     </ResponsiveContainer>
   );

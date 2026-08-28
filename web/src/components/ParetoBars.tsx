@@ -4,9 +4,12 @@ import { fmtMoney } from "@/lib/format";
 import type { ValueMode, MerchantTotal } from "@/lib/queries";
 import type { Category } from "@/lib/categorize";
 import { useChartTheme, axisProps, tooltipProps, gridProps } from "./chart";
+import { useT } from "./I18nProvider";
 
 export function ParetoBars({ data, value }: { data: MerchantTotal[]; value: ValueMode }) {
   const t = useChartTheme();
+  const tr = useT();
+  const cumulativeName = tr("merchants.legend.cumulative");
   return (
     <ResponsiveContainer width="100%" height={440}>
       <ComposedChart data={data} margin={{ bottom: 70 }}>
@@ -20,14 +23,14 @@ export function ParetoBars({ data, value }: { data: MerchantTotal[]; value: Valu
         <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} width={45} {...axisProps(t)} />
         <Tooltip
           {...tooltipProps(t)}
-          formatter={(v, name) => (name === "cumulative" ? `${Number(v).toFixed(1)}%` : fmtMoney(Number(v), value))}
+          formatter={(v, name) => (name === cumulativeName ? `${Number(v).toFixed(1)}%` : fmtMoney(Number(v), value))}
         />
-        <Bar yAxisId="amt" dataKey="total" name="total">
+        <Bar yAxisId="amt" dataKey="total" name={tr("merchants.legend.total")}>
           {data.map(d => (
             <Cell key={d.merchant} fill={t.category[d.category as Category] ?? t.series.neutral} />
           ))}
         </Bar>
-        <Line yAxisId="pct" dataKey="cumShare" name="cumulative" stroke={t.series.neutral} strokeWidth={2} strokeDasharray="5 4" dot={false} />
+        <Line yAxisId="pct" dataKey="cumShare" name={cumulativeName} stroke={t.series.neutral} strokeWidth={2} strokeDasharray="5 4" dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

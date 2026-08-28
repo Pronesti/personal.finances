@@ -2,7 +2,9 @@ import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { installmentBurden, activePlans } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, spanLabel, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, spanLabel, valueOpts, withModes } from "@/lib/params";
+import { getT } from "@/lib/locale";
+import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
@@ -22,51 +24,54 @@ export default async function Installments({ searchParams }: { searchParams: Pro
   const plans = activePlans(db, opts);
   const latest = burden.at(-1);
   const committed = plans.reduce((s, p) => s + p.remainingTotal, 0);
+  const tr = await getT();
   return (
     <main>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Installment burden</h1>
+        <h1 className="text-xl font-semibold">{tr("installments.title")}</h1>
         {/* spend toggle hidden: this page is cash by definition — see installmentBurden */}
         <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
 
-      <Pills options={GRANULARITIES} current={g} href={x => withModes("/installments", modes, { g: x })} />
+      <Pills
+        options={GRANULARITIES} current={g}
+        href={x => withModes("/installments", modes, { g: x })}
+        label={x => granularityLabel(x as Granularity, tr.locale)}
+      />
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Open plans</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.openPlans")}</div>
           <div className="text-2xl font-bold">{plans.length}</div>
-          <div className="text-sm text-ink-muted">on the latest statements</div>
+          <div className="text-sm text-ink-muted">{tr("installments.openPlans.detail")}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Still to pay</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.stillToPay")}</div>
           <div className="text-2xl font-bold">{fmtMoney(committed, modes.value)}</div>
-          <div className="text-sm text-ink-muted">at the current installment amounts</div>
+          <div className="text-sm text-ink-muted">{tr("installments.stillToPay.detail")}</div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Installment share</div>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("installments.share")}</div>
           <div className="text-2xl font-bold">{latest ? pct(latest.sharePct) : "—"}</div>
-          <div className="text-sm text-ink-muted">of {spanLabel(g)}&apos;s purchases</div>
+          <div className="text-sm text-ink-muted">{tr("installments.share.detail", { span: spanLabel(g, tr.locale) })}</div>
         </div>
       </div>
 
       <InstallmentBurdenChart data={burden} value={modes.value} />
       <p className="mb-8 mt-3 text-xs text-ink-muted">
-        Always &ldquo;as billed&rdquo;: each period shows what its statements actually charged, split
-        into installment charges (committed by past decisions) and one-off purchases. The line is the
-        installment share — the fraction of the period you could not have avoided by spending less.
-        For where this is headed, see <Link href={withModes("/future", modes)} className="text-accent hover:underline">Future</Link>.
+        {tr("installments.chartNote")}{" "}
+        <Link href={withModes("/future", modes)} className="text-accent hover:underline">{tr("nav.future")}</Link>.
       </p>
 
-      <h2 className="mb-3 text-lg font-semibold">Open plans</h2>
+      <h2 className="mb-3 text-lg font-semibold">{tr("installments.openPlans")}</h2>
       {plans.length === 0
-        ? <p className="text-sm text-ink-muted">No open installment plans on the latest statements.</p>
+        ? <p className="text-sm text-ink-muted">{tr("installments.none")}</p>
         : <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
-                <th className="py-1 pr-3">Merchant</th><th className="pr-3">Card</th>
-                <th className="pr-3 text-right">Progress</th><th className="pr-3 text-right">Monthly</th>
-                <th className="pr-3 text-right">Months left</th><th className="pr-3 text-right">Still to pay</th>
+                <th className="py-1 pr-3">{tr("installments.table.merchant")}</th><th className="pr-3">{tr("installments.table.card")}</th>
+                <th className="pr-3 text-right">{tr("installments.table.progress")}</th><th className="pr-3 text-right">{tr("installments.table.monthly")}</th>
+                <th className="pr-3 text-right">{tr("installments.table.monthsLeft")}</th><th className="pr-3 text-right">{tr("installments.table.stillToPay")}</th>
               </tr>
             </thead>
             <tbody>
@@ -87,23 +92,10 @@ export default async function Installments({ searchParams }: { searchParams: Pro
             </tbody>
           </table>}
       {plans.length > 0 && (
-        <p className="mt-3 text-xs text-ink-muted">
-          &ldquo;Still to pay&rdquo; assumes the installment stays at its current nominal amount, which
-          Argentine plans do — in real terms each later installment is cheaper.
-        </p>
+        <p className="mt-3 text-xs text-ink-muted">{tr("installments.tableNote")}</p>
       )}
 
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the part of each statement that comes from installment plans. An
-        installment plan divides one purchase into monthly payments. These payments are an
-        obligation. You cannot stop them when you spend less. The goal of this analysis is to
-        show how rigid your statement is. Read each bar to see one period, divided into
-        installment charges and one-time purchases. Read the line to see the installment share
-        of that period. A low share is good. It shows that you can decrease your costs quickly
-        when it is necessary. A high share is bad. It shows that past decisions control a large
-        part of your statement. The table shows each open plan and the amount that you must
-        still pay.
-      </p>
+      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("installments.footer")}</p>
     </main>
   );
 }
