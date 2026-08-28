@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Convert BBVA credit-card statements (Visa / Mastercard) from PDF to JSON.
+Convert credit-card statements from PDF to JSON. BBVA (Visa / Mastercard) is
+parsed here; Mercado Pago statements are detected and routed to mp_statement.py.
 
 Usage:
     python3 pdf_to_json.py                # convert every PDF in ../pdfs that has no JSON yet
@@ -28,6 +29,11 @@ import unicodedata
 from pathlib import Path
 
 import pdfplumber
+
+# When this file runs as a script it is the "__main__" module; register it under
+# its real name too, so mp_statement's `import pdf_to_json` reuses this module
+# instead of loading a second copy with its own UnknownLayout class.
+sys.modules.setdefault("pdf_to_json", sys.modules[__name__])
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PDF_DIR = BASE_DIR / "pdfs"
@@ -546,6 +552,12 @@ def convert(pdf_path: Path) -> dict:
         pages = [page_lines(p) for p in pdf.pages]
 
     first_page_text = "\n".join(line_text(l) for l in pages[0])
+
+    if "Este es tu resumen" in first_page_text:
+        # Mercado Pago statement — a different issuer with a different layout.
+        # Imported lazily: mp_statement imports helpers from this module.
+        import mp_statement
+        return mp_statement.parse(pdf_path)
 
     data = {"file": pdf_path.name}
     data.update(parse_header(pages[0], first_page_text))

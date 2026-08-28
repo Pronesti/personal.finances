@@ -677,7 +677,9 @@ describe("moneyBack", () => {
     db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
                 VALUES (2,'payments','2026-07-05','BONIF.PROMO CUOTA XENEIZE','BONIF PROMO CUOTA XENEIZE','entertainment','sports',-500,NULL,NULL,NULL),
                        (2,'payments',NULL,'CR.RG 5617 30% M (M)','CR RG 5617 30% M M','taxes_fees',NULL,-300,NULL,NULL,NULL),
-                       (2,'payments','2026-07-06','SU PAGO EN PESOS','SU PAGO EN PESOS','transfers',NULL,-10000,NULL,NULL,NULL)`).run();
+                       (2,'payments','2026-07-06','SU PAGO EN PESOS','SU PAGO EN PESOS','transfers',NULL,-10000,NULL,NULL,NULL),
+                       (2,'payments','2026-07-07','Pago de tarjeta','PAGO DE TARJETA','transfers',NULL,-8000,NULL,NULL,NULL),
+                       (2,'payments','2026-07-08','Pago del resumen','PAGO DEL RESUMEN','transfers',NULL,-9000,NULL,NULL,NULL)`).run();
   }
 
   it("splits credits into promo / refund / taxback and rates them against positive purchases", () => {
@@ -696,7 +698,8 @@ describe("moneyBack", () => {
     const db = openAndSeed();
     seedCredits(db);
     const { top } = moneyBack(db, o("cash", "nominal"));
-    expect(top.some(t => t.description.startsWith("SU PAGO"))).toBe(false);
+    expect(top.some(t => t.description.startsWith("SU PAGO"))).toBe(false); // BBVA wording
+    expect(top.some(t => t.description.startsWith("Pago de"))).toBe(false); // both MP wordings
   });
 
   it("buckets by quarter and keeps the rate nominal in real mode", () => {

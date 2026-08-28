@@ -988,9 +988,10 @@ function creditKind(desc: string): CreditKind {
 // Chart 17. The mirror of /taxes: what the card gave BACK — bank promos (BONIF/Visa Garpa
 // lines), merchant refunds, and RG 5617 recovered on foreign-spend reversals. Sources are the
 // negative purchase rows (which the spend pages silently net away — decision 2 — so this is
-// the one place they are visible) plus payments-section credits, excluding SU PAGO rows, which
-// are the user's own money. The rate divides nominal credits by nominal positive purchases,
-// same convention as taxBurden's overhead.
+// the one place they are visible) plus payments-section credits, excluding the user's own
+// money: SU PAGO rows (BBVA) and Pago de tarjeta / Pago del resumen rows (Mercado Pago,
+// the wording varies by statement generation). The rate divides
+// nominal credits by nominal positive purchases, same convention as taxBurden's overhead.
 export function moneyBack(
   db: Database.Database, opts: ValueOpts, granularity: Granularity = "month", topN = 12
 ): { periods: CreditPeriod[]; top: CreditItem[] } {
@@ -999,7 +1000,8 @@ export function moneyBack(
     FROM transactions t JOIN statements s ON s.id = t.statement_id
     WHERE t.ars < 0
       AND (t.section = 'purchases'
-           OR (t.section = 'payments' AND t.description NOT LIKE 'SU PAGO%'))
+           OR (t.section = 'payments' AND t.description NOT LIKE 'SU PAGO%'
+               AND t.description NOT LIKE 'Pago de%'))
   `).all() as { month: string; date: string | null; description: string; merchant: string; ars: number }[];
   const purchases = db.prepare(`
     SELECT s.cycle_month AS month, SUM(t.ars) AS base
