@@ -3,7 +3,12 @@ export type StatementJson = {
   file: string;
   brand: string;
   period: { closing_date: string; due_date?: string; previous_closing_date?: string | null };
-  balances?: { current_ars?: number | null; current_usd?: number | null; minimum_payment_ars?: number | null };
+  balances?: {
+    previous_ars?: number | null;
+    current_ars?: number | null; current_usd?: number | null; minimum_payment_ars?: number | null;
+  };
+  limits?: { purchase?: number | null };
+  rates?: { annual_nominal_ars?: number | null; monthly_effective_ars?: number | null };
   declared_totals?: { concept: string; block: number | null; ars: number | null; usd: number | null }[];
   upcoming_installments?: { month: string; amount_ars: number }[];
   transactions: {

@@ -25,6 +25,18 @@ describe("statementToRows", () => {
     expect(r.installments).toEqual([{ month: "2026-08", amount_ars: 375290.39 }]);
     expect(r.alerts).toEqual([]);
   });
+  it("maps the bank's terms — limits, rates, previous balance — and nulls their absence", () => {
+    const r = statementToRows(fixture, rules, aliases);
+    // The fixture carries no limits/rates block, mirroring an older parse: absent, never 0.
+    expect(r.statement).toMatchObject({ prev_balance_ars: null, limit_purchase: null, rate_tna_pct: null, rate_tem_pct: null });
+    const full: StatementJson = structuredClone(fixture);
+    full.balances!.previous_ars = 3869292.39;
+    full.limits = { purchase: 20000000 };
+    full.rates = { annual_nominal_ars: 69.44, monthly_effective_ars: 5.707 };
+    expect(statementToRows(full, rules, aliases).statement).toMatchObject({
+      prev_balance_ars: 3869292.39, limit_purchase: 20000000, rate_tna_pct: 69.44, rate_tem_pct: 5.707,
+    });
+  });
   it("carries integrity alerts", () => {
     const bad = structuredClone(fixture);
     bad.declared_totals![0].ars = 999999;

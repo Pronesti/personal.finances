@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden } from "@/lib/queries";
+import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -734,5 +734,95 @@ describe("paymentFloat", () => {
     const june = paymentFloat(db, cpi).find(r => r.period === "2026-06")!;
     // Clamped to the first CPI month: the old row contributes the same gain as a June purchase.
     expect(june.gain).toBeCloseTo(200);
+  });
+});
+
+describe("bankTerms", () => {
+  function seedTerms(db: Database.Database) {
+    db.prepare(`UPDATE statements SET balance_ars=1000000, balance_usd=10, minimum_payment_ars=50000,
+                limit_purchase=10000000, rate_tem_pct=5.5, rate_tna_pct=66 WHERE file='v_2026_07.json'`).run();
+    db.prepare(`UPDATE statements SET balance_ars=500000, limit_purchase=10000000,
+                rate_tem_pct=5.0, rate_tna_pct=60 WHERE file='m_2026_07.json'`).run();
+    db.prepare(`UPDATE statements SET limit_purchase=10000000 WHERE file='v_2026_06.json'`).run();
+  }
+
+  it("sums limits across brands, takes the pricier TEM, and keeps ratios nominal", () => {
+    const db = openAndSeed();
+    seedTerms(db);
+    const july = bankTerms(db, o("cash", "nominal")).find(m => m.month === "2026-07")!;
+    expect(july.limit).toBe(20000000);
+    expect(july.balance).toBeCloseTo(1000000 + 10 * 1100 + 500000); // USD leg at July MEP
+    expect(july.utilizationPct).toBeCloseTo((1511000 / 20000000) * 100);
+    expect(july.minPaymentPct).toBeCloseTo((50000 / 1500000) * 100); // over the ARS balance only
+    expect(july.temPct).toBe(5.5);
+    expect(july.inflationPct).toBeCloseTo(10); // CPI 100 -> 110
+    expect(july.realTemPct).toBeCloseTo((1.055 / 1.1 - 1) * 100); // negative: inflation beats the TEM
+  });
+
+  it("converts the limit to real pesos and leaves missing months null, not zero", () => {
+    const db = openAndSeed();
+    seedTerms(db);
+    const rows = bankTerms(db, o("cash", "real"));
+    const june = rows.find(m => m.month === "2026-06")!;
+    // June only has the visa statement while the table knows two brands: the summed limit is a
+    // coverage hole and must gap, but the per-card limit still reads.
+    expect(june.limit).toBeNull();
+    expect(june.limitCard).toBeCloseTo(10000000 * (110 / 100)); // June pesos restated at July CPI
+    expect(june.temPct).toBeNull();
+    expect(june.inflationPct).toBeNull(); // no 2026-05 in the CPI table
+    expect(june.balance).toBeNull(); // no balances seeded for June — absent, not 0
+    const july = rows.find(m => m.month === "2026-07")!;
+    expect(july.limit).toBe(20000000); // both brands present; July IS the CPI base month
+    expect(july.limitCard).toBe(10000000);
+  });
+});
+
+describe("cyclePace", () => {
+  function seedWindows(db: Database.Database) {
+    db.prepare(`UPDATE statements SET prev_closing_date='2026-05-29' WHERE file='v_2026_06.json'`).run();
+    db.prepare(`UPDATE statements SET prev_closing_date='2026-07-02' WHERE file='v_2026_07.json'`).run();
+    db.prepare(`UPDATE statements SET prev_closing_date='2026-07-02' WHERE file='m_2026_07.json'`).run();
+  }
+
+  it("accumulates each cycle day by day against its own statement's window", () => {
+    const db = openAndSeed();
+    seedWindows(db);
+    const { cycles, typical } = cyclePace(db, o("cash", "nominal"));
+    expect(cycles.map(c => c.month)).toEqual(["2026-06", "2026-07"]);
+    const july = cycles[1];
+    // COTO day 8 (+1000), TIENDA day 9 (+100×4 remaining accrual), refund day 10 (−200),
+    // YPF day 13 measured against the MASTERCARD window (+500).
+    expect(july.days.find(d => d.day === 9)!.cum).toBe(1400);
+    expect(july.days.find(d => d.day === 10)!.cum).toBe(1200);
+    expect(july.total).toBe(1700);
+    expect(july.length).toBe(28);
+    // typical = median over prior cycles only: June's single 1000-peso cycle.
+    expect(typical.at(-1)!.cum).toBe(1000);
+    expect(typical.length).toBe(28);
+  });
+
+  it("drops rows dated outside the window — an old installment is not this cycle's pace", () => {
+    const db = openAndSeed();
+    seedWindows(db);
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'purchases','2026-03-15','OLD PLAN','OLD PLAN','shopping',NULL,900,NULL,4,6)`).run();
+    const { cycles } = cyclePace(db, o("cash", "nominal"));
+    expect(cycles[1].total).toBe(1700); // unchanged
+  });
+});
+
+describe("categoryMovers", () => {
+  it("ranks categories by how much they pushed the total between the last two periods", () => {
+    const res = categoryMovers(openAndSeed(), o("cash", "nominal"), "month")!;
+    expect(res.prevPeriod).toBe("2026-06");
+    expect(res.curPeriod).toBe("2026-07");
+    expect(res.movers.map(m => m.category)).toEqual(["transport", "shopping", "food"]);
+    expect(res.movers[0]).toMatchObject({ prev: 0, cur: 500, delta: 500, pctChange: null }); // new, not +∞%
+    expect(res.movers[2]).toMatchObject({ prev: 1000, cur: 800, delta: -200 });
+    expect(res.movers[2].pctChange).toBeCloseTo(-20);
+  });
+
+  it("returns null when the granularity leaves fewer than two periods", () => {
+    expect(categoryMovers(openAndSeed(), o("cash", "nominal"), "year")).toBeNull();
   });
 });

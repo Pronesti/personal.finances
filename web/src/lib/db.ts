@@ -15,7 +15,11 @@ export function migrate(db: Database.Database): void {
       prev_closing_date TEXT,
       balance_ars REAL,
       balance_usd REAL,
-      minimum_payment_ars REAL
+      minimum_payment_ars REAL,
+      prev_balance_ars REAL,
+      limit_purchase REAL,
+      rate_tna_pct REAL,
+      rate_tem_pct REAL
     );
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY,
@@ -54,6 +58,14 @@ export function migrate(db: Database.Database): void {
       state TEXT NOT NULL CHECK (state IN ('open','reviewed','dismissed'))
     );
   `);
+  // CREATE IF NOT EXISTS never widens an existing table, so a database created before the
+  // bank-terms columns existed gets them here. Values stay NULL until the next ingest.
+  const have = new Set(
+    (db.prepare("PRAGMA table_info(statements)").all() as { name: string }[]).map(c => c.name)
+  );
+  for (const col of ["prev_balance_ars", "limit_purchase", "rate_tna_pct", "rate_tem_pct"]) {
+    if (!have.has(col)) db.exec(`ALTER TABLE statements ADD COLUMN ${col} REAL`);
+  }
 }
 
 export function openDb(dbPath: string = path.join(DATA_DIR, "app.db")): Database.Database {

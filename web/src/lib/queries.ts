@@ -1109,3 +1109,165 @@ export function paymentFloat(
     };
   }).sort((a, b) => a.period.localeCompare(b.period));
 }
+
+export type BankMonth = {
+  month: string;
+  /**
+   * Total purchase limit across both cards, converted to the active value mode. Null on a month
+   * missing one card's statement — a line that sawtooths 20M↔40M because a PDF is absent reads
+   * as the bank slashing the limit, so the chart shows a gap instead.
+   */
+  limit: number | null;
+  /** Per-card limit (MAX across brands) — immune to coverage holes; the real-terms tile's series. */
+  limitCard: number | null;
+  /** Closing balance across both cards (USD part at that month's MEP), same mode. */
+  balance: number | null;
+  /** Nominal ratio balance/limit — identical in every value mode. */
+  utilizationPct: number | null;
+  /** Minimum payment over the ARS closing balance, nominal ratio. */
+  minPaymentPct: number | null;
+  /** Monthly effective financing rate (TEM) the statements print. */
+  temPct: number | null;
+  tnaPct: number | null;
+  /** CPI month-over-month for this cycle month; null past the table's edge. */
+  inflationPct: number | null;
+  /** What revolving actually costs in purchasing power: (1+TEM)/(1+inflation)−1. */
+  realTemPct: number | null;
+};
+
+// Chart 19. The statement header as a time series — the terms the bank sets, which every other
+// page ignores. Monthly, never bucketed: a limit and a rate are point-in-time terms, and summing
+// them over a quarter would manufacture a number the bank never offered. The purchase limit SUMS
+// across brands — two cards are independent headroom — while the rates take MAX: the bank moves
+// both cards together in this dataset, and when it ever doesn't, the pricier TEM is the one a
+// revolver would actually pay.
+export function bankTerms(db: Database.Database, opts: ValueOpts): BankMonth[] {
+  const rows = db.prepare(`
+    SELECT cycle_month AS month,
+           SUM(limit_purchase) AS lim, MAX(limit_purchase) AS lim_card,
+           COUNT(DISTINCT brand) AS nbrands,
+           SUM(balance_ars) AS bal_ars, SUM(balance_usd) AS bal_usd,
+           SUM(minimum_payment_ars) AS min_pay,
+           MAX(rate_tem_pct) AS tem, MAX(rate_tna_pct) AS tna
+    FROM statements GROUP BY cycle_month ORDER BY cycle_month
+  `).all() as {
+    month: string; lim: number | null; lim_card: number | null; nbrands: number;
+    bal_ars: number | null; bal_usd: number | null;
+    min_pay: number | null; tem: number | null; tna: number | null;
+  }[];
+  const allBrands = (db.prepare("SELECT COUNT(DISTINCT brand) n FROM statements").get() as { n: number }).n;
+  const baseMonth = opts.value === "real" ? latestMonth(opts.cpi) : "";
+  return rows.map(r => {
+    const balNominal = r.bal_ars == null && r.bal_usd == null ? null
+      : (r.bal_ars ?? 0) + (r.bal_usd ?? 0) * mepFor(r.month, opts.mep);
+    const prev = addMonth(r.month, -1);
+    const infl = opts.cpi[r.month] != null && opts.cpi[prev] != null
+      ? (opts.cpi[r.month] / opts.cpi[prev] - 1) * 100
+      : null;
+    return {
+      month: r.month,
+      limit: r.lim == null || r.nbrands < allBrands ? null : toMode(r.lim, r.month, opts, baseMonth),
+      limitCard: r.lim_card == null ? null : toMode(r.lim_card, r.month, opts, baseMonth),
+      balance: balNominal == null ? null : toMode(balNominal, r.month, opts, baseMonth),
+      utilizationPct: r.lim && balNominal != null ? (balNominal / r.lim) * 100 : null,
+      minPaymentPct: r.min_pay != null && r.bal_ars ? (r.min_pay / r.bal_ars) * 100 : null,
+      temPct: r.tem, tnaPct: r.tna,
+      inflationPct: infl,
+      realTemPct: r.tem != null && infl != null
+        ? ((1 + r.tem / 100) / (1 + infl / 100) - 1) * 100
+        : null,
+    };
+  });
+}
+
+export type PaceDay = { day: number; cum: number };
+export type PaceCycle = { month: string; length: number; total: number; days: PaceDay[] };
+
+// Chart 20. How a cycle's spending accumulated day by day — did the month run hot from day one
+// or break on a single late purchase? Always accrual, and only rows DATED inside the cycle
+// window (previous closing, closing]: an installment row re-listed with its original purchase
+// date months back is an old decision, not this cycle's pace — the window filter is what drops
+// it. Both cards merge into one cycle; each row's day offset is measured against its OWN
+// statement's window, since the two cards close a few days apart. `typical` is the day-by-day
+// MEDIAN over every cycle except the latest — a cycle already finished keeps contributing its
+// final total past its last day, so shorter cycles don't drag the tail down.
+export function cyclePace(
+  db: Database.Database, opts: ValueOpts
+): { cycles: PaceCycle[]; typical: PaceDay[] } {
+  const accrual: ValueOpts = { ...opts, spend: "accrual" };
+  const wins = new Map(
+    (db.prepare(`
+      SELECT id, prev_closing_date AS start, closing_date AS end FROM statements
+      WHERE prev_closing_date IS NOT NULL
+    `).all() as { id: number; start: string; end: string }[])
+      .map(w => [w.id, w])
+  );
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, accrual);
+  const byCycle = new Map<string, { perDay: Map<number, number>; length: number }>();
+  for (const r of rows) {
+    const w = wins.get(r.statement_id);
+    if (!w || r.date == null) continue;
+    const day = Math.round((Date.parse(r.date + "T00:00:00Z") - Date.parse(w.start + "T00:00:00Z")) / 86400_000);
+    const len = Math.round((Date.parse(w.end + "T00:00:00Z") - Date.parse(w.start + "T00:00:00Z")) / 86400_000);
+    if (day < 1 || day > len) continue; // dated outside this cycle: an old installment's row, or noise
+    const amt = effectiveAmount(r, accrual, ctx);
+    if (amt == null) continue;
+    const c = byCycle.get(r.month) ?? { perDay: new Map<number, number>(), length: 0 };
+    c.perDay.set(day, (c.perDay.get(day) ?? 0) + amt);
+    if (len > c.length) c.length = len;
+    byCycle.set(r.month, c);
+  }
+  const cycles: PaceCycle[] = [...byCycle.entries()].map(([month, c]) => {
+    let cum = 0;
+    const days: PaceDay[] = [];
+    for (let d = 1; d <= c.length; d++) {
+      cum += c.perDay.get(d) ?? 0;
+      days.push({ day: d, cum });
+    }
+    return { month, length: c.length, total: cum, days };
+  }).sort((a, b) => a.month.localeCompare(b.month));
+
+  const prior = cycles.slice(0, -1);
+  const maxLen = Math.max(0, ...prior.map(c => c.length));
+  const typical: PaceDay[] = [];
+  for (let d = 1; d <= maxLen; d++) {
+    const at = prior.map(c => (d <= c.length ? c.days[d - 1].cum : c.total));
+    if (at.length > 0) typical.push({ day: d, cum: midMedian(at) });
+  }
+  return { cycles, typical };
+}
+
+export type Mover = {
+  category: string; prev: number; cur: number; delta: number;
+  /** Null when the category had no spend in the previous period — "new", not "+∞%". */
+  pctChange: number | null;
+};
+
+// Chart 21. WHY did the total move: the last two periods' category totals side by side, sorted
+// by how much each category pushed the total. Built on spendByCategory so every mode and
+// granularity judgement is inherited, not re-decided. The latest bucket of a quarter/year
+// granularity can be partial — the page says so rather than this function guessing.
+export function categoryMovers(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+): { prevPeriod: string; curPeriod: string; movers: Mover[] } | null {
+  const rows = spendByCategory(db, opts, granularity);
+  const periods = [...new Set(rows.map(r => r.period))].sort();
+  if (periods.length < 2) return null;
+  const [prevPeriod, curPeriod] = periods.slice(-2);
+  const prev = new Map<string, number>();
+  const cur = new Map<string, number>();
+  for (const r of rows) {
+    if (r.period === prevPeriod) prev.set(r.category, r.amount);
+    if (r.period === curPeriod) cur.set(r.category, r.amount);
+  }
+  const movers = [...new Set([...prev.keys(), ...cur.keys()])].map(category => {
+    const p = prev.get(category) ?? 0;
+    const c = cur.get(category) ?? 0;
+    return {
+      category, prev: p, cur: c, delta: c - p,
+      pctChange: p !== 0 ? ((c - p) / p) * 100 : null,
+    };
+  }).sort((a, b) => b.delta - a.delta);
+  return { prevPeriod, curPeriod, movers };
+}

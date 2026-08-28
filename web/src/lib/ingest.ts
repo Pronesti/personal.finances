@@ -23,6 +23,10 @@ export function statementToRows(json: StatementJson, rules: Rule[], aliases: Ali
     balance_ars: json.balances?.current_ars ?? null,
     balance_usd: json.balances?.current_usd ?? null,
     minimum_payment_ars: json.balances?.minimum_payment_ars ?? null,
+    prev_balance_ars: json.balances?.previous_ars ?? null,
+    limit_purchase: json.limits?.purchase ?? null,
+    rate_tna_pct: json.rates?.annual_nominal_ars ?? null,
+    rate_tem_pct: json.rates?.monthly_effective_ars ?? null,
   };
   const transactions = json.transactions.map(t => {
     const merchant = applyAlias(normalizeMerchant(t.description), aliases);
@@ -64,8 +68,8 @@ export function ingestFile(
     ).all(statement.file, statement.brand, statement.closing_date) as { file: string }[])
       .map(d => d.file);
     const sid = db.prepare(
-      `INSERT INTO statements (file, brand, closing_date, cycle_month, due_date, prev_closing_date, balance_ars, balance_usd, minimum_payment_ars)
-       VALUES (@file, @brand, @closing_date, @cycle_month, @due_date, @prev_closing_date, @balance_ars, @balance_usd, @minimum_payment_ars)`
+      `INSERT INTO statements (file, brand, closing_date, cycle_month, due_date, prev_closing_date, balance_ars, balance_usd, minimum_payment_ars, prev_balance_ars, limit_purchase, rate_tna_pct, rate_tem_pct)
+       VALUES (@file, @brand, @closing_date, @cycle_month, @due_date, @prev_closing_date, @balance_ars, @balance_usd, @minimum_payment_ars, @prev_balance_ars, @limit_purchase, @rate_tna_pct, @rate_tem_pct)`
     ).run(statement).lastInsertRowid;
     const insTx = db.prepare(
       `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)

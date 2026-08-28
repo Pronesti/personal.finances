@@ -7,10 +7,11 @@ import { LangToggle } from "./LangToggle";
 
 const links: readonly (readonly [string, MessageKey])[] = [
   ["/", "nav.overview"], ["/trends", "nav.trends"], ["/currency", "nav.currency"], ["/future", "nav.future"],
-  ["/installments", "nav.installments"], ["/float", "nav.float"], ["/categories", "nav.categories"],
+  ["/installments", "nav.installments"], ["/float", "nav.float"], ["/bank", "nav.bank"], ["/categories", "nav.categories"],
   ["/merchants", "nav.merchants"], ["/sankey", "nav.sankey"], ["/calendar", "nav.calendar"], ["/habits", "nav.habits"],
-  ["/recurring", "nav.recurring"], ["/taxes", "nav.taxes"], ["/credits", "nav.credits"], ["/anomalies", "nav.anomalies"],
-  ["/inflation", "nav.inflation"], ["/compare", "nav.compare"], ["/upload", "nav.upload"], ["/review", "nav.review"],
+  ["/pace", "nav.pace"], ["/recurring", "nav.recurring"], ["/taxes", "nav.taxes"], ["/credits", "nav.credits"],
+  ["/anomalies", "nav.anomalies"], ["/inflation", "nav.inflation"], ["/compare", "nav.compare"], ["/movers", "nav.movers"],
+  ["/upload", "nav.upload"], ["/review", "nav.review"],
 ] as const;
 
 export function Nav() {
