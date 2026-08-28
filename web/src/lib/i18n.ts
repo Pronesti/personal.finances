@@ -192,7 +192,7 @@ const en = {
 
   // ── categories ────────────────────────────────────────────────────────────
   "categories.title": "Categories",
-  "categories.crumb.all": "all",
+  "categories.crumb.all": "All categories",
   "categories.empty": "No spending in {period}.",
   "categories.empty.any": "any statement",
   "categories.table.date": "Date",
@@ -681,7 +681,7 @@ const es: Dictionary = {
 
   // ── categorías ────────────────────────────────────────────────────────────
   "categories.title": "Categorías",
-  "categories.crumb.all": "todo",
+  "categories.crumb.all": "Todas las categorías",
   "categories.empty": "Sin gasto en {period}.",
   "categories.empty.any": "ningún resumen",
   "categories.table.date": "Fecha",
