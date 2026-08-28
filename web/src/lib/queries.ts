@@ -563,6 +563,42 @@ export function rulePreview(db: Database.Database, match: string): { merchant: s
   `).all(match.toUpperCase()) as { merchant: string; count: number }[];
 }
 
+export type MerchantEvidence = {
+  count: number;
+  firstMonth: string;
+  lastMonth: string;
+  brands: string[];
+  sample: {
+    date: string | null; description: string; ars: number | null; usd: number | null;
+    installment_number: number | null; installment_count: number | null;
+  }[];
+};
+
+// Everything the reviewer needs to judge a proposal without leaving the page: how often the
+// merchant appears, over which cycle months, on which card, and the raw statement lines
+// themselves — the description often carries a locality or product the normalized name lost.
+export function merchantEvidence(
+  db: Database.Database, merchant: string, sampleSize = 6
+): MerchantEvidence | null {
+  const agg = db.prepare(`
+    SELECT COUNT(*) AS count, MIN(s.cycle_month) AS firstMonth, MAX(s.cycle_month) AS lastMonth
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.merchant = ? AND t.section = 'purchases'
+  `).get(merchant) as { count: number; firstMonth: string | null; lastMonth: string | null };
+  if (agg.count === 0) return null;
+  const brands = (db.prepare(`
+    SELECT DISTINCT s.brand FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.merchant = ? AND t.section = 'purchases' ORDER BY s.brand
+  `).all(merchant) as { brand: string }[]).map(r => r.brand);
+  const sample = db.prepare(`
+    SELECT t.date, t.description, t.ars, t.usd, t.installment_number, t.installment_count
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.merchant = ? AND t.section = 'purchases'
+    ORDER BY COALESCE(t.date, s.cycle_month) DESC LIMIT ?
+  `).all(merchant, sampleSize) as MerchantEvidence["sample"];
+  return { count: agg.count, firstMonth: agg.firstMonth!, lastMonth: agg.lastMonth!, brands, sample };
+}
+
 // Applies a freshly accepted rule to rows already loaded, so the dashboard updates without a full
 // re-ingest. The section scope mirrors categorize() exactly — it short-circuits taxes_and_charges
 // and runs the rule loop over payments (BONIF PROMO CUOTA XENEIZE is a real, rule-categorized

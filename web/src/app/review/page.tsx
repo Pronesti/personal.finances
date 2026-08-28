@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { unknownMerchants, rulePreview } from "@/lib/queries";
+import { unknownMerchants, rulePreview, merchantEvidence } from "@/lib/queries";
 import { loadCategoryFile, pendingMerchants, CATEGORIES } from "@/lib/categorize";
 import { fmtArs } from "@/lib/format";
 import { ProposeButton } from "@/components/ProposeButton";
@@ -36,12 +36,50 @@ export default async function Review() {
           <tbody>
             {data.proposals.map((p, i) => {
               const also = (previews.get(p.merchant) ?? []).filter(r => r.merchant !== p.merchant);
+              const ev = merchantEvidence(db, p.merchant);
               return (
                 <tr key={p.merchant} className="border-t border-line align-top">
-                  <td className="py-1">
+                  <td className="py-1 pr-3">
                     {p.merchant}
                     {p.confidence === "low" && <span className="ml-2 text-xs text-warning">low confidence</span>}
                     {p.sent !== p.merchant && <div className="text-xs text-ink-muted">sent as &ldquo;{p.sent}&rdquo;</div>}
+                    {ev && (
+                      <div className="text-xs text-ink-muted">
+                        {ev.count} {ev.count === 1 ? "charge" : "charges"} ·{" "}
+                        {ev.firstMonth === ev.lastMonth ? ev.firstMonth : `${ev.firstMonth} – ${ev.lastMonth}`} ·{" "}
+                        {ev.brands.join(", ")}
+                      </div>
+                    )}
+                    {ev && ev.sample.length > 0 && (
+                      <details className="mt-1 text-xs">
+                        <summary className="cursor-pointer text-accent hover:underline">
+                          statement lines
+                        </summary>
+                        <table className="mt-1">
+                          <tbody>
+                            {ev.sample.map((s, j) => (
+                              <tr key={j} className="text-ink-muted">
+                                <td className="pr-3 whitespace-nowrap align-top">{s.date ?? "—"}</td>
+                                <td className="pr-3 align-top">
+                                  {s.description}
+                                  {s.installment_count != null && (
+                                    <span className="ml-1">
+                                      (cuota {s.installment_number}/{s.installment_count})
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="whitespace-nowrap text-right align-top">
+                                  {s.ars != null ? fmtArs(s.ars) : s.usd != null ? `US$ ${s.usd.toFixed(2)}` : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {ev.count > ev.sample.length && (
+                          <div className="mt-0.5 text-ink-muted">…and {ev.count - ev.sample.length} more</div>
+                        )}
+                      </details>
+                    )}
                   </td>
                   <td>
                     <form action={acceptAction} className="flex flex-wrap items-center gap-2" id={`f-${i}`}>
@@ -54,7 +92,7 @@ export default async function Review() {
                     </form>
                     {also.length > 0 && (
                       <div className="mt-1 text-xs text-warning">
-                        This rule also claims: {also.map(r => r.merchant).join(", ")}
+                        This rule also claims: {also.map(r => `${r.merchant} (${r.count}×)`).join(", ")}
                       </div>
                     )}
                   </td>

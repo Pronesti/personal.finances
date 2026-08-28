@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -93,6 +93,20 @@ describe("queries", () => {
                 VALUES (2,'purchases','2026-07-20','DIA','DIA','other',NULL,3000,NULL,NULL,NULL),
                        (2,'purchases','2026-07-22','SOMMIERLANDIA','SOMMIERLANDIA','other',NULL,5000,NULL,NULL,NULL)`).run();
     expect(rulePreview(db, "DIA").map(r => r.merchant)).toEqual(["DIA", "SOMMIERLANDIA"]);
+  });
+
+  it("merchantEvidence summarizes a merchant's history with raw lines, newest first", () => {
+    const ev = merchantEvidence(db, "COTO")!;
+    expect(ev).toMatchObject({ count: 3, firstMonth: "2026-06", lastMonth: "2026-07", brands: ["visa"] });
+    expect(ev.sample.map(s => s.date)).toEqual(["2026-07-12", "2026-07-10", "2026-06-10"]);
+    expect(ev.sample[0].description).toBe("COTO DEVOL");
+    expect(merchantEvidence(db, "NUNCA VISTO")).toBeNull();
+  });
+
+  it("merchantEvidence caps the sample but reports the full count", () => {
+    const ev = merchantEvidence(db, "COTO", 2)!;
+    expect(ev.count).toBe(3);
+    expect(ev.sample).toHaveLength(2);
   });
 
   it("recategorize covers the same rows a full ingest would, payments included", () => {
