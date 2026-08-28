@@ -21,8 +21,13 @@ const CATEGORY_DARK: Record<Category, string> = {
 export type ChartTheme = {
   scheme: Scheme;
   category: Record<Category, string>;
-  /** Series colours for charts that are not split by category. */
-  series: { primary: string; secondary: string; band: string; alert: string; neutral: string };
+  /**
+   * Series colours for charts that are not split by category. `mixed` is for a mark that spans
+   * every category at once — a card in the sankey, which funds all of them — so it has to read
+   * as structure rather than as one more category: darker than the three greyish category hues
+   * (transfers, taxes_fees, other), and still clearing 3:1 on canvas and on a card surface.
+   */
+  series: { primary: string; secondary: string; band: string; alert: string; neutral: string; mixed: string };
   /** Chrome: axis labels, gridlines, the tooltip card. */
   ink: string;
   inkMuted: string;
@@ -34,7 +39,7 @@ export type ChartTheme = {
 const LIGHT: ChartTheme = {
   scheme: "light",
   category: CATEGORY_LIGHT,
-  series: { primary: "#0b7fbb", secondary: "#7c4dcc", band: "#cf7211", alert: "#d43f4f", neutral: "#6b7280" },
+  series: { primary: "#0b7fbb", secondary: "#7c4dcc", band: "#cf7211", alert: "#d43f4f", neutral: "#6b7280", mixed: "#4b5262" },
   ink: "#14161a",
   inkMuted: "#5a6371",
   grid: "#e3e6eb",
@@ -45,7 +50,7 @@ const LIGHT: ChartTheme = {
 const DARK: ChartTheme = {
   scheme: "dark",
   category: CATEGORY_DARK,
-  series: { primary: "#45b6f5", secondary: "#a98bff", band: "#f5b13c", alert: "#ff7b8a", neutral: "#9aa3b2" },
+  series: { primary: "#45b6f5", secondary: "#a98bff", band: "#f5b13c", alert: "#ff7b8a", neutral: "#9aa3b2", mixed: "#646c7a" },
   ink: "#e8eaee",
   inkMuted: "#a2abba",
   grid: "#272c36",

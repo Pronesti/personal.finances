@@ -548,6 +548,31 @@ describe("sankeyFlows", () => {
     seed(db);
     expect(sankeyFlows(db, o("cash", "nominal"), "2020-01")).toEqual({ nodes: [], links: [] });
   });
+
+  it("tags a merchant with the category funding it, so the chart can colour it", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const { nodes } = sankeyFlows(db, o("cash", "nominal"), "2026-07");
+    const byName = new Map(nodes.map(n => [n.name, n]));
+    expect(byName.get("YPF")).toMatchObject({ kind: "merchant", category: "transport" });
+    expect(byName.get("food")).toMatchObject({ kind: "category", category: "food" });
+    // A card feeds every category, so it stays uncoloured.
+    expect(byName.get("visa")!.category).toBeUndefined();
+  });
+
+  it("gives a merchant split across categories the one with the bigger inflow", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const sid = (db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number }).id;
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       VALUES (?, 'purchases', '2026-07-20', 'DUAL', 'DUAL', ?, NULL, ?, NULL, NULL, NULL)`
+    );
+    ins.run(sid, "food", 100);
+    ins.run(sid, "taxes_fees", 900);
+    const { nodes } = sankeyFlows(db, o("cash", "nominal"), "2026-07");
+    expect(nodes.find(n => n.name === "DUAL")).toMatchObject({ category: "taxes_fees" });
+  });
 });
 
 describe("dailySpend", () => {

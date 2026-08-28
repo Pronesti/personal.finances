@@ -399,7 +399,11 @@ const TOP_MERCHANTS = 8; // per category; the tail becomes one "<category> — o
 export type SankeyNode = {
   name: string;
   kind: "card" | "category" | "merchant" | "tail";
-  /** Set for the two node kinds whose label is a category name, so the UI can translate it. */
+  /**
+   * The category this node belongs to: its own for a category or tail node (whose label IS the
+   * category name, so the UI also translates it), the one that funds it for a merchant. Only a
+   * card node lacks it — a card feeds every category, so no single hue is honest for it.
+   */
   category?: Category;
 };
 
@@ -469,6 +473,19 @@ export function sankeyFlows(
         value: tail,
       });
     }
+  }
+
+  // Merchant nodes are keyed by name alone, so one can be fed by two categories: a rule-matched
+  // merchant that also shows up in a statement's taxes-and-charges section is forced to
+  // taxes_fees for those rows only. Give such a node the colour of its bigger inflow rather than
+  // whichever category `perCategory` happened to visit first; the links stay separately coloured,
+  // so the split is still visible.
+  const dominant = new Map<number, number>(); // merchant node index -> its biggest inbound value
+  for (const l of links) {
+    if (nodes[l.target].kind !== "merchant") continue;
+    if (l.value <= (dominant.get(l.target) ?? 0)) continue;
+    dominant.set(l.target, l.value);
+    nodes[l.target].category = nodes[l.source].category;
   }
   return { nodes, links };
 }
