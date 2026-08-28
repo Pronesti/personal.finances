@@ -749,15 +749,18 @@ describe("bankTerms", () => {
     db.prepare(`UPDATE statements SET limit_purchase=10000000 WHERE file='v_2026_06.json'`).run();
   }
 
-  it("sums limits across brands, takes the pricier TEM, and keeps ratios nominal", () => {
+  it("sums limits across brands, keeps per-brand terms, and names the pricier TEM's card", () => {
     const db = openAndSeed();
     seedTerms(db);
     const july = bankTerms(db, o("cash", "nominal")).find(m => m.month === "2026-07")!;
     expect(july.limit).toBe(20000000);
+    expect(july.limitByBrand).toEqual({ visa: 10000000, mastercard: 10000000 });
+    expect(july.temByBrand).toEqual({ visa: 5.5, mastercard: 5.0 });
     expect(july.balance).toBeCloseTo(1000000 + 10 * 1100 + 500000); // USD leg at July MEP
     expect(july.utilizationPct).toBeCloseTo((1511000 / 20000000) * 100);
     expect(july.minPaymentPct).toBeCloseTo((50000 / 1500000) * 100); // over the ARS balance only
     expect(july.temPct).toBe(5.5);
+    expect(july.temBrand).toBe("visa"); // the pricier card, not an anonymous MAX
     expect(july.inflationPct).toBeCloseTo(10); // CPI 100 -> 110
     expect(july.realTemPct).toBeCloseTo((1.055 / 1.1 - 1) * 100); // negative: inflation beats the TEM
   });
@@ -768,15 +771,16 @@ describe("bankTerms", () => {
     const rows = bankTerms(db, o("cash", "real"));
     const june = rows.find(m => m.month === "2026-06")!;
     // June only has the visa statement while the table knows two brands: the summed limit is a
-    // coverage hole and must gap, but the per-card limit still reads.
+    // coverage hole and must gap, but visa's own line still reads.
     expect(june.limit).toBeNull();
-    expect(june.limitCard).toBeCloseTo(10000000 * (110 / 100)); // June pesos restated at July CPI
+    expect(june.limitByBrand.visa).toBeCloseTo(10000000 * (110 / 100)); // June pesos restated at July CPI
+    expect(june.limitByBrand.mastercard).toBeUndefined(); // no statement — absent from the map
     expect(june.temPct).toBeNull();
     expect(june.inflationPct).toBeNull(); // no 2026-05 in the CPI table
     expect(june.balance).toBeNull(); // no balances seeded for June — absent, not 0
     const july = rows.find(m => m.month === "2026-07")!;
     expect(july.limit).toBe(20000000); // both brands present; July IS the CPI base month
-    expect(july.limitCard).toBe(10000000);
+    expect(july.limitByBrand.visa).toBe(10000000);
   });
 });
 

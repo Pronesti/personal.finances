@@ -1115,48 +1115,62 @@ export function paymentFloat(
 export type BankMonth = {
   month: string;
   /**
-   * Total purchase limit across both cards, converted to the active value mode. Null on a month
-   * missing one card's statement — a line that sawtooths 20M↔40M because a PDF is absent reads
-   * as the bank slashing the limit, so the chart shows a gap instead.
+   * Total purchase limit across every card, converted to the active value mode. Null on a month
+   * missing any card's statement — a line that sawtooths because a PDF is absent reads as the
+   * bank slashing the limit, so the chart shows a gap instead.
    */
   limit: number | null;
-  /** Per-card limit (MAX across brands) — immune to coverage holes; the real-terms tile's series. */
-  limitCard: number | null;
-  /** Closing balance across both cards (USD part at that month's MEP), same mode. */
+  /** Each present card's own limit, mode-converted — the honest per-card series now that the
+   *  cards no longer share one number (BBVA 20M vs Mercado Pago ~5M). */
+  limitByBrand: Record<string, number | null>;
+  /** Each present card's monthly effective rate (TEM) as its statement prints it. */
+  temByBrand: Record<string, number | null>;
+  /** Closing balance across the cards present (USD part at that month's MEP), same mode. */
   balance: number | null;
-  /** Nominal ratio balance/limit — identical in every value mode. */
+  /** Nominal ratio balance/limit over the cards present — identical in every value mode. */
   utilizationPct: number | null;
   /** Minimum payment over the ARS closing balance, nominal ratio. */
   minPaymentPct: number | null;
-  /** Monthly effective financing rate (TEM) the statements print. */
+  /** The priciest present card's TEM — what a revolver would actually pay — and which card. */
   temPct: number | null;
-  tnaPct: number | null;
+  temBrand: string | null;
   /** CPI month-over-month for this cycle month; null past the table's edge. */
   inflationPct: number | null;
-  /** What revolving actually costs in purchasing power: (1+TEM)/(1+inflation)−1. */
+  /** What revolving on the priciest card costs in purchasing power: (1+TEM)/(1+inflation)−1. */
   realTemPct: number | null;
 };
 
 // Chart 19. The statement header as a time series — the terms the bank sets, which every other
 // page ignores. Monthly, never bucketed: a limit and a rate are point-in-time terms, and summing
-// them over a quarter would manufacture a number the bank never offered. The purchase limit SUMS
-// across brands — two cards are independent headroom — while the rates take MAX: the bank moves
-// both cards together in this dataset, and when it ever doesn't, the pricier TEM is the one a
-// revolver would actually pay.
+// them over a quarter would manufacture a number no bank ever offered. The purchase limit SUMS
+// across brands — the cards are independent headroom — but limits and rates are ALSO kept per
+// brand: three cards from two issuers no longer share one number, so a single MAX line would
+// jump whenever the coverage set changes, not when a bank moves anything.
 export function bankTerms(db: Database.Database, opts: ValueOpts): BankMonth[] {
   const rows = db.prepare(`
     SELECT cycle_month AS month,
-           SUM(limit_purchase) AS lim, MAX(limit_purchase) AS lim_card,
+           SUM(limit_purchase) AS lim,
            COUNT(DISTINCT brand) AS nbrands,
            SUM(balance_ars) AS bal_ars, SUM(balance_usd) AS bal_usd,
-           SUM(minimum_payment_ars) AS min_pay,
-           MAX(rate_tem_pct) AS tem, MAX(rate_tna_pct) AS tna
+           SUM(minimum_payment_ars) AS min_pay
     FROM statements GROUP BY cycle_month ORDER BY cycle_month
   `).all() as {
-    month: string; lim: number | null; lim_card: number | null; nbrands: number;
-    bal_ars: number | null; bal_usd: number | null;
-    min_pay: number | null; tem: number | null; tna: number | null;
+    month: string; lim: number | null; nbrands: number;
+    bal_ars: number | null; bal_usd: number | null; min_pay: number | null;
   }[];
+  // MAX within one brand-month is the superseding rule: re-ingesting a cycle replaces the row,
+  // so at most one statement per brand and month survives anyway.
+  const perBrand = db.prepare(`
+    SELECT cycle_month AS month, brand,
+           MAX(limit_purchase) AS lim, MAX(rate_tem_pct) AS tem
+    FROM statements GROUP BY cycle_month, brand
+  `).all() as { month: string; brand: string; lim: number | null; tem: number | null }[];
+  const byMonth = new Map<string, { brand: string; lim: number | null; tem: number | null }[]>();
+  for (const b of perBrand) {
+    const list = byMonth.get(b.month) ?? [];
+    list.push(b);
+    byMonth.set(b.month, list);
+  }
   const allBrands = (db.prepare("SELECT COUNT(DISTINCT brand) n FROM statements").get() as { n: number }).n;
   const baseMonth = opts.value === "real" ? latestMonth(opts.cpi) : "";
   return rows.map(r => {
@@ -1166,20 +1180,38 @@ export function bankTerms(db: Database.Database, opts: ValueOpts): BankMonth[] {
     const infl = opts.cpi[r.month] != null && opts.cpi[prev] != null
       ? (opts.cpi[r.month] / opts.cpi[prev] - 1) * 100
       : null;
+    const brands = byMonth.get(r.month) ?? [];
+    const limitByBrand: Record<string, number | null> = {};
+    const temByBrand: Record<string, number | null> = {};
+    let temPct: number | null = null;
+    let temBrand: string | null = null;
+    for (const b of brands.sort((a, c) => a.brand.localeCompare(c.brand))) {
+      limitByBrand[b.brand] = b.lim == null ? null : toMode(b.lim, r.month, opts, baseMonth);
+      temByBrand[b.brand] = b.tem;
+      if (b.tem != null && (temPct == null || b.tem > temPct)) {
+        temPct = b.tem;
+        temBrand = b.brand;
+      }
+    }
     return {
       month: r.month,
       limit: r.lim == null || r.nbrands < allBrands ? null : toMode(r.lim, r.month, opts, baseMonth),
-      limitCard: r.lim_card == null ? null : toMode(r.lim_card, r.month, opts, baseMonth),
+      limitByBrand, temByBrand,
       balance: balNominal == null ? null : toMode(balNominal, r.month, opts, baseMonth),
       utilizationPct: r.lim && balNominal != null ? (balNominal / r.lim) * 100 : null,
       minPaymentPct: r.min_pay != null && r.bal_ars ? (r.min_pay / r.bal_ars) * 100 : null,
-      temPct: r.tem, tnaPct: r.tna,
+      temPct, temBrand,
       inflationPct: infl,
-      realTemPct: r.tem != null && infl != null
-        ? ((1 + r.tem / 100) / (1 + infl / 100) - 1) * 100
+      realTemPct: temPct != null && infl != null
+        ? ((1 + temPct / 100) / (1 + infl / 100) - 1) * 100
         : null,
     };
   });
+}
+
+/** Union of brands appearing in a bankTerms series, sorted — the charts' line set. */
+export function bankBrands(months: BankMonth[]): string[] {
+  return [...new Set(months.flatMap(m => Object.keys(m.limitByBrand)))].sort();
 }
 
 export type PaceDay = { day: number; cum: number };

@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db";
 import { latestMonth, loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
-import { bankTerms } from "@/lib/queries";
+import { bankTerms, bankBrands } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import { fmtMoney, fmtPct } from "@/lib/format";
@@ -19,20 +19,40 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
   const opts = valueOpts(modes);
   const db = getDb();
   const months = bankTerms(db, opts);
-  const latest = months.at(-1);
+  const brands = bankBrands(months);
+  // Utilization means "of everything the cards allow", so the tile reads the last month with
+  // every card's statement on file — the newest cycle often has only one card in yet.
+  const latestFull = [...months].reverse().find(m => m.limit != null);
+  // The last month whose real rate is COMPUTABLE — the newest cycle usually has a TEM but no
+  // CPI yet, and a tile that goes blank for that is less honest than one a month older.
+  const latestRated = [...months].reverse().find(m => m.realTemPct != null)
+    ?? [...months].reverse().find(m => m.temPct != null);
 
   // The tile is a real-terms judgement regardless of the active value mode — a nominal limit
-  // frozen for a year IS the story, and only constant pesos can say so. Per-card limit, not the
-  // sum: the sum dips whenever one card's statement is missing, which is a coverage hole, not
-  // the bank moving anything.
-  const real = bankTerms(db, { spend: "cash", value: "real", tax: "excl", cpi: loadCpi(), mep: loadMep() })
-    .filter(m => m.limitCard != null);
-  const last = real.at(-1);
-  const back = real.at(-1 - REAL_WINDOW) ?? real[0];
-  const realLimitPct = last && back && back !== last && back.limitCard! > 0
-    ? ((last.limitCard! - back.limitCard!) / back.limitCard!) * 100
+  // frozen for a year IS the story, and only constant pesos can say so. It tracks the LARGEST
+  // card's own limit: cards from different issuers no longer share a number, and a cross-brand
+  // MAX would fake a collapse on any month where only the small card's statement is in.
+  const real = bankTerms(db, { spend: "cash", value: "real", tax: "excl", cpi: loadCpi(), mep: loadMep() });
+  // Ties on the latest limit (the two BBVA cards share it) go to the longer history: the tile
+  // wants the erosion of a standing limit, and the spottier card's series starts at its own
+  // introduction, which reads as a raise instead.
+  const bigBrand = brands
+    .map(b => ({
+      b,
+      lim: [...real].reverse().find(m => m.limitByBrand[b] != null)?.limitByBrand[b] ?? null,
+      span: real.filter(m => m.limitByBrand[b] != null).length,
+    }))
+    .filter(x => x.lim != null)
+    .sort((a, c) => c.lim! - a.lim! || c.span - a.span)[0]?.b;
+  const series = bigBrand
+    ? real.filter(m => m.limitByBrand[bigBrand] != null).map(m => m.limitByBrand[bigBrand]!)
+    : [];
+  const last = series.at(-1);
+  const back = series.at(-1 - REAL_WINDOW) ?? series[0];
+  const realLimitPct = last != null && back != null && series.length > 1 && back > 0
+    ? ((last - back) / back) * 100
     : null;
-  const windowMonths = last && back ? real.indexOf(last) - real.indexOf(back) : null;
+  const windowMonths = series.length > 1 ? Math.min(REAL_WINDOW, series.length - 1) : null;
   const tr = await getT();
 
   return (
@@ -48,12 +68,14 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.utilization")}</div>
           <div className="text-2xl font-bold">
-            {latest?.utilizationPct != null ? `${latest.utilizationPct.toFixed(1).replace(".", ",")}%` : "—"}
+            {latestFull?.utilizationPct != null ? `${latestFull.utilizationPct.toFixed(1).replace(".", ",")}%` : "—"}
           </div>
           <div className="text-sm text-ink-muted">
-            {latest?.balance != null && latest?.limit != null
+            {latestFull?.balance != null && latestFull?.limit != null
               ? tr("bank.tile.utilization.detail", {
-                  balance: fmtMoney(latest.balance, modes.value), limit: fmtMoney(latest.limit, modes.value),
+                  balance: fmtMoney(latestFull.balance, modes.value),
+                  limit: fmtMoney(latestFull.limit, modes.value),
+                  month: latestFull.month,
                 })
               : tr("bank.tile.none")}
           </div>
@@ -62,19 +84,22 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.limitReal")}</div>
           <div className="text-2xl font-bold">{fmtPct(realLimitPct)}</div>
           <div className="text-sm text-ink-muted">
-            {windowMonths ? tr("bank.tile.limitReal.detail", { months: windowMonths }) : tr("bank.tile.none")}
+            {windowMonths && bigBrand
+              ? tr("bank.tile.limitReal.detail", { brand: bigBrand, months: windowMonths })
+              : tr("bank.tile.none")}
           </div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr("bank.tile.realTem")}</div>
           <div className="text-2xl font-bold">
-            {latest?.realTemPct != null ? tr("bank.tile.realTem.value", { pct: fmtPct(latest.realTemPct) }) : "—"}
+            {latestRated?.realTemPct != null ? tr("bank.tile.realTem.value", { pct: fmtPct(latestRated.realTemPct) }) : "—"}
           </div>
           <div className="text-sm text-ink-muted">
-            {latest?.temPct != null && latest?.inflationPct != null
+            {latestRated?.temPct != null && latestRated?.inflationPct != null
               ? tr("bank.tile.realTem.detail", {
-                  tem: latest.temPct.toFixed(2).replace(".", ","),
-                  infl: latest.inflationPct.toFixed(2).replace(".", ","),
+                  tem: latestRated.temPct.toFixed(2).replace(".", ","),
+                  brand: latestRated.temBrand ?? "",
+                  infl: latestRated.inflationPct.toFixed(2).replace(".", ","),
                 })
               : tr("bank.tile.realTem.stale")}
           </div>
@@ -82,11 +107,11 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
       </div>
 
       <h2 className="mb-3 text-lg font-semibold">{tr("bank.headroomHeading")}</h2>
-      <BankChart data={months} value={modes.value} />
+      <BankChart data={months} brands={brands} value={modes.value} />
       <p className="mb-8 mt-3 text-xs text-ink-muted">{tr("bank.headroomNote")}</p>
 
       <h2 className="mb-3 text-lg font-semibold">{tr("bank.ratesHeading")}</h2>
-      <RateChart data={months} />
+      <RateChart data={months} brands={brands} />
       <p className="mt-3 text-xs text-ink-muted">{tr("bank.ratesNote")}</p>
 
       <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("bank.footer")}</p>

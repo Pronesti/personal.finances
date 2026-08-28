@@ -64,3 +64,13 @@ export function gridProps(t: ChartTheme) {
 export function barWidth(points: number) {
   return points < 2 ? ({ barSize: 120 } as const) : ({} as const);
 }
+
+/**
+ * Colour for the i-th line of a small dynamic series set (one per card brand). Shared by the
+ * two bank charts so a brand keeps its hue across them; primary is skipped because the
+ * headroom chart's balance bars already own it.
+ */
+export function nthSeries(t: ChartTheme, i: number): string {
+  const ramp = [t.series.band, t.series.secondary, t.series.alert, t.series.neutral, t.series.mixed];
+  return ramp[i % ramp.length];
+}
