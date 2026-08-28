@@ -3,7 +3,7 @@ import type { ValueMode } from "@/lib/queries";
 
 export type ProjectionMonth = {
   month: string;
-  certain: number;   // contractual cuotas from the newest statement per brand
+  certain: number;   // contractual installments from the newest statement per brand
   expected: number;  // detected recurring charges carried forward
   estLow: number;    // variable spend band, low edge
   estHigh: number;   // variable spend band, high edge
@@ -26,7 +26,7 @@ export function project(input: {
     const month = addMonth(input.startMonth, k);
     const p = Math.pow(1 + input.inflation, k + 1);
     // Recurring and variable spend are assumed to track inflation. So in nominal terms they
-    // grow; in constant pesos they are flat. The contractual cuota schedule is the mirror
+    // grow; in constant pesos they are flat. The contractual installment schedule is the mirror
     // image: fixed in nominal pesos, therefore shrinking in constant ones. USD figures are
     // converted at the latest MEP by the caller; peso drift is not modelled.
     const grow = input.mode === "nominal" ? p : 1;

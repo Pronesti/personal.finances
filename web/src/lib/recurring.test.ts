@@ -32,7 +32,7 @@ describe("detectRecurring", () => {
     expect(detectRecurring([...sparse, ...few])).toHaveLength(0);
   });
 
-  it("excludes cuota rows", () => {
+  it("excludes installment rows", () => {
     const rows = ["2026-01", "2026-02", "2026-03", "2026-04"].map(m => ars("TIENDA", m, 100, 12));
     expect(detectRecurring(rows)).toHaveLength(0);
   });

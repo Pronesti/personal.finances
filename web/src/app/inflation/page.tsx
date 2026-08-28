@@ -30,16 +30,6 @@ export default async function Inflation() {
         and only once-a-month charges count, so buying more does not read as paying more.
         Basket: {basket.join(", ")}.
       </p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page compares your personal inflation with the official INDEC index. Your line uses
-        only the merchants that you pay each month. The goal is to show if your prices grow
-        faster than the average prices. Both lines start at 100 in the first month. Read the gap
-        between the lines. Your line below the official line is good. Your services increase
-        less than the average. Your line above the official line is bad. Your own basket becomes
-        more expensive than the average. The basket list under the chart shows the merchants in
-        the calculation.
-      </p>
     </main>
   );
 }

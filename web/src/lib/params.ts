@@ -1,8 +1,15 @@
 import { loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
+import type { Granularity } from "@/lib/months";
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
 type SP = { [k: string]: string | string[] | undefined };
+
+export const GRANULARITIES = ["month", "quarter", "year"] as const;
+
+export function parseGranularity(sp: SP): Granularity {
+  return sp.g === "quarter" ? "quarter" : sp.g === "year" ? "year" : "month";
+}
 
 export type Modes = { spend: SpendMode; value: ValueMode; tax: TaxMode };
 

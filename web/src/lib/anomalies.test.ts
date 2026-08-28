@@ -53,7 +53,7 @@ describe("duplicate detection", () => {
     ])).toHaveLength(0);
   });
 
-  it("never flags cuota rows — the same purchase is re-listed every statement", () => {
+  it("never flags installment rows — the same purchase is re-listed every statement", () => {
     expect(only("duplicate", ["2026-01", "2026-02", "2026-03", "2026-04"].map(month =>
       row({ merchant: "TIENDANEWSAN", month, date: "2025-07-17", ars: 166666.61, installment_count: 18 })
     ))).toHaveLength(0);

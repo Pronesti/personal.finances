@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence } from "@/lib/queries";
+import { monthlySpendByCategory, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -109,6 +109,93 @@ describe("queries", () => {
     expect(ev.sample).toHaveLength(2);
   });
 
+  it("merchantConcentration ranks merchants with cumulative share, netting refunds", () => {
+    const { merchants, totalSpend } = merchantConcentration(db, o("cash", "nominal"));
+    expect(totalSpend).toBe(2400); // COTO 1800 + YPF 500 + TIENDA 100; SPOTIFY is USD-only
+    expect(merchants.map(m => m.merchant)).toEqual(["COTO", "YPF", "TIENDA"]);
+    expect(merchants[0]).toMatchObject({ category: "food", total: 1800, count: 3, firstMonth: "2026-06", lastMonth: "2026-07" });
+    expect(merchants[0].share).toBeCloseTo(75);
+    expect(merchants[2].cumShare).toBeCloseTo(100);
+  });
+
+  it("merchantConcentration values an installment at full remaining price in accrual", () => {
+    const { merchants } = merchantConcentration(db, o("accrual", "nominal"));
+    expect(merchants.find(m => m.merchant === "TIENDA")!.total).toBe(400); // installments 3..6 of 100
+  });
+
+  it("merchantNovelty splits spend by first-ever sighting of the merchant", () => {
+    const rows = merchantNovelty(db, o("cash", "nominal"));
+    expect(rows).toEqual([
+      { period: "2026-06", newSpend: 1000, returningSpend: 0, newMerchants: 1 },
+      { period: "2026-07", newSpend: 600, returningSpend: 800, newMerchants: 2 },
+    ]);
+  });
+
+  it("merchantNovelty rebuckets by year but keeps 'new' month-grained", () => {
+    // COTO's July charges stay 'returning' inside the 2026 bucket — first sighting was June.
+    expect(merchantNovelty(db, o("cash", "nominal"), "year")).toEqual([
+      { period: "2026", newSpend: 1600, returningSpend: 800, newMerchants: 3 },
+    ]);
+  });
+
+  it("merchantConcentration scoped to one period ranks only that period's spend", () => {
+    const { merchants, totalSpend } = merchantConcentration(db, o("cash", "nominal"),
+      { granularity: "month", period: "2026-07" });
+    expect(totalSpend).toBe(1400); // COTO 800 + YPF 500 + TIENDA 100
+    expect(merchants[0]).toMatchObject({ merchant: "COTO", total: 800, count: 2 });
+  });
+
+  it("installmentBurden splits each billed month into installment vs one-off, always cash", () => {
+    // accrual passed in on purpose: the query must force cash internally
+    const rows = installmentBurden(db, o("accrual", "nominal"));
+    expect(rows[0]).toEqual({ period: "2026-06", installment: 0, oneOff: 1000, plans: 0, sharePct: 0 });
+    expect(rows[1]).toMatchObject({ period: "2026-07", installment: 100, oneOff: 1300, plans: 1 });
+    expect(rows[1].sharePct).toBeCloseTo(100 / 14);
+  });
+
+  it("installmentBurden converts to real pesos at the base month", () => {
+    const rows = installmentBurden(db, o("cash", "real"));
+    expect(rows[0].oneOff).toBeCloseTo(1100); // 1000 at 2026-06 CPI 100 → base 2026-07 CPI 110
+  });
+
+  it("installmentBurden rebuckets by year, counting a series once per period", () => {
+    const rows = installmentBurden(db, o("cash", "nominal"), "year");
+    expect(rows).toEqual([
+      { period: "2026", installment: 100, oneOff: 2300, plans: 1, sharePct: (100 / 2400) * 100 },
+    ]);
+  });
+
+  it("activePlans lists open series from the latest statement per brand", () => {
+    const plans = activePlans(db, o("cash", "nominal"));
+    expect(plans).toEqual([{
+      merchant: "TIENDA", brand: "visa", paid: 3, total: 6,
+      monthly: 100, remainingMonths: 3, remainingTotal: 300,
+    }]);
+  });
+
+  it("taxBurden classifies levies, excludes DEVOLUCION, and bases the rate on ARS + USD@MEP", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'taxes_and_charges',NULL,'DB.RG 5617 30% ( 1000,00 )','','taxes_fees',NULL,300,NULL,NULL,NULL),
+                       (2,'taxes_and_charges',NULL,'IVA RG 4240 21%( 1000,00)','','taxes_fees',NULL,210,NULL,NULL,NULL),
+                       (2,'taxes_and_charges',NULL,'INTERESES FINANCIACION $','','taxes_fees',NULL,50,NULL,NULL,NULL),
+                       (2,'taxes_and_charges',NULL,'DEVOLUCION DE SALDOS','','taxes_fees',NULL,500,NULL,NULL,NULL)`).run();
+    const rows = taxBurden(db, o("cash", "nominal"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ period: "2026-07", rg5617: 300, iva: 210, interest: 50, iibb: 0, total: 560 });
+    // Base: ARS purchases 1400 (1000 - 200 + 100 + 500) + Spotify 3.73 USD at MEP 1100.
+    expect(rows[0].ratePct).toBeCloseTo((560 / (1400 + 3.73 * 1100)) * 100);
+  });
+
+  it("taxBurden's yearly rate divides by the whole year's purchases, tax-free months included", () => {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'taxes_and_charges',NULL,'IVA RG 4240 21%( 1000,00)','','taxes_fees',NULL,210,NULL,NULL,NULL)`).run();
+    const rows = taxBurden(db, o("cash", "nominal"), "year");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ period: "2026", iva: 210, total: 210 });
+    // June had purchases (1000) but no tax lines — it still belongs in the denominator.
+    expect(rows[0].ratePct).toBeCloseTo((210 / (1000 + 1400 + 3.73 * 1100)) * 100);
+  });
+
   it("recategorize covers the same rows a full ingest would, payments included", () => {
     db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
                 VALUES (2,'purchases','2026-07-20','XENEIZE','CUOTA XENEIZE','other',NULL,3000,NULL,NULL,NULL),
@@ -124,7 +211,7 @@ describe("queries", () => {
     expect(rows[0]).toMatchObject({ brand: "mastercard", month: "2026-07", transactions: 1, alerts: 0 });
   });
 
-  it("accrual counts remaining principal at first-observed cuota, nets refunds, skips USD-only in sums", () => {
+  it("accrual counts remaining principal at first-observed installment, nets refunds, skips USD-only in sums", () => {
     const r = monthlySpendByCategory(db, o("accrual", "nominal"));
     const july = Object.fromEntries(r.filter(x => x.month === "2026-07").map(x => [x.category, x.amount]));
     expect(july).toEqual({ food: 800, shopping: 400, transport: 500 });
@@ -199,22 +286,22 @@ describe("queries", () => {
     ]);
   });
 
-  it("eli5 aggregates cuotas across latest statement per brand and honors modes", () => {
+  it("eli5 aggregates installments across latest statement per brand and honors modes", () => {
     const t = eli5(db, o("cash", "real"));
     expect(t.spentThisMonth).toBeCloseTo(1400);
-    expect(t.cuotaMonths).toBe(2);
-    expect(t.cuotaTotal).toBe(350);
+    expect(t.installmentMonths).toBe(2);
+    expect(t.installmentTotal).toBe(350);
     expect(t.baseMonth).toBe("2026-07");
     expect(t.alerts).toEqual([]);
     const nom = eli5(db, o("cash", "nominal"));
     expect(nom.sparkline.find(s => s.month === "2026-06")!.amount).toBe(1000);
   });
 
-  it("eli5 values the cuota total in the active mode, not raw pesos", () => {
+  it("eli5 values the installment total in the active mode, not raw pesos", () => {
     // upcoming_installments is nominal ARS: 200 + 100 + 50. USD mode must divide by the
     // latest month's MEP, not print 350 behind a US$ sign.
-    expect(eli5(db, o("cash", "usd")).cuotaTotal).toBeCloseTo(350 / 1100);
-    expect(eli5(db, o("cash", "nominal")).cuotaTotal).toBe(350);
+    expect(eli5(db, o("cash", "usd")).installmentTotal).toBeCloseTo(350 / 1100);
+    expect(eli5(db, o("cash", "nominal")).installmentTotal).toBe(350);
   });
 
   it("eli5 throws actionable error on empty DB", () => {
@@ -223,7 +310,7 @@ describe("queries", () => {
   });
 });
 
-describe("cuota series identity", () => {
+describe("installment series identity", () => {
   it("keys each series by its purchase date — two series, one merchant, one count", () => {
     const db = openDb(":memory:");
     seed(db);
@@ -232,7 +319,7 @@ describe("cuota series identity", () => {
       `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
        VALUES (?, 'purchases', ?, 'ML', 'MERCADOLIBRE', 'shopping', NULL, 1000, NULL, ?, 6)`
     );
-    ins.run(sid, "2026-01-05", 1);  // series A, first cuota observed
+    ins.run(sid, "2026-01-05", 1);  // series A, first installment observed
     ins.run(sid, "2026-05-20", 4);  // series B, first observed at k=4
     const shopping = monthlySpendByCategory(db, o("accrual", "nominal"))
       .filter(r => r.month === "2026-07" && r.category === "shopping")
@@ -349,9 +436,9 @@ describe("currencySplit", () => {
   });
 });
 
-import { cuotaProjection, latestStatementIds } from "@/lib/queries";
+import { installmentProjection, latestStatementIds } from "@/lib/queries";
 
-describe("cuotaProjection", () => {
+describe("installmentProjection", () => {
   it("takes the certain layer only from the newest statement per brand", () => {
     const db = openDb(":memory:");
     seed(db);
@@ -360,7 +447,7 @@ describe("cuotaProjection", () => {
     db.prepare("INSERT INTO upcoming_installments (statement_id, month, amount_ars) VALUES (?, '2026-08', 9999)").run(june);
 
     expect(latestStatementIds(db)).toHaveLength(2); // one visa, one mastercard
-    const p = cuotaProjection(db, o("cash", "nominal"), 3);
+    const p = installmentProjection(db, o("cash", "nominal"), 3);
     expect(p.map(x => x.month)).toEqual(["2026-08", "2026-09", "2026-10"]);
     expect(p[0].certain).toBeCloseTo(250, 6); // 200 (visa July) + 50 (mastercard), never 10249
     expect(p[1].certain).toBeCloseTo(100, 6);
@@ -368,7 +455,7 @@ describe("cuotaProjection", () => {
   });
 
   it("returns nothing when no statements are ingested", () => {
-    expect(cuotaProjection(openDb(":memory:"), o("cash", "nominal"))).toEqual([]);
+    expect(installmentProjection(openDb(":memory:"), o("cash", "nominal"))).toEqual([]);
   });
 });
 
@@ -430,7 +517,7 @@ describe("sankeyFlows", () => {
 });
 
 describe("dailySpend", () => {
-  it("counts a cuota series once at full price, not once per statement", () => {
+  it("counts an installment series once at full price, not once per statement", () => {
     const db = openDb(":memory:");
     seed(db);
     const ins = db.prepare(
@@ -477,5 +564,116 @@ describe("eli5 phase 2 tiles", () => {
     expect(t.openAnomalies.every(a => !a.resolved)).toBe(true);
     const dupes = t.openAnomalies.filter(a => a.kind === "duplicate");
     expect(dupes.map(a => a.amount)).toEqual([90000]);
+  });
+});
+
+import { weekdayProfile, ticketTrend, moneyBack, paymentFloat } from "@/lib/queries";
+
+describe("weekdayProfile", () => {
+  it("buckets accrual spend by purchase weekday, Monday first, refunds netting but not counting", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const days = weekdayProfile(db, o("cash", "nominal")); // cash on purpose: accrual is forced
+    expect(days.map(d => d.day)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    const wed = days.find(d => d.day === "Wed")!;
+    expect(wed).toMatchObject({ total: 1500, count: 2 }); // COTO June + YPF, both Wednesdays
+    expect(wed.byCategory).toEqual({ food: 1000, transport: 500 });
+    // TIENDA installment 3/6 on a Saturday: full remaining principal, once.
+    expect(days.find(d => d.day === "Sat")!).toMatchObject({ total: 400, count: 1 });
+    // The Sunday refund nets the total but is not a visit.
+    expect(days.find(d => d.day === "Sun")!).toMatchObject({ total: -200, count: 0 });
+  });
+});
+
+describe("ticketTrend", () => {
+  it("counts each purchase once at full price and reports avg and midpoint median", () => {
+    const rows = ticketTrend(openAndSeed(), o("cash", "nominal"));
+    expect(rows[0]).toEqual({ period: "2026-06", count: 1, total: 1000, avgTicket: 1000, medianTicket: 1000 });
+    // July tickets: COTO 1000, TIENDA 400 (remaining principal), YPF 500. Refund excluded.
+    expect(rows[1]).toMatchObject({ period: "2026-07", count: 3, total: 1900, medianTicket: 500 });
+    expect(rows[1].avgTicket).toBeCloseTo(1900 / 3);
+  });
+
+  it("admits USD-billed rows only in usd mode", () => {
+    const db = openAndSeed();
+    expect(ticketTrend(db, o("cash", "usd"))[1].count).toBe(4);     // Spotify joins
+    expect(ticketTrend(db, o("cash", "nominal"))[1].count).toBe(3); // and only there
+  });
+
+  it("averages the two middles on an even sample", () => {
+    const db = openAndSeed();
+    db.prepare("DELETE FROM transactions WHERE merchant = 'YPF'").run();
+    expect(ticketTrend(db, o("cash", "nominal"))[1].medianTicket).toBe(700); // (400 + 1000) / 2
+  });
+});
+
+function openAndSeed(): Database.Database {
+  const db = openDb(":memory:");
+  seed(db);
+  return db;
+}
+
+describe("moneyBack", () => {
+  function seedCredits(db: Database.Database) {
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (2,'payments','2026-07-05','BONIF.PROMO CUOTA XENEIZE','BONIF PROMO CUOTA XENEIZE','entertainment','sports',-500,NULL,NULL,NULL),
+                       (2,'payments',NULL,'CR.RG 5617 30% M (M)','CR RG 5617 30% M M','taxes_fees',NULL,-300,NULL,NULL,NULL),
+                       (2,'payments','2026-07-06','SU PAGO EN PESOS','SU PAGO EN PESOS','transfers',NULL,-10000,NULL,NULL,NULL)`).run();
+  }
+
+  it("splits credits into promo / refund / taxback and rates them against positive purchases", () => {
+    const db = openAndSeed();
+    seedCredits(db);
+    const { periods, top } = moneyBack(db, o("cash", "nominal"));
+    expect(periods).toHaveLength(1); // June has no credits: no bucket, not a zero row
+    // COTO DEVOL -200 is the seeded purchases-section reversal.
+    expect(periods[0]).toMatchObject({ period: "2026-07", promo: 500, refund: 200, taxback: 300, total: 1000 });
+    expect(periods[0].pctOfSpend).toBeCloseTo((1000 / 1600) * 100); // vs COTO 1000 + TIENDA 100 + YPF 500
+    expect(top.map(t => t.amount)).toEqual([500, 300, 200]);
+    expect(top[0].kind).toBe("promo");
+  });
+
+  it("never counts the user's own payments as money back", () => {
+    const db = openAndSeed();
+    seedCredits(db);
+    const { top } = moneyBack(db, o("cash", "nominal"));
+    expect(top.some(t => t.description.startsWith("SU PAGO"))).toBe(false);
+  });
+
+  it("buckets by quarter and keeps the rate nominal in real mode", () => {
+    const db = openAndSeed();
+    seedCredits(db);
+    const { periods } = moneyBack(db, o("cash", "real"), "quarter");
+    expect(periods[0].period).toBe("2026-Q3");
+    expect(periods[0].pctOfSpend).toBeCloseTo((1000 / 1600) * 100); // July-only, CPI cancels anyway
+  });
+});
+
+describe("paymentFloat", () => {
+  it("measures purchase-to-due days and the real-terms gain of paying later", () => {
+    const rows = paymentFloat(openAndSeed(), cpi);
+    const june = rows.find(r => r.month === "2026-06")!;
+    expect(june.avgDays).toBe(27); // 2026-06-10 -> due 2026-07-07
+    // 1000 pesos: worth 1100 base pesos at purchase (CPI 100), 1000 at the July due date.
+    expect(june.gain).toBeCloseTo(100);
+    expect(june.gainPct).toBeCloseTo((100 / 1100) * 100);
+    expect(june.avgDaysInstallment).toBeNull();
+  });
+
+  it("splits one-off from installment float — the cuota rows carry their original purchase date", () => {
+    const july = paymentFloat(openAndSeed(), cpi).find(r => r.month === "2026-07")!;
+    expect(july.avgDaysOneOff).toBeCloseTo((28 * 1000 + 26 * 500) / 1500); // COTO + YPF, due-date weighted
+    expect(july.avgDaysInstallment).toBe(27); // TIENDA 2026-07-11 -> visa due 2026-08-07
+    // Both CPI legs fall back to the table's last month (2026-07): zero gain, never invented.
+    expect(july.gain).toBe(0);
+  });
+
+  it("clamps purchase months older than the CPI table instead of throwing", () => {
+    const db = openAndSeed();
+    db.prepare(`INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+                VALUES (1,'purchases','2023-12-15','OLD PLAN','OLD PLAN','shopping',NULL,1000,NULL,17,18)`).run();
+    const june = paymentFloat(db, cpi).find(r => r.month === "2026-06")!;
+    // Clamped to the first CPI month: the old row contributes the same gain as a June purchase.
+    expect(june.gain).toBeCloseTo(200);
   });
 });

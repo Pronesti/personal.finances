@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { toReal, latestMonth, type CpiTable } from "@/lib/cpi";
+import { toReal, latestMonth, monthValue, CPI_REMEDY, type CpiTable } from "@/lib/cpi";
 import { mepFor, type MepTable } from "@/lib/mep";
 import { detectRecurring, type RecurringCharge } from "@/lib/recurring";
 import { detectAnomalies, type Anomaly } from "@/lib/anomalies";
@@ -89,20 +89,20 @@ export function toMode(amountArs: number, month: string, opts: ValueOpts, baseMo
 }
 
 // The single home of cash/accrual/real/usd/tax semantics. Returns null when the row
-// doesn't contribute in this mode (USD-only outside usd mode, or a later cuota in accrual).
+// doesn't contribute in this mode (USD-only outside usd mode, or a later installment in accrual).
 function effectiveAmount(r: BaseRow, opts: ValueOpts, ctx: AmountCtx): number | null {
-  let cuotaFactor = 1;
+  let installmentFactor = 1;
   if (opts.spend === "accrual" && r.installment_count != null && r.installment_number != null) {
     const k = ctx.minK.get(`${r.merchant}|${r.installment_count}|${r.date ?? ""}`)!;
     if (r.installment_number !== k) return null;
-    cuotaFactor = r.installment_count - k + 1; // remaining principal; full price when k=1 (rev note 4)
+    installmentFactor = r.installment_count - k + 1; // remaining principal; full price when k=1 (rev note 4)
   }
   const mult = ctx.taxMult.get(r.statement_id) ?? 1;
   if (r.ars == null) {
     // USD-billed row: only usd mode can value it, and its own USD figure is the truth.
-    return opts.value === "usd" && r.usd != null ? r.usd * cuotaFactor * mult : null;
+    return opts.value === "usd" && r.usd != null ? r.usd * installmentFactor * mult : null;
   }
-  return toMode(r.ars * cuotaFactor * mult, r.month, opts, ctx.baseMonth);
+  return toMode(r.ars * installmentFactor * mult, r.month, opts, ctx.baseMonth);
 }
 
 export function monthlySpendByCategory(db: Database.Database, opts: ValueOpts) {
@@ -146,7 +146,7 @@ export function categoryDrill(
     if (filter.merchant && r.merchant !== filter.merchant) continue;
     if (filter.period && periodOf(r.month, filter.granularity ?? "month") !== filter.period) continue;
     const amt = effectiveAmount(r, opts, ctx);
-    if (amt == null && r.usd == null) continue; // dropped by mode (non-first cuota in accrual)
+    if (amt == null && r.usd == null) continue; // dropped by mode (non-first installment in accrual)
     rows.push({ month: r.month, date: r.date, description: r.description, merchant: r.merchant,
       category: r.category, subcategory: r.subcategory, amount: amt, usd: r.usd });
     if (amt != null) {
@@ -207,11 +207,11 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
     `SELECT month, SUM(amount_ars) amount FROM upcoming_installments
      WHERE statement_id IN (${ids.map(() => "?").join(",")}) GROUP BY month ORDER BY month`
   ).all(...ids) as { month: string; amount: number }[];
-  // upcoming_installments stores nominal ARS. Value it the way cuotaProjection does: at the
+  // upcoming_installments stores nominal ARS. Value it the way installmentProjection does: at the
   // latest month seen, not at the future month it falls due — neither CPI nor MEP has data
   // past the last statement. Without this the tile printed raw pesos behind a "US$" sign.
   const baseMonth = latestMonth(opts.cpi);
-  const cuotaTotal = upcoming.reduce(
+  const installmentTotal = upcoming.reduce(
     (s, u) => s + toMode(u.amount, lastMonthKey, opts, baseMonth), 0
   );
 
@@ -221,7 +221,7 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
   const latest = latestPerBrand.sort((a, b) => b.closing_date.localeCompare(a.closing_date))[0];
 
   const openAnomalies = anomalies(db, opts.cpi).filter(a => !a.resolved).slice(0, 5);
-  const [next] = cuotaProjection(db, opts, 1);
+  const [next] = installmentProjection(db, opts, 1);
   const nextStatementForecast = next
     ? { certain: next.certain, expected: next.expected, estLow: next.estLow, estHigh: next.estHigh }
     : { certain: 0, expected: 0, estLow: 0, estHigh: 0 };
@@ -235,8 +235,8 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
       .sort((a, b) => b.amount - a.amount).slice(0, 3)
       .map(m => ({ category: m.category, amount: m.amount })),
     alerts,
-    cuotaMonths: upcoming.length,
-    cuotaTotal,
+    installmentMonths: upcoming.length,
+    installmentTotal,
     sparkline: sorted.slice(-12).map(([month, amount]) => ({ month, amount })),
     latestClosing: latest.closing_date,
     nextDueDate: latest.due_date,
@@ -296,7 +296,7 @@ export function latestStatementIds(db: Database.Database): number[] {
   `).all() as { id: number }[]).map(r => r.id);
 }
 
-export function cuotaProjection(
+export function installmentProjection(
   db: Database.Database, opts: ValueOpts, horizon = 6
 ): ProjectionMonth[] {
   const rows = baseRows(db);
@@ -328,7 +328,7 @@ export function cuotaProjection(
     (s, r) => s + toMode(r.lastAmount, r.lastMonth, opts, ctx.baseMonth), 0
   );
 
-  // Variable = neither contractual cuota nor detected recurring. Trailing 6 cycle months.
+  // Variable = neither contractual installment nor detected recurring. Trailing 6 cycle months.
   const trailing = months.slice(-6);
   const variableByMonth = new Map(trailing.map(m => [m, 0]));
   for (const r of rows) {
@@ -436,7 +436,7 @@ export function sankeyFlows(db: Database.Database, opts: ValueOpts, month: strin
   return { nodes: names.map(name => ({ name })), links };
 }
 
-// Chart 3. Always accrual: a calendar answers "what did I buy that day", and cuota rows are
+// Chart 3. Always accrual: a calendar answers "what did I buy that day", and installment rows are
 // re-listed by every statement at their original purchase date (rev note 4 collapses them).
 export function dailySpend(db: Database.Database, opts: ValueOpts) {
   const accrual: ValueOpts = { ...opts, spend: "accrual" };
@@ -599,6 +599,228 @@ export function merchantEvidence(
   return { count: agg.count, firstMonth: agg.firstMonth!, lastMonth: agg.lastMonth!, brands, sample };
 }
 
+export type MerchantTotal = {
+  merchant: string; category: string; total: number; count: number;
+  firstMonth: string; lastMonth: string; share: number; cumShare: number;
+};
+
+// Chart 11. Merchant ranking with cumulative share — "how concentrated is my spending?".
+// Unscoped it covers the whole history; `scope` narrows it to one periodOf() label, sharing
+// the granularity vocabulary with /categories and /compare. Negatives net per merchant
+// (decision 2); a merchant whose scoped history nets ≤ 0 (fully refunded) is dropped rather
+// than shown with a negative share. The category shown is the merchant's dominant one — a
+// merchant can straddle categories via subcategory rules.
+export function merchantConcentration(
+  db: Database.Database, opts: ValueOpts,
+  scope?: { granularity: Granularity; period: string }
+): {
+  merchants: MerchantTotal[]; totalSpend: number;
+} {
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, opts);
+  const acc = new Map<string, {
+    total: number; count: number; firstMonth: string; lastMonth: string; byCat: Map<string, number>;
+  }>();
+  for (const r of rows) {
+    if (scope && periodOf(r.month, scope.granularity) !== scope.period) continue;
+    const amt = effectiveAmount(r, opts, ctx);
+    if (amt == null) continue;
+    const cur = acc.get(r.merchant)
+      ?? { total: 0, count: 0, firstMonth: r.month, lastMonth: r.month, byCat: new Map() };
+    cur.total += amt;
+    cur.count += 1;
+    if (r.month < cur.firstMonth) cur.firstMonth = r.month;
+    if (r.month > cur.lastMonth) cur.lastMonth = r.month;
+    cur.byCat.set(r.category, (cur.byCat.get(r.category) ?? 0) + amt);
+    acc.set(r.merchant, cur);
+  }
+  const positive = [...acc.entries()].filter(([, v]) => v.total > 0)
+    .sort((a, b) => b[1].total - a[1].total);
+  const totalSpend = positive.reduce((s, [, v]) => s + v.total, 0);
+  let cum = 0;
+  const merchants = positive.map(([merchant, v]) => {
+    cum += v.total;
+    const category = [...v.byCat.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    return {
+      merchant, category, total: v.total, count: v.count,
+      firstMonth: v.firstMonth, lastMonth: v.lastMonth,
+      share: (v.total / totalSpend) * 100, cumShare: (cum / totalSpend) * 100,
+    };
+  });
+  return { merchants, totalSpend };
+}
+
+// Chart 12. Spend split by whether the merchant had ever appeared before its first cycle
+// month — "new" stays month-grained even when the bars are bucketed by quarter or year, so
+// changing granularity regroups the same judgement rather than redefining it. The first
+// covered period is structurally all-new — the page says so instead of hiding it.
+export function merchantNovelty(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+): {
+  period: string; newSpend: number; returningSpend: number; newMerchants: number;
+}[] {
+  const rows = baseRows(db); // ordered by cycle_month, so first sighting wins below
+  const ctx = amountCtx(db, rows, opts);
+  const firstSeen = new Map<string, string>();
+  for (const r of rows) if (!firstSeen.has(r.merchant)) firstSeen.set(r.merchant, r.month);
+  const acc = new Map<string, { newSpend: number; returningSpend: number; newSet: Set<string> }>();
+  for (const r of rows) {
+    const amt = effectiveAmount(r, opts, ctx);
+    if (amt == null) continue;
+    const period = periodOf(r.month, granularity);
+    const b = acc.get(period) ?? { newSpend: 0, returningSpend: 0, newSet: new Set<string>() };
+    if (firstSeen.get(r.merchant) === r.month) {
+      b.newSpend += amt;
+      b.newSet.add(r.merchant);
+    } else {
+      b.returningSpend += amt;
+    }
+    acc.set(period, b);
+  }
+  return [...acc.entries()]
+    .map(([period, b]) => ({
+      period, newSpend: b.newSpend, returningSpend: b.returningSpend, newMerchants: b.newSet.size,
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+}
+
+// Chart 13. Always cash: the question is what fraction of each statement was pre-committed by
+// past installment decisions before the month even started — accrual would collapse the series back
+// to its purchase month and erase exactly that. Value/tax modes still apply. At quarter/year
+// granularity, `plans` counts distinct series billed at least once in the period.
+export function installmentBurden(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+): {
+  period: string; installment: number; oneOff: number; plans: number; sharePct: number;
+}[] {
+  const cash: ValueOpts = { ...opts, spend: "cash" };
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, cash);
+  const acc = new Map<string, { installment: number; oneOff: number; plans: Set<string> }>();
+  for (const r of rows) {
+    const amt = effectiveAmount(r, cash, ctx);
+    if (amt == null) continue;
+    const period = periodOf(r.month, granularity);
+    const b = acc.get(period) ?? { installment: 0, oneOff: 0, plans: new Set<string>() };
+    if (r.installment_count != null) {
+      b.installment += amt;
+      b.plans.add(`${r.merchant}|${r.installment_count}|${r.date ?? ""}`); // series key, as in amountCtx
+    } else {
+      b.oneOff += amt;
+    }
+    acc.set(period, b);
+  }
+  return [...acc.entries()]
+    .map(([period, b]) => ({
+      period, installment: b.installment, oneOff: b.oneOff, plans: b.plans.size,
+      sharePct: b.installment + b.oneOff > 0 ? (b.installment / (b.installment + b.oneOff)) * 100 : 0,
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+}
+
+export type ActivePlan = {
+  merchant: string; brand: string; paid: number; total: number;
+  monthly: number; remainingMonths: number; remainingTotal: number;
+};
+
+// Open installment series as listed on the LATEST statement per brand — the same superseding rule as
+// latestStatementIds. remainingTotal assumes the installment stays constant, which AR plans do in
+// nominal pesos; upcoming_installments knows the true per-month totals but not the merchant.
+export function activePlans(db: Database.Database, opts: ValueOpts): ActivePlan[] {
+  const ids = latestStatementIds(db);
+  if (ids.length === 0) return [];
+  const rows = db.prepare(`
+    SELECT s.brand, s.cycle_month AS month, t.merchant, t.date, t.ars,
+           t.installment_number AS num, t.installment_count AS cnt
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.statement_id IN (${ids.map(() => "?").join(",")})
+      AND t.section = 'purchases' AND t.installment_count IS NOT NULL
+      AND t.installment_number < t.installment_count AND t.ars IS NOT NULL
+  `).all(...ids) as {
+    brand: string; month: string; merchant: string; date: string | null;
+    ars: number; num: number; cnt: number;
+  }[];
+  const baseMonth = opts.value === "real" ? latestMonth(opts.cpi) : "";
+  const plans = new Map<string, ActivePlan>();
+  for (const r of rows) {
+    const key = `${r.brand}|${r.merchant}|${r.cnt}|${r.date ?? ""}`;
+    if (plans.has(key)) continue;
+    const monthly = toMode(r.ars, r.month, opts, baseMonth);
+    plans.set(key, {
+      merchant: r.merchant, brand: r.brand, paid: r.num, total: r.cnt,
+      monthly, remainingMonths: r.cnt - r.num, remainingTotal: monthly * (r.cnt - r.num),
+    });
+  }
+  return [...plans.values()].sort((a, b) => b.remainingTotal - a.remainingTotal);
+}
+
+export type TaxPeriod = {
+  period: string; rg5617: number; iva: number; iibb: number; stampDuty: number;
+  interest: number; other: number; total: number; ratePct: number | null;
+};
+
+type TaxKind = "rg5617" | "iva" | "iibb" | "stampDuty" | "interest" | "other";
+
+function taxKind(desc: string): TaxKind | null {
+  if (desc.startsWith("DEVOLUCION")) return null; // balance transfer, not a tax (see taxMultipliers)
+  if (desc.includes("RG 5617")) return "rg5617";
+  if (desc.includes("IVA")) return "iva";
+  if (desc.includes("IIBB")) return "iibb";
+  if (desc.includes("SELLOS")) return "stampDuty";
+  if (desc.includes("INTERES")) return "interest";
+  return "other";
+}
+
+// Chart 14. What the card itself costs, by levy, per period. The rate's denominator mirrors
+// taxMultipliers: ARS purchases plus USD purchases at MEP, because RG 5617 is levied on the
+// foreign spend — an ARS-only base would overstate a travel month's overhead. The rate is a
+// nominal ratio (both sides same-month pesos), so it is identical in every value mode; at
+// quarter/year granularity each side is summed nominally before dividing, while the displayed
+// amounts convert month by month so a real-mode year is honest constant pesos.
+export function taxBurden(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+): TaxPeriod[] {
+  const taxes = db.prepare(`
+    SELECT s.cycle_month AS month, t.description, t.ars
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.section = 'taxes_and_charges' AND t.ars IS NOT NULL
+  `).all() as { month: string; description: string; ars: number }[];
+  const base = db.prepare(`
+    SELECT s.cycle_month AS month,
+           SUM(CASE WHEN t.ars IS NOT NULL THEN t.ars ELSE 0 END) AS ars_purch,
+           SUM(CASE WHEN t.ars IS NULL THEN COALESCE(t.usd, 0) ELSE 0 END) AS usd_purch
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.section = 'purchases' GROUP BY s.cycle_month
+  `).all() as { month: string; ars_purch: number; usd_purch: number }[];
+  const baseMonth = opts.value === "real" ? latestMonth(opts.cpi) : "";
+  type Bucket = { conv: Record<TaxKind, number>; nominalTax: number; nominalBase: number };
+  const acc = new Map<string, Bucket>();
+  for (const t of taxes) {
+    const kind = taxKind(t.description);
+    if (kind == null) continue;
+    const period = periodOf(t.month, granularity);
+    const b = acc.get(period) ?? {
+      conv: { rg5617: 0, iva: 0, iibb: 0, stampDuty: 0, interest: 0, other: 0 },
+      nominalTax: 0, nominalBase: 0,
+    };
+    b.conv[kind] += toMode(t.ars, t.month, opts, baseMonth);
+    b.nominalTax += t.ars;
+    acc.set(period, b);
+  }
+  // Second pass so a bucket exists only where taxes do, yet its rate divides by the FULL
+  // period's purchases — including the period's tax-free months.
+  for (const r of base) {
+    const b = acc.get(periodOf(r.month, granularity));
+    if (b) b.nominalBase += r.ars_purch + r.usd_purch * mepFor(r.month, opts.mep);
+  }
+  return [...acc.entries()].map(([period, b]) => ({
+    period,
+    ...b.conv,
+    total: b.conv.rg5617 + b.conv.iva + b.conv.iibb + b.conv.stampDuty + b.conv.interest + b.conv.other,
+    ratePct: b.nominalBase > 0 ? (b.nominalTax / b.nominalBase) * 100 : null,
+  })).sort((a, b) => a.period.localeCompare(b.period));
+}
+
 // Applies a freshly accepted rule to rows already loaded, so the dashboard updates without a full
 // re-ingest. The section scope mirrors categorize() exactly — it short-circuits taxes_and_charges
 // and runs the rule loop over payments (BONIF PROMO CUOTA XENEIZE is a real, rule-categorized
@@ -610,4 +832,216 @@ export function recategorize(
     `UPDATE transactions SET category = ?, subcategory = ?
      WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0`
   ).run(category, subcategory, match.toUpperCase()).changes;
+}
+
+export type WeekdayRow = {
+  /** Monday-first, so the weekend reads as one block at the right edge. */
+  day: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+  total: number;
+  /** Purchases only — a netting refund is not a store visit. */
+  count: number;
+  byCategory: Record<string, number>;
+};
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0] as const;
+
+// Chart 15. Where the week's money goes, by purchase day. Always accrual for the same reason
+// as dailySpend: the question is "what did I buy on Saturdays", and installment rows are
+// re-listed by every statement — collapsing a series to its purchase date is the only reading
+// under which a weekday means anything.
+export function weekdayProfile(db: Database.Database, opts: ValueOpts): WeekdayRow[] {
+  const accrual: ValueOpts = { ...opts, spend: "accrual" };
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, accrual);
+  const days = DAY_NAMES.map(day => ({ day, total: 0, count: 0, byCategory: {} as Record<string, number> }));
+  for (const r of rows) {
+    if (r.date == null) continue;
+    const amt = effectiveAmount(r, accrual, ctx);
+    if (amt == null) continue;
+    const d = days[new Date(r.date + "T00:00:00Z").getUTCDay()];
+    d.total += amt;
+    if (amt > 0) d.count += 1;
+    d.byCategory[r.category] = (d.byCategory[r.category] ?? 0) + amt;
+  }
+  return MONDAY_FIRST.map(i => days[i]);
+}
+
+export type TicketPeriod = {
+  period: string; count: number; avgTicket: number; medianTicket: number; total: number;
+};
+
+// Midpoint median: even-sized samples average the two middles, so a two-purchase month
+// doesn't arbitrarily report its pricier half.
+function midMedian(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2;
+}
+
+// Chart 16. Price-vs-volume decomposition: is spend moving because of MORE purchases or BIGGER
+// ones? Always accrual — an installment series is one purchase decision, not six tickets — and
+// refunds are excluded outright rather than netted: this is a habits lens, and a refund cancels
+// a purchase's cost, not the visit. In real mode the average ticket is inflation-honest, which
+// is the whole point: a flat real median with a rising count is volume, the reverse is price.
+export function ticketTrend(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month"
+): TicketPeriod[] {
+  const accrual: ValueOpts = { ...opts, spend: "accrual" };
+  const rows = baseRows(db);
+  const ctx = amountCtx(db, rows, accrual);
+  const acc = new Map<string, number[]>();
+  for (const r of rows) {
+    const amt = effectiveAmount(r, accrual, ctx);
+    if (amt == null || amt <= 0) continue;
+    const period = periodOf(r.month, granularity);
+    const list = acc.get(period) ?? [];
+    list.push(amt);
+    acc.set(period, list);
+  }
+  return [...acc.entries()].map(([period, tickets]) => {
+    const total = tickets.reduce((s, x) => s + x, 0);
+    return {
+      period, count: tickets.length, total,
+      avgTicket: total / tickets.length, medianTicket: midMedian(tickets),
+    };
+  }).sort((a, b) => a.period.localeCompare(b.period));
+}
+
+export type CreditKind = "promo" | "refund" | "taxback";
+
+export type CreditPeriod = {
+  period: string; promo: number; refund: number; taxback: number; total: number;
+  /** Nominal ratio vs the period's positive purchases — identical in every value mode. */
+  pctOfSpend: number | null;
+};
+
+export type CreditItem = {
+  month: string; date: string | null; merchant: string; description: string;
+  kind: CreditKind; amount: number;
+};
+
+function creditKind(desc: string): CreditKind {
+  if (desc.includes("RG 5617")) return "taxback";
+  if (desc.includes("BONIF") || desc.includes("OFF")) return "promo";
+  return "refund"; // DEVOLUCION and plain merchant reversals
+}
+
+// Chart 17. The mirror of /taxes: what the card gave BACK — bank promos (BONIF/Visa Garpa
+// lines), merchant refunds, and RG 5617 recovered on foreign-spend reversals. Sources are the
+// negative purchase rows (which the spend pages silently net away — decision 2 — so this is
+// the one place they are visible) plus payments-section credits, excluding SU PAGO rows, which
+// are the user's own money. The rate divides nominal credits by nominal positive purchases,
+// same convention as taxBurden's overhead.
+export function moneyBack(
+  db: Database.Database, opts: ValueOpts, granularity: Granularity = "month", topN = 12
+): { periods: CreditPeriod[]; top: CreditItem[] } {
+  const credits = db.prepare(`
+    SELECT s.cycle_month AS month, t.date, t.description, t.merchant, t.ars
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.ars < 0
+      AND (t.section = 'purchases'
+           OR (t.section = 'payments' AND t.description NOT LIKE 'SU PAGO%'))
+  `).all() as { month: string; date: string | null; description: string; merchant: string; ars: number }[];
+  const purchases = db.prepare(`
+    SELECT s.cycle_month AS month, SUM(t.ars) AS base
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.section = 'purchases' AND t.ars > 0 GROUP BY s.cycle_month
+  `).all() as { month: string; base: number }[];
+  const baseMonth = opts.value === "real" ? latestMonth(opts.cpi) : "";
+
+  type Bucket = { conv: Record<CreditKind, number>; nominal: number; base: number };
+  const acc = new Map<string, Bucket>();
+  const items: CreditItem[] = [];
+  for (const c of credits) {
+    const kind = creditKind(c.description);
+    const amount = toMode(-c.ars, c.month, opts, baseMonth);
+    const period = periodOf(c.month, granularity);
+    const b = acc.get(period) ?? { conv: { promo: 0, refund: 0, taxback: 0 }, nominal: 0, base: 0 };
+    b.conv[kind] += amount;
+    b.nominal += -c.ars;
+    acc.set(period, b);
+    items.push({ month: c.month, date: c.date, merchant: c.merchant, description: c.description, kind, amount });
+  }
+  for (const p of purchases) {
+    const b = acc.get(periodOf(p.month, granularity));
+    if (b) b.base += p.base;
+  }
+  return {
+    periods: [...acc.entries()].map(([period, b]) => ({
+      period, ...b.conv,
+      total: b.conv.promo + b.conv.refund + b.conv.taxback,
+      pctOfSpend: b.base > 0 ? (b.nominal / b.base) * 100 : null,
+    })).sort((a, b) => a.period.localeCompare(b.period)),
+    top: items.sort((a, b) => b.amount - a.amount).slice(0, topN),
+  };
+}
+
+export type FloatMonth = {
+  month: string;
+  /** Purchase-to-due days, weighted by nominal amount. */
+  avgDays: number;
+  avgDaysOneOff: number | null;
+  avgDaysInstallment: number | null;
+  gainOneOff: number;
+  gainInstallment: number;
+  gain: number;
+  /** Gain over the real (purchase-time) value of the month's billed purchases. */
+  gainPct: number;
+};
+
+// Like monthValue, but a month before the table's start clamps to the first entry instead of
+// throwing: an 18-installment plan can carry a purchase date older than the CPI series, and
+// "no float gain measurable" is the honest reading there, not a crash.
+function cpiAtOrFirst(month: string, cpi: CpiTable): number {
+  const months = Object.keys(cpi).sort();
+  if (months.length === 0) throw new Error(`CPI table empty — run ${CPI_REMEDY}`);
+  return month <= months[0] ? cpi[months[0]] : monthValue(month, cpi, CPI_REMEDY);
+}
+
+// Chart 18. What paying LATER in devalued pesos is worth — the card as an inflation subsidy.
+// Every billed ARS purchase is paid at its statement's due date; the gain is the difference
+// between the real value of those pesos at purchase time and at payment time, in constant
+// latest-month pesos. Cash rows by construction (each installment row IS one payment), dated
+// by their ORIGINAL purchase date, so a 12-cuota plan earns eleven extra months of float —
+// exactly the effect this chart exists to show. USD-billed rows are excluded: their float is a
+// MEP bet, not a CPI one. A due month past the CPI table falls back to the latest index, so
+// the newest month's gain is understated, never invented.
+export function paymentFloat(db: Database.Database, cpi: CpiTable): FloatMonth[] {
+  const rows = db.prepare(`
+    SELECT s.cycle_month AS month, s.due_date, t.date, t.ars,
+           t.installment_count IS NOT NULL AS isInstallment
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    WHERE t.section = 'purchases' AND t.ars > 0 AND t.date IS NOT NULL
+  `).all() as { month: string; due_date: string | null; date: string; ars: number; isInstallment: 0 | 1 }[];
+  const base = latestMonth(cpi);
+  type Bucket = {
+    days: [number, number]; weight: [number, number]; gain: [number, number]; realAtPurchase: number;
+  };
+  const acc = new Map<string, Bucket>();
+  for (const r of rows) {
+    const due = r.due_date ?? `${r.month}-28`; // no due date on file: assume end of cycle month
+    const days = (Date.parse(due + "T00:00:00Z") - Date.parse(r.date + "T00:00:00Z")) / 86400_000;
+    if (days < 0) continue; // malformed row; a negative float is a parse error, not a loan to the bank
+    const realAtPurchase = r.ars * (cpi[base] / cpiAtOrFirst(r.date.slice(0, 7), cpi));
+    const realAtDue = r.ars * (cpi[base] / cpiAtOrFirst(due.slice(0, 7), cpi));
+    const b = acc.get(r.month)
+      ?? { days: [0, 0], weight: [0, 0], gain: [0, 0], realAtPurchase: 0 };
+    b.days[r.isInstallment] += days * r.ars;
+    b.weight[r.isInstallment] += r.ars;
+    b.gain[r.isInstallment] += realAtPurchase - realAtDue;
+    b.realAtPurchase += realAtPurchase;
+    acc.set(r.month, b);
+  }
+  return [...acc.entries()].map(([month, b]) => {
+    const weight = b.weight[0] + b.weight[1];
+    const gain = b.gain[0] + b.gain[1];
+    return {
+      month,
+      avgDays: (b.days[0] + b.days[1]) / weight,
+      avgDaysOneOff: b.weight[0] > 0 ? b.days[0] / b.weight[0] : null,
+      avgDaysInstallment: b.weight[1] > 0 ? b.days[1] / b.weight[1] : null,
+      gainOneOff: b.gain[0], gainInstallment: b.gain[1], gain,
+      gainPct: b.realAtPurchase > 0 ? (gain / b.realAtPurchase) * 100 : 0,
+    };
+  }).sort((a, b) => a.month.localeCompare(b.month));
 }

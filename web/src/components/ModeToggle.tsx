@@ -29,10 +29,11 @@ function Seg({ param, options, current }: { param: string; options: [string, str
   );
 }
 
-export function ModeToggle({ modes, baseMonth, spendToggle = true }: {
+export function ModeToggle({ modes, baseMonth, spendToggle = true, taxToggle = true }: {
   modes: { spend: string; value: string; tax: string };
   baseMonth?: string;
   spendToggle?: boolean;
+  taxToggle?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -45,7 +46,9 @@ export function ModeToggle({ modes, baseMonth, spendToggle = true }: {
       {spendToggle && (
         <Seg param="spend" current={modes.spend} options={[["accrual", "Purchases"], ["cash", "As billed"]]} />
       )}
-      <Seg param="tax" current={modes.tax} options={[["excl", "Pre-tax"], ["incl", "True cost"]]} />
+      {taxToggle && (
+        <Seg param="tax" current={modes.tax} options={[["excl", "Pre-tax"], ["incl", "True cost"]]} />
+      )}
     </div>
   );
 }

@@ -66,21 +66,13 @@ export default async function Overview({ searchParams }: { searchParams: Promise
               </>}
         </Tile>
         <Tile href={withModes("/compare", modes)} label="Installment burden (both cards)">
-          <div className="text-2xl font-bold">{fmtMoney(t.cuotaTotal, modes.value)}</div>
-          <div className="text-sm text-ink-muted">over next {t.cuotaMonths} months</div>
+          <div className="text-2xl font-bold">{fmtMoney(t.installmentTotal, modes.value)}</div>
+          <div className="text-sm text-ink-muted">over next {t.installmentMonths} months</div>
         </Tile>
         <Tile href={withModes("/trends", modes)} label={`12-month trend (${valueLabel})`}>
           <Sparkline data={t.sparkline} />
         </Tile>
       </div>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows a summary of the latest statement. The goal is to give a fast status of
-        your cards. Each tile shows one part of the analysis. Click a tile to open the full page
-        for that part. The first tile compares this statement with the last statement. A small
-        change is normal. A large increase is a signal. Examine it in Trends. The alert tile is
-        good when it shows zero. When it shows more, open the Alerts page and examine each item.
-      </p>
     </main>
   );
 }

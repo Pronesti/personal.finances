@@ -30,15 +30,6 @@ export default async function Upload() {
         the file is called, and the superseded PDF is kept in pdfs/.superseded. The PDF is parsed
         locally by scripts/pdf_to_json.py; nothing about it leaves this machine.
       </p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page receives the PDF statements and shows the statements in the database. Drop a
-        PDF file in the zone above. The parser reads the file on this machine. No data goes out
-        of this machine. When you load a cycle again, the new file replaces the old file. The
-        table shows each statement, its card, its cycle, and its alerts. A cycle that is not in
-        the table is a hole in the history. The pages that compare periods are less exact when
-        holes exist. Load the missing statements to close the holes.
-      </p>
     </main>
   );
 }

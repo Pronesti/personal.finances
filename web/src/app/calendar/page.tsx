@@ -26,15 +26,6 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         the first statement: six installment series were bought in late 2024 and are still being paid off.
         Hover a cell for the total.
       </p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the days when you make purchases. Each cell is one day. A dark cell
-        shows a large total. The goal is to show your time pattern, not your billing. An
-        installment purchase counts once, on its purchase day, at the full price. Read the grid
-        to find the days with many purchases. Some dark cells are normal. Large purchases occur
-        on some days. Many dark cells in a short period show a time with high costs. Point to a
-        cell to see its total.
-      </p>
     </main>
   );
 }

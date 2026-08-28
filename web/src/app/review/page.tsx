@@ -64,7 +64,7 @@ export default async function Review() {
                                   {s.description}
                                   {s.installment_count != null && (
                                     <span className="ml-1">
-                                      (cuota {s.installment_number}/{s.installment_count})
+                                      (installment {s.installment_number}/{s.installment_count})
                                     </span>
                                   )}
                                 </td>
@@ -119,16 +119,6 @@ export default async function Review() {
         would claim merchants you did not mean — the warning above the accept button lists them.
         Accepted rules go last, so a rule you wrote by hand always beats one the model proposed.
         Rejecting remembers the merchant so it is not sent again.
-      </p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page controls how merchants get their categories. The model proposes a rule for
-        each merchant that has no category. Only the merchant name goes to the model. Examine
-        each proposal and its statement lines. Accept a correct rule. Correct the category
-        first when it is necessary. Reject a bad rule. The warning under a rule shows other
-        merchants that the rule also captures. Examine that list before you accept the rule.
-        Good categories make all the other pages exact. Many merchants without a category make
-        the category pages less exact.
       </p>
     </main>
   );

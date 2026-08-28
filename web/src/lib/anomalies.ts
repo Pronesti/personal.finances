@@ -31,7 +31,7 @@ function daysApart(a: string, b: string): number {
   return Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86400_000;
 }
 
-// Cuota rows repeat across statements carrying the ORIGINAL purchase date and amount
+// Installment rows repeat across statements carrying the ORIGINAL purchase date and amount
 // (TIENDANEWSAN: 13 rows, all 2025-07-17, all 166666.61) — never duplicates. And a pair must
 // sit on ONE statement: the same purchase split across two cards is two real transactions.
 function duplicates(rows: AnomalyRow[]): Anomaly[] {

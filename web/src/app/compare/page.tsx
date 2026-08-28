@@ -34,16 +34,6 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
           ⚠ Single-card months (missing statements for one brand): {singleCard.map(c => c.month).join(", ")} — comparisons across these are apples-to-oranges.
         </p>
       )}
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page compares the total cost of each period with the period before it. The goal is
-        to show the direction of your costs. Select month, quarter, or year with the pills.
-        Each bar is one period. The percentage above a bar is the change against the period
-        before it. Use the real mode for this comparison. In real mode, a change near zero is
-        good. It means that your costs are stable. Large changes in sequence show a cost that is
-        not under control, or a special event. A period with a missing statement makes its
-        comparison not correct. The warning under the chart lists those periods.
-      </p>
     </main>
   );
 }

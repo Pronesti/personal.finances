@@ -108,16 +108,6 @@ export default async function Recurring() {
         <p className="text-sm text-ink-muted mb-4">Was recurring, has not billed for at least two cycles. No next charge is expected until it reappears.</p>
         <Table rows={lapsed} mep={mep} lapsed />
       </section>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the charges that come back each month. The goal is to show your fixed
-        obligations and their price changes. The first table contains the subscriptions. The
-        percentage change against the last month is the price signal. A change near inflation is
-        normal. A change far above inflation is bad. Examine that merchant, or cancel the
-        service. The second table contains frequent charges with variable amounts. They are not
-        obligations. The last table contains charges that stopped. No new charge is expected
-        from them. A merchant in the wrong table is a signal that its pattern changed.
-      </p>
     </main>
   );
 }

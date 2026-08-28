@@ -88,16 +88,6 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
         a price rise. Duplicate matching uses the ±2-day window Actual Budget uses for schedules, stays
         within one statement, and ignores installment rows.
       </p>
-
-      <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">
-        This page shows the results of the checks on your statements. The checks find duplicate
-        charges, price jumps, new merchants, and errors in the statement totals. The goal is to
-        find problems early, when a dispute with the bank is possible. The chart marks the
-        months with open alerts. Read the table and examine each open alert. An alert is not
-        always an error. It is a question. Mark an alert as reviewed when the charge is correct.
-        Dismiss it when it is not important. Zero open alerts is good. An open balance or math
-        alert is bad. It shows that the statement numbers do not agree.
-      </p>
     </main>
   );
 }

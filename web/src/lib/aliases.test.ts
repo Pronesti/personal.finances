@@ -32,7 +32,7 @@ describe("applyAlias", () => {
     expect(applyAlias("SANCOR COOP SE0000012345678-020-000", aliases)).toBe("SANCOR");
     expect(applyAlias("MOVISTAR AREN", aliases)).toBe("MOVISTAR ARENA");
   });
-  it("rejoins cuota series split by PDF truncation", () => {
+  it("rejoins installment series split by PDF truncation", () => {
     expect(applyAlias("LEF CASA DE MUSICA S", aliases)).toBe("LEF CASA DE MUSICA");
     expect(applyAlias("LEF CASA DE MUSICA SA - S", aliases)).toBe("LEF CASA DE MUSICA");
   });

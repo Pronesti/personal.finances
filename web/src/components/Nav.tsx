@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 
 const links = [
-  ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/categories", "Categories"], ["/sankey", "Sankey"], ["/calendar", "Calendar"],
-  ["/recurring", "Recurring"], ["/anomalies", "Alerts"], ["/inflation", "Inflation"], ["/compare", "Compare"], ["/upload", "Upload"], ["/review", "Review"],
+  ["/", "Overview"], ["/trends", "Trends"], ["/currency", "Currency"], ["/future", "Future"], ["/installments", "Installments"], ["/float", "Float"], ["/categories", "Categories"], ["/merchants", "Merchants"], ["/sankey", "Sankey"], ["/calendar", "Calendar"], ["/habits", "Habits"],
+  ["/recurring", "Recurring"], ["/taxes", "Taxes"], ["/credits", "Credits"], ["/anomalies", "Alerts"], ["/inflation", "Inflation"], ["/compare", "Compare"], ["/upload", "Upload"], ["/review", "Review"],
 ] as const;
 
 export function Nav() {
