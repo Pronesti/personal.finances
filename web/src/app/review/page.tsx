@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { unknownMerchants, rulePreview, merchantEvidence } from "@/lib/queries";
-import { loadCategoryFile, pendingMerchants, CATEGORIES } from "@/lib/categorize";
+import { pendingMerchants, CATEGORIES } from "@/lib/categorize";
+import { loadCategoryData } from "@/lib/rules";
 import { fmtArs } from "@/lib/format";
 import { ProposeButton } from "@/components/ProposeButton";
 import { getT } from "@/lib/locale";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Review() {
   const db = getDb();
-  const data = loadCategoryFile();
+  const data = loadCategoryData(db);
   const unknown = unknownMerchants(db);
   const spend = new Map(unknown.map(u => [u.merchant, u.total]));
   const pending = pendingMerchants(data, unknown.map(u => u.merchant));

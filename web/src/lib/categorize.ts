@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-import { DATA_DIR } from "@/lib/paths";
 import type { Proposal } from "@/lib/llm";
 
 export const CATEGORIES = [
@@ -26,37 +23,10 @@ export function normalizeMerchant(description: string): string {
   return s.replace(/\s+/g, " ").trim().toUpperCase();
 }
 
-export type CategoryFile = { rules: Rule[]; proposals: Proposal[]; rejected: string[] };
-
-const FILE = path.join(DATA_DIR, "merchant-categories.json");
-
-export function loadCategoryFile(file: string = FILE): CategoryFile {
-  const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<CategoryFile>;
-  return { rules: raw.rules ?? [], proposals: raw.proposals ?? [], rejected: raw.rejected ?? [] };
-}
-
-export function loadRules(): Rule[] {
-  return loadCategoryFile().rules;
-}
-
-// One entry per line, because the ordering of this file is load-bearing (first match wins) and a
-// human reads it. JSON.stringify(…, 2) would explode 32 rules to 160 lines and bury every accept
-// in a reformat. Written via a temp file + rename: a half-written file breaks every future ingest.
-export function saveCategoryFile(data: CategoryFile, file: string = FILE): void {
-  const list = (items: unknown[]) =>
-    items.length === 0 ? "[]" : `[\n${items.map(o => `    ${JSON.stringify(o)}`).join(",\n")}\n  ]`;
-  const body = [
-    "{",
-    `  "rules": ${list(data.rules)},`,
-    `  "proposals": ${list(data.proposals)},`,
-    `  "rejected": ${JSON.stringify(data.rejected)}`,
-    "}",
-    "",
-  ].join("\n");
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, body);
-  fs.renameSync(tmp, file);
-}
+// The rules, the pending LLM proposals and the rejected merchants, as one value. Stored in the
+// database (see lib/rules.ts) rather than in a file, so a correction is a data change: the file
+// this used to live in is tracked by git and every accept dirtied the working tree.
+export type CategoryData = { rules: Rule[]; proposals: Proposal[]; rejected: string[] };
 
 // Takes an already normalized + aliased merchant (ingest does both), not a raw description.
 export function categorize(
@@ -75,7 +45,7 @@ export function categorize(
 
 // Uses categorize itself rather than a second matcher: three implementations of "does this rule
 // claim this merchant" (here, categorize, and recategorize's SQL) would drift independently.
-export function pendingMerchants(data: CategoryFile, unknown: string[]): string[] {
+export function pendingMerchants(data: CategoryData, unknown: string[]): string[] {
   const proposed = new Set(data.proposals.map(p => p.merchant));
   const rejected = new Set(data.rejected);
   return unknown.filter(m =>
@@ -83,13 +53,13 @@ export function pendingMerchants(data: CategoryFile, unknown: string[]): string[
     !proposed.has(m) && !rejected.has(m));
 }
 
-// Appending puts the new rule last — the lowest priority in a first-match-wins file. Safe by
+// Appending puts the new rule last — the lowest priority in a first-match-wins list. Safe by
 // construction: a merchant only gets a proposal because no existing rule matched it. A match an
 // existing rule already claims is dropped, never overwritten (spec §7) — and `added: false` tells
 // the caller not to rewrite the database either.
 export function acceptProposal(
-  data: CategoryFile, merchant: string, rule: Rule
-): { data: CategoryFile; added: boolean } {
+  data: CategoryData, merchant: string, rule: Rule
+): { data: CategoryData; added: boolean } {
   const claimed = data.rules.some(r => r.match.toUpperCase() === rule.match.toUpperCase());
   return {
     added: !claimed,
@@ -105,12 +75,12 @@ export function acceptProposal(
 // merchant already HAS a category, so an appended rule would lose to whichever rule gave it one.
 // The new rule goes FIRST for that reason, and rewriting an existing rule for the same match is
 // the point here rather than something to refuse.
-export function upsertRule(data: CategoryFile, rule: Rule): CategoryFile {
+export function upsertRule(data: CategoryData, rule: Rule): CategoryData {
   const others = data.rules.filter(r => r.match.toUpperCase() !== rule.match.toUpperCase());
   return { ...data, rules: [rule, ...others] };
 }
 
-export function rejectProposal(data: CategoryFile, merchant: string): CategoryFile {
+export function rejectProposal(data: CategoryData, merchant: string): CategoryData {
   return {
     rules: data.rules,
     proposals: data.proposals.filter(p => p.merchant !== merchant),

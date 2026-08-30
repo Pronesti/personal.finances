@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { categoryDrill, coverage } from "@/lib/queries";
 import { parseModes, parseGranularity, withModes, valueOpts, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
-import { CATEGORIES, type Category } from "@/lib/categorize";
+import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import { DrillBars } from "@/components/DrillBars";
 import { RecategorizeButton } from "@/components/RecategorizeButton";
@@ -98,7 +98,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
                       <td className="text-right">{r.amount != null ? fmtMoney(r.amount, modes.value) : "—"}</td>
                       <td className="text-right">{r.usd ?? "—"}</td>
                       <td className="text-right whitespace-nowrap">
-                        <RecategorizeButton row={r} categories={CATEGORIES} />
+                        <RecategorizeButton row={r} />
                       </td>
                     </tr>
                   ))}

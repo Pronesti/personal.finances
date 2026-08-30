@@ -205,7 +205,7 @@ const en = {
   "categories.modal.match": "Rule text",
   "categories.modal.category": "Category",
   "categories.modal.subcategory": "Subcategory",
-  "categories.modal.note": "A charge has no category of its own \u2014 categories come from merchant rules, and every row is rebuilt from them the next time a statement is loaded. Saving writes a rule to data/merchant-categories.json and applies it to every charge whose merchant contains the rule text, so this charge and its siblings move together. The rule goes first, ahead of whichever rule categorizes the merchant today.",
+  "categories.modal.note": "A charge has no category of its own \u2014 categories come from merchant rules, and every row is rebuilt from them the next time a statement is loaded. Saving writes a rule to the database and applies it to every charge whose merchant contains the rule text, so this charge and its siblings move together. The rule goes first, ahead of whichever rule categorizes the merchant today.",
   "categories.modal.save": "Save",
   "categories.modal.saving": "Saving\u2026",
   "categories.modal.cancel": "Cancel",
@@ -433,7 +433,7 @@ const en = {
   "review.reject": "reject",
   "review.action.nothing": "Nothing to classify — every unknown merchant is already proposed or rejected.",
   "review.action.partial": "Classified {done} of {total} — click again for the rest.",
-  "review.note": "Accepting appends a rule to data/merchant-categories.json and applies it to the transactions already loaded. Rules match by substring and are first-match-wins, so edit the rule text if it would claim merchants you did not mean — the warning above the accept button lists them. Accepted rules go last, so a rule you wrote by hand always beats one the model proposed. Rejecting remembers the merchant so it is not sent again.",
+  "review.note": "Accepting appends a rule to the database and applies it to the transactions already loaded. Rules match by substring and are first-match-wins, so edit the rule text if it would claim merchants you did not mean — the warning above the accept button lists them. Accepted rules go last, so a rule you wrote by hand always beats one the model proposed. Rejecting remembers the merchant so it is not sent again.",
   "review.footer": "This page controls how merchants get their categories. The model proposes a rule for each merchant that has no category. Only the merchant name goes to the model. Examine each proposal and its statement lines. Accept a correct rule. Correct the category first when it is necessary. Reject a bad rule. The warning under a rule shows other merchants that the rule also captures. Examine that list before you accept the rule. Good categories make all the other pages exact. Many merchants without a category make the category pages less exact.",
   // ── bank ──────────────────────────────────────────────────────────────────
   "bank.title": "Bank terms",
@@ -704,7 +704,7 @@ const es: Dictionary = {
   "categories.modal.match": "Texto de la regla",
   "categories.modal.category": "Categor\u00eda",
   "categories.modal.subcategory": "Subcategor\u00eda",
-  "categories.modal.note": "Un cargo no tiene categor\u00eda propia: las categor\u00edas salen de las reglas de comercio, y cada fila se reconstruye a partir de ellas la pr\u00f3xima vez que se carga un resumen. Guardar escribe una regla en data/merchant-categories.json y la aplica a todo cargo cuyo comercio contenga el texto de la regla, as\u00ed que este cargo y sus hermanos se mueven juntos. La regla va primero, adelante de la regla que hoy categoriza al comercio.",
+  "categories.modal.note": "Un cargo no tiene categor\u00eda propia: las categor\u00edas salen de las reglas de comercio, y cada fila se reconstruye a partir de ellas la pr\u00f3xima vez que se carga un resumen. Guardar escribe una regla en la base de datos y la aplica a todo cargo cuyo comercio contenga el texto de la regla, as\u00ed que este cargo y sus hermanos se mueven juntos. La regla va primero, adelante de la regla que hoy categoriza al comercio.",
   "categories.modal.save": "Guardar",
   "categories.modal.saving": "Guardando\u2026",
   "categories.modal.cancel": "Cancelar",
@@ -930,7 +930,7 @@ const es: Dictionary = {
   "review.reject": "rechazar",
   "review.action.nothing": "No hay nada para clasificar: todos los comercios desconocidos ya están propuestos o rechazados.",
   "review.action.partial": "Se clasificaron {done} de {total} — hacé clic de nuevo para el resto.",
-  "review.note": "Aceptar agrega una regla a data/merchant-categories.json y la aplica a las transacciones ya cargadas. Las reglas coinciden por subcadena y gana la primera, así que editá el texto de la regla si fuera a capturar comercios que no querías: la advertencia arriba del botón de aceptar los lista. Las reglas aceptadas van al final, así que una regla escrita a mano siempre le gana a una propuesta por el modelo. Rechazar recuerda el comercio para no volver a enviarlo.",
+  "review.note": "Aceptar agrega una regla a la base de datos y la aplica a las transacciones ya cargadas. Las reglas coinciden por subcadena y gana la primera, así que editá el texto de la regla si fuera a capturar comercios que no querías: la advertencia arriba del botón de aceptar los lista. Las reglas aceptadas van al final, así que una regla escrita a mano siempre le gana a una propuesta por el modelo. Rechazar recuerda el comercio para no volver a enviarlo.",
   "review.footer": "Esta página controla cómo los comercios reciben su categoría. El modelo propone una regla para cada comercio que no tiene categoría. Solo el nombre del comercio va al modelo. Examiná cada propuesta y sus líneas del resumen. Aceptá una regla correcta. Corregí primero la categoría cuando haga falta. Rechazá una regla mala. La advertencia debajo de una regla muestra otros comercios que la regla también captura. Examiná esa lista antes de aceptar la regla. Las categorías buenas hacen exactas a todas las otras páginas. Muchos comercios sin categoría hacen menos exactas a las páginas de categorías.",
   // ── fallas ────────────────────────────────────────────────────────────────
   // ── banco ─────────────────────────────────────────────────────────────────

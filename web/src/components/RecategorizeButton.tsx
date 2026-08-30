@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
 import { recategorizeAction } from "@/app/categories/actions";
-import type { Category } from "@/lib/categorize";
+import { CATEGORIES } from "@/lib/categorize";
 import { useT } from "./I18nProvider";
 
 export type RecategorizeRow = {
@@ -9,14 +9,14 @@ export type RecategorizeRow = {
   category: string; subcategory: string | null;
 };
 
-type Props = { row: RecategorizeRow; categories: readonly Category[] };
+type Props = { row: RecategorizeRow };
 
 /**
  * Per-charge escape hatch from the drill table. The dialog is mounted only while it is open —
  * 200 rows render 200 buttons, not 200 hidden forms — and it is a native <dialog>, so the
  * backdrop and the focus trap come from the browser rather than from state here.
  */
-export function RecategorizeButton({ row, categories }: Props) {
+export function RecategorizeButton({ row }: Props) {
   const [open, setOpen] = useState(false);
   const t = useT();
   return (
@@ -24,12 +24,12 @@ export function RecategorizeButton({ row, categories }: Props) {
       <button type="button" onClick={() => setOpen(true)} className="text-accent hover:underline">
         {t("categories.recategorize")}
       </button>
-      {open && <Dialog row={row} categories={categories} onClose={() => setOpen(false)} />}
+      {open && <Dialog row={row} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function Dialog({ row, categories, onClose }: Props & { onClose: () => void }) {
+function Dialog({ row, onClose }: Props & { onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
   const titleId = useId();
@@ -78,7 +78,7 @@ function Dialog({ row, categories, onClose }: Props & { onClose: () => void }) {
           <label className="min-w-0 flex-1 text-xs text-ink-muted">
             {t("categories.modal.category")}
             <select name="category" defaultValue={row.category} className={field}>
-              {categories.map(c => <option key={c} value={c}>{t(`category.${c}`)}</option>)}
+              {CATEGORIES.map(c => <option key={c} value={c}>{t(`category.${c}`)}</option>)}
             </select>
           </label>
           <label className="min-w-0 flex-1 text-xs text-ink-muted">

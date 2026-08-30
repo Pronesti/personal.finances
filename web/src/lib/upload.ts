@@ -6,7 +6,7 @@ import type Database from "better-sqlite3";
 import { DATA_DIR } from "@/lib/paths";
 import { Failure } from "@/lib/failure";
 import { ingestFile, type IngestReport } from "@/lib/ingest";
-import { loadRules } from "@/lib/categorize";
+import { loadRules } from "@/lib/rules";
 import { loadAliases } from "@/lib/aliases";
 import { loadCpi, latestMonth } from "@/lib/cpi";
 import type { StatementJson } from "@/lib/integrity";
@@ -151,7 +151,7 @@ export async function ingestUpload(
     // The pipeline named the JSON after the temp file; the statement is named after the upload.
     json = { ...json, file: name };
     try {
-      report = ingestFile(db, json, loadRules(), loadAliases());
+      report = ingestFile(db, json, loadRules(db), loadAliases(db));
     } catch (e) {
       throw new Failure("ingest_failed", "failure.ingest_failed", { name, detail: (e as Error).message });
     }

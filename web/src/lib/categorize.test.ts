@@ -50,48 +50,17 @@ describe("categorize on aliased merchants", () => {
   });
 });
 
-// --- proposal store ---
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
+// --- the pure transformations over the stored rules, proposals and rejections. Where they are
+// stored, and that the order of the rules survives a round trip, is rules.test.ts. ---
 import {
-  loadCategoryFile, saveCategoryFile, pendingMerchants, acceptProposal, upsertRule, rejectProposal,
-  type CategoryFile,
+  pendingMerchants, acceptProposal, upsertRule, rejectProposal, type CategoryData,
 } from "@/lib/categorize";
 
-const base: CategoryFile = {
+const base: CategoryData = {
   rules: [{ match: "SPOTIFY", category: "subscriptions", subcategory: "music" }],
   proposals: [{ merchant: "LA PANADERIA", sent: "LA PANADERIA", category: "food", subcategory: "bakery", confidence: "high" }],
   rejected: ["WEIRD THING"],
 };
-
-function tmpFile(contents: string): string {
-  const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "cat-")), "merchant-categories.json");
-  fs.writeFileSync(p, contents);
-  return p;
-}
-
-describe("category file", () => {
-  it("defaults the new sections when the file predates them", () => {
-    expect(loadCategoryFile(tmpFile(JSON.stringify({ rules: base.rules }))))
-      .toEqual({ rules: base.rules, proposals: [], rejected: [] });
-  });
-
-  it("round-trips, keeping one rule per line so an accept is a one-line diff", () => {
-    const p = tmpFile("{}");
-    saveCategoryFile(base, p);
-    expect(loadCategoryFile(p)).toEqual(base);
-    const text = fs.readFileSync(p, "utf8");
-    expect(text).toContain(`    {"match":"SPOTIFY","category":"subscriptions","subcategory":"music"}`);
-  });
-
-  it("writes a file with no proposals or rejections without producing invalid JSON", () => {
-    const p = tmpFile("{}");
-    const empty: CategoryFile = { rules: base.rules, proposals: [], rejected: [] };
-    saveCategoryFile(empty, p);
-    expect(loadCategoryFile(p)).toEqual(empty);
-  });
-});
 
 describe("pendingMerchants", () => {
   it("skips merchants that are already ruled, proposed or rejected", () => {

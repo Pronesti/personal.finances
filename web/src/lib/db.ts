@@ -2,8 +2,13 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import { DATA_DIR } from "@/lib/paths";
+import { seedCategoryData } from "@/lib/rules";
+import { seedAliases } from "@/lib/aliases";
 
-export function migrate(db: Database.Database): void {
+// `seedDir` is where the tracked JSON files that these tables replaced still live. Null means do
+// not seed at all, which is the default because seeding is an openDb-level concern: a caller
+// running migrate() over a hand-built database is widening a schema, not importing repo data.
+export function migrate(db: Database.Database, seedDir: string | null = null): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS statements (
       id INTEGER PRIMARY KEY,
@@ -57,6 +62,38 @@ export function migrate(db: Database.Database): void {
       key TEXT PRIMARY KEY,
       state TEXT NOT NULL CHECK (state IN ('open','reviewed','dismissed'))
     );
+    -- Merchant rules, formerly data/merchant-categories.json. Correcting a category is a data
+    -- change now, not a source change: that file is tracked by git, this database is not.
+    -- The position column is explicit and load-bearing: categorize() is first-match-wins, so
+    -- MOVISTAR AR must be tried before MOVISTAR or a concert becomes a phone bill. Never rowid.
+    CREATE TABLE IF NOT EXISTS category_rules (
+      position INTEGER NOT NULL PRIMARY KEY,
+      match TEXT NOT NULL UNIQUE,
+      category TEXT NOT NULL,
+      subcategory TEXT
+    );
+    -- LLM classifications waiting for a human decision on /review. The position column keeps
+    -- the review table in a stable order between renders.
+    CREATE TABLE IF NOT EXISTS category_proposals (
+      position INTEGER NOT NULL PRIMARY KEY,
+      merchant TEXT NOT NULL UNIQUE,
+      sent TEXT NOT NULL,
+      category TEXT NOT NULL,
+      subcategory TEXT NOT NULL,
+      confidence TEXT NOT NULL CHECK (confidence IN ('high','low'))
+    );
+    -- Merchants a human declined to categorize, so the next propose run stops asking about them.
+    CREATE TABLE IF NOT EXISTS rejected_merchants (
+      position INTEGER NOT NULL PRIMARY KEY,
+      merchant TEXT NOT NULL UNIQUE
+    );
+    -- Merchant aliases, formerly data/merchant-aliases.json. Prefix match, first match wins, so
+    -- position matters here for the same reason it does on the rules.
+    CREATE TABLE IF NOT EXISTS merchant_aliases (
+      position INTEGER NOT NULL PRIMARY KEY,
+      match TEXT NOT NULL UNIQUE,
+      alias TEXT NOT NULL
+    );
   `);
   // CREATE IF NOT EXISTS never widens an existing table, so a database created before the
   // bank-terms columns existed gets them here. Values stay NULL until the next ingest.
@@ -66,14 +103,25 @@ export function migrate(db: Database.Database): void {
   for (const col of ["prev_balance_ars", "limit_purchase", "rate_tna_pct", "rate_tem_pct"]) {
     if (!have.has(col)) db.exec(`ALTER TABLE statements ADD COLUMN ${col} REAL`);
   }
+  // One-time import, guarded on the tables being empty, so a second run is a no-op and an
+  // existing database is never overwritten by the file it was seeded from.
+  if (seedDir !== null) {
+    seedCategoryData(db, path.join(seedDir, "merchant-categories.json"));
+    seedAliases(db, path.join(seedDir, "merchant-aliases.json"));
+  }
 }
 
-export function openDb(dbPath: string = path.join(DATA_DIR, "app.db")): Database.Database {
+export function openDb(
+  dbPath: string = path.join(DATA_DIR, "app.db"),
+  // An in-memory database is only ever a test fixture, so it starts empty: seeding it from the
+  // repo's real merchant files would make every test that opens one depend on their contents.
+  seedDir: string | null = dbPath === ":memory:" ? null : DATA_DIR,
+): Database.Database {
   if (dbPath !== ":memory:") fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
-  migrate(db);
+  migrate(db, seedDir);
   return db;
 }
 
