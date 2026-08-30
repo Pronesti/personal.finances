@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
-import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers } from "@/lib/queries";
+import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers, chromeData } from "@/lib/queries";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -35,6 +35,16 @@ function seed(db: Database.Database) {
 describe("queries", () => {
   let db: Database.Database;
   beforeEach(() => { db = openDb(":memory:"); seed(db); });
+
+  it("chromeData returns the months on file and the newest closing date", () => {
+    expect(chromeData(db)).toEqual({ months: ["2026-06", "2026-07"], latestClosing: "2026-07-30" });
+  });
+
+  // The layout renders chrome before anything is ingested, so this read must survive an empty
+  // database rather than taking every route down with it — /upload above all.
+  it("chromeData survives an empty database", () => {
+    expect(chromeData(openDb(":memory:"))).toEqual({ months: [], latestClosing: null });
+  });
 
   it("reviewableAlerts merges integrity alerts and anomalies, all open by default", () => {
     const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };

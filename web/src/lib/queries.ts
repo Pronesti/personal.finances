@@ -198,6 +198,16 @@ export function coverage(db: Database.Database): { month: string; brands: string
   return rows.map(r => ({ month: r.month, brands: r.b.split(",").sort() }));
 }
 
+/**
+ * What the page chrome needs before it knows which page it is: the cycle months on file, which
+ * are the period picker's options, and the newest closing date, which the overview title names.
+ * One read, done by the layout, shared by every route.
+ */
+export function chromeData(db: Database.Database): { months: string[]; latestClosing: string | null } {
+  const latest = db.prepare("SELECT MAX(closing_date) AS d FROM statements").get() as { d: string | null };
+  return { months: coverage(db).map(c => c.month), latestClosing: latest.d };
+}
+
 export function eli5(db: Database.Database, opts: ValueOpts) {
   const months = spendByCategory(db, opts);
   const sorted = periodTotals(db, opts).map(m => [m.period, m.amount] as [string, number]);
