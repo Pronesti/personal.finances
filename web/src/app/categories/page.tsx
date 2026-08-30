@@ -29,10 +29,8 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   const { level, rows, groups } = categoryDrill(db, opts, { ...filter, granularity: g, period });
   const tr = await getT();
 
-  // Changing the scope keeps you where you drilled to, and drilling keeps the scope.
-  const drilled = Object.fromEntries(
-    Object.entries(filter).filter(([, v]) => v != null)
-  ) as Record<string, string>;
+  // A crumb names one level, so it carries only the scope and the filter down to that level —
+  // the deeper filters are exactly what clicking it drops.
   const crumbHref = (extra: Record<string, string> = {}) =>
     withModes("/categories", modes, { g, period, ...extra });
 
@@ -45,12 +43,12 @@ export default async function Categories({ searchParams }: { searchParams: Promi
       {/* Rendered at every level, drilled or not: this is the page's "you are here", and a row
           that only appeared once you drilled moved everything under it down. It used to sit
           directly beneath the granularity pills, where its root label read as a second, broken
-          period row — the header owns those pills now, so it reads as the crumb it is. At the
-          root there is nowhere to go back to, so the label is plain text rather than a link. */}
+          period row — the header owns those pills now, so it reads as the crumb it is.
+          The root keeps one look at every depth, rather than turning from plain text into a
+          link the moment you drill: a crumb that restyles itself as you move reads as a
+          different control. At the root it simply points at the level you are already on. */}
       <div className="mb-4 flex gap-2 text-sm">
-        {Object.keys(drilled).length === 0
-          ? <span className="font-medium">{tr("categories.crumb.all")}</span>
-          : <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>}
+        <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>
         {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{tr(`category.${filter.category as Category}`)}</Link></>}
         {filter.subcategory && <><span>/</span><span className="font-medium">{filter.subcategory}</span></>}
         {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
