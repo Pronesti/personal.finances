@@ -884,12 +884,18 @@ export function taxBurden(
 // re-ingest. The section scope mirrors categorize() exactly — it short-circuits taxes_and_charges
 // and runs the rule loop over payments (BONIF PROMO CUOTA XENEIZE is a real, rule-categorized
 // payments row) — otherwise this update and `npm run ingest` would disagree.
+// `scope` is the whole difference between accepting a proposal and correcting a category by
+// hand. A proposal only ever exists for a merchant nothing claims, so it must leave categorized
+// rows alone; a correction exists precisely to overwrite one. Tax lines are outside both:
+// categorize() forces them to taxes_fees on every ingest, so no rule can ever hold them.
 export function recategorize(
-  db: Database.Database, match: string, category: string, subcategory: string | null
+  db: Database.Database, match: string, category: string, subcategory: string | null,
+  scope: "unknown" | "all" = "unknown"
 ): number {
   return db.prepare(
     `UPDATE transactions SET category = ?, subcategory = ?
-     WHERE category = 'other' AND section <> 'taxes_and_charges' AND instr(merchant, ?) > 0`
+     WHERE section <> 'taxes_and_charges' AND instr(merchant, ?) > 0
+       ${scope === "unknown" ? "AND category = 'other'" : ""}`
   ).run(category, subcategory, match.toUpperCase()).changes;
 }
 

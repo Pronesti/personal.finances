@@ -101,6 +101,15 @@ export function acceptProposal(
   };
 }
 
+// A correction made by hand from the categories page, where an accept's rules are backwards: the
+// merchant already HAS a category, so an appended rule would lose to whichever rule gave it one.
+// The new rule goes FIRST for that reason, and rewriting an existing rule for the same match is
+// the point here rather than something to refuse.
+export function upsertRule(data: CategoryFile, rule: Rule): CategoryFile {
+  const others = data.rules.filter(r => r.match.toUpperCase() !== rule.match.toUpperCase());
+  return { ...data, rules: [rule, ...others] };
+}
+
 export function rejectProposal(data: CategoryFile, merchant: string): CategoryFile {
   return {
     rules: data.rules,

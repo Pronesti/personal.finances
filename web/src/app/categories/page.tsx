@@ -5,11 +5,12 @@ import { categoryDrill, coverage } from "@/lib/queries";
 import { periodOf, type Granularity } from "@/lib/months";
 import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, withModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
-import type { Category } from "@/lib/categorize";
+import { CATEGORIES, type Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
 import { DrillBars } from "@/components/DrillBars";
+import { RecategorizeButton } from "@/components/RecategorizeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
                 <thead><tr className="border-b border-line text-left text-ink-muted">
                   <th className="py-1">{tr("categories.table.date")}</th><th>{tr("categories.table.description")}</th>
                   <th className="text-right">{tr("categories.table.amount")}</th><th className="text-right">{tr("categories.table.usd")}</th>
+                  <th className="text-right">{tr("categories.table.rule")}</th>
                 </tr></thead>
                 <tbody>
                   {rows.slice(0, 200).map((r, i) => (
@@ -96,6 +98,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
                       <td>{r.description}</td>
                       <td className="text-right">{r.amount != null ? fmtMoney(r.amount, modes.value) : "—"}</td>
                       <td className="text-right">{r.usd ?? "—"}</td>
+                      <td className="text-right whitespace-nowrap">
+                        <RecategorizeButton row={r} categories={CATEGORIES} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

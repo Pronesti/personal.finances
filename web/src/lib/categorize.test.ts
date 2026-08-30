@@ -55,7 +55,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
-  loadCategoryFile, saveCategoryFile, pendingMerchants, acceptProposal, rejectProposal,
+  loadCategoryFile, saveCategoryFile, pendingMerchants, acceptProposal, upsertRule, rejectProposal,
   type CategoryFile,
 } from "@/lib/categorize";
 
@@ -122,6 +122,25 @@ describe("acceptProposal", () => {
     expect(added).toBe(false);
     expect(data.rules).toEqual(base.rules); // manual override wins (spec §7)
     expect(data.proposals).toEqual([]);
+  });
+});
+
+describe("upsertRule", () => {
+  it("puts a new rule first, so it beats the rule that categorizes the merchant today", () => {
+    const next = upsertRule(base, { match: "SPOTIFY HIFI", category: "entertainment" });
+    expect(next.rules[0]).toEqual({ match: "SPOTIFY HIFI", category: "entertainment" });
+    expect(next.rules).toHaveLength(2);
+  });
+
+  it("rewrites the rule for a match that already exists instead of duplicating it", () => {
+    const next = upsertRule(base, { match: "spotify", category: "entertainment", subcategory: "audio" });
+    expect(next.rules).toEqual([{ match: "spotify", category: "entertainment", subcategory: "audio" }]);
+  });
+
+  it("leaves proposals and rejections alone", () => {
+    const next = upsertRule(base, { match: "COTO", category: "food" });
+    expect(next.proposals).toEqual(base.proposals);
+    expect(next.rejected).toEqual(base.rejected);
   });
 });
 

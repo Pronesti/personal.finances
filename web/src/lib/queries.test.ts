@@ -205,6 +205,15 @@ describe("queries", () => {
     expect(db.prepare("SELECT COUNT(*) n FROM transactions WHERE category='taxes_fees'").get()).toEqual({ n: 1 });
   });
 
+  it("recategorize leaves categorized rows alone by default and overwrites them at scope 'all'", () => {
+    // COTO is already food; only a hand-made correction may move it — and it moves all three
+    // COTO rows, the refund included, exactly as a re-ingest under the new rule would.
+    expect(recategorize(db, "COTO", "shopping", "groceries")).toBe(0);
+    expect(recategorize(db, "COTO", "shopping", "groceries", "all")).toBe(3);
+    expect(db.prepare("SELECT category, subcategory FROM transactions WHERE merchant='COTO'").get())
+      .toEqual({ category: "shopping", subcategory: "groceries" });
+  });
+
   it("statementList reports each statement newest first with its counts", () => {
     const rows = statementList(db);
     expect(rows.map(r => r.file)).toEqual(["m_2026_07.json", "v_2026_07.json", "v_2026_06.json"]);

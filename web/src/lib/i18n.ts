@@ -199,6 +199,16 @@ const en = {
   "categories.table.description": "Description",
   "categories.table.amount": "Amount",
   "categories.table.usd": "USD",
+  "categories.table.rule": "Rule",
+  "categories.recategorize": "recategorize",
+  "categories.modal.title": "Recategorize {merchant}",
+  "categories.modal.match": "Rule text",
+  "categories.modal.category": "Category",
+  "categories.modal.subcategory": "Subcategory",
+  "categories.modal.note": "A charge has no category of its own \u2014 categories come from merchant rules, and every row is rebuilt from them the next time a statement is loaded. Saving writes a rule to data/merchant-categories.json and applies it to every charge whose merchant contains the rule text, so this charge and its siblings move together. The rule goes first, ahead of whichever rule categorizes the merchant today.",
+  "categories.modal.save": "Save",
+  "categories.modal.saving": "Saving\u2026",
+  "categories.modal.cancel": "Cancel",
   "categories.footer": "This page shows your costs divided by category. The goal is to find where your money goes in one period. Use the first row of pills to select month, quarter, year, or all, which drills the whole history at once, and the second row to select the period itself. Click a bar to go down one level: category, then subcategory, then merchant. The table shows the purchases of the selected level. Use the path line above the chart to go back. Compare a category with the same category in an earlier period. A category that grows without a known cause is a signal. Examine its merchants.",
 
   // ── merchants ─────────────────────────────────────────────────────────────
@@ -688,6 +698,16 @@ const es: Dictionary = {
   "categories.table.description": "Descripción",
   "categories.table.amount": "Monto",
   "categories.table.usd": "USD",
+  "categories.table.rule": "Regla",
+  "categories.recategorize": "recategorizar",
+  "categories.modal.title": "Recategorizar {merchant}",
+  "categories.modal.match": "Texto de la regla",
+  "categories.modal.category": "Categor\u00eda",
+  "categories.modal.subcategory": "Subcategor\u00eda",
+  "categories.modal.note": "Un cargo no tiene categor\u00eda propia: las categor\u00edas salen de las reglas de comercio, y cada fila se reconstruye a partir de ellas la pr\u00f3xima vez que se carga un resumen. Guardar escribe una regla en data/merchant-categories.json y la aplica a todo cargo cuyo comercio contenga el texto de la regla, as\u00ed que este cargo y sus hermanos se mueven juntos. La regla va primero, adelante de la regla que hoy categoriza al comercio.",
+  "categories.modal.save": "Guardar",
+  "categories.modal.saving": "Guardando\u2026",
+  "categories.modal.cancel": "Cancelar",
   "categories.footer": "Esta página muestra tus costos divididos por categoría. El objetivo es encontrar adónde va tu plata en un período. Usá la primera fila de pastillas para elegir mes, trimestre, año o todo, que abre toda la historia de una vez, y la segunda fila para elegir el período. Hacé clic en una barra para bajar un nivel: categoría, después subcategoría, después comercio. La tabla muestra las compras del nivel elegido. Usá la línea de ruta arriba del gráfico para volver. Compará una categoría con la misma categoría en un período anterior. Una categoría que crece sin una causa conocida es una señal. Examiná sus comercios.",
 
   // ── comercios ─────────────────────────────────────────────────────────────
