@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { categoryDrill, coverage } from "@/lib/queries";
@@ -34,6 +35,20 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   const crumbHref = (extra: Record<string, string> = {}) =>
     withModes("/categories", modes, { g, period, ...extra });
 
+  // The drill is an ordered path, so the crumbs are built by walking it and accumulating the
+  // filters each level needs. Every crumb is the same thing — a link to one level — and they
+  // are built from one list and rendered by one branch so that none of them can drift into
+  // looking like something else.
+  const crumbs = [{ key: "root", label: tr("categories.crumb.all"), href: crumbHref() }];
+  const upToHere: Record<string, string> = {};
+  for (const key of ["category", "subcategory", "merchant"] as const) {
+    const value = filter[key];
+    if (value == null) continue;
+    upToHere[key] = value;
+    const label = key === "category" ? tr(`category.${value as Category}`) : value;
+    crumbs.push({ key, label, href: crumbHref({ ...upToHere }) });
+  }
+
   // The transaction list only exists below the top level (or for a single merchant); without it
   // the chart has no neighbour to share an ultrawide row with.
   const showRows = level !== "category" || !!filter.merchant;
@@ -44,14 +59,18 @@ export default async function Categories({ searchParams }: { searchParams: Promi
           that only appeared once you drilled moved everything under it down. It used to sit
           directly beneath the granularity pills, where its root label read as a second, broken
           period row — the header owns those pills now, so it reads as the crumb it is.
-          The root keeps one look at every depth, rather than turning from plain text into a
-          link the moment you drill: a crumb that restyles itself as you move reads as a
-          different control. At the root it simply points at the level you are already on. */}
+          Every crumb looks the same at every depth, rather than the root turning from plain
+          text into a link the moment you drill and the deepest one turning back: a row whose
+          parts restyle themselves as you move through it reads as several controls instead of
+          one path. The crumb for the level you are on points at that level, which costs
+          nothing and keeps the row still. */}
       <div className="mb-4 flex gap-2 text-sm">
-        <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>
-        {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{tr(`category.${filter.category as Category}`)}</Link></>}
-        {filter.subcategory && <><span>/</span><span className="font-medium">{filter.subcategory}</span></>}
-        {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
+        {crumbs.map((crumb, i) => (
+          <Fragment key={crumb.key}>
+            {i > 0 && <span>/</span>}
+            <Link href={crumb.href} className="text-accent hover:underline">{crumb.label}</Link>
+          </Fragment>
+        ))}
       </div>
       {groups.length === 0
         ? <p className="text-sm text-ink-muted">
