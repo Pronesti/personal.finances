@@ -1,10 +1,8 @@
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { cyclePace } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import { fmtMoney, fmtPct } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
 import { PaceChart } from "@/components/PaceChart";
 import { Stat, StatRail } from "@/components/Stat";
 
@@ -34,13 +32,6 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("pace.title")}</h1>
-        {/* Spend toggle hidden: pace is purchase decisions made inside the cycle window, which
-            is the accrual reading by construction. */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
-      </div>
-
       {latest == null ? (
         <p className="text-sm text-ink-muted">{tr("pace.empty")}</p>
       ) : (

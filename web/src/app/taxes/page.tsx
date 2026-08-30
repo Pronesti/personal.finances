@@ -1,12 +1,8 @@
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { taxBurden } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, periodWord, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, periodWord, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
-import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { TaxBars } from "@/components/TaxBars";
 
@@ -27,18 +23,6 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
   const tr = await getT();
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("taxes.title")}</h1>
-        {/* tax toggle hidden: this page IS the tax view — "true cost" would double-count */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
-      </div>
-
-      <Pills
-        options={GRANULARITIES} current={g}
-        href={x => withModes("/taxes", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-
       <StatRail stats={
         <>
           <Stat label={tr("taxes.total")} value={fmtMoney(total, modes.value)} detail={tr("taxes.total.detail")} />

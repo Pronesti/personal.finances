@@ -1,12 +1,10 @@
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { weekdayProfile, ticketTrend } from "@/lib/queries";
 import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Granularity } from "@/lib/months";
 import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
 import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { WeekdayBars } from "@/components/WeekdayBars";
@@ -36,12 +34,6 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("habits.title")}</h1>
-        {/* spend toggle hidden: both charts collapse installment series to their purchase day */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
-      </div>
-
       <StatRail stats={
         <>
           <Stat
@@ -71,11 +63,15 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           </section>
           <section>
             <h2 className="mb-3 text-lg font-semibold">{tr("habits.ticketHeading")}</h2>
-            <Pills
-              options={GRANULARITIES} current={g}
-              href={x => withModes("/habits", modes, { g: x })}
-              label={x => granularityLabel(x as Granularity, tr.locale)}
-            />
+            {/* Scoped to this chart, not the page — so it stays here rather than in the chrome,
+                and owns its own spacing the way any section-level control does. */}
+            <div className="mb-4">
+              <Pills
+                options={GRANULARITIES} current={g}
+                href={x => withModes("/habits", modes, { g: x })}
+                label={x => granularityLabel(x as Granularity, tr.locale)}
+              />
+            </div>
             <TicketTrendChart data={tickets} value={modes.value} />
             <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("habits.ticketNote")}</p>
           </section>

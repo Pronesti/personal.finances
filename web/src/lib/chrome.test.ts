@@ -31,6 +31,15 @@ describe("route chrome", () => {
     expect(Object.keys(CHROME).sort()).toEqual(PAGES.map(p => p.route).sort());
   });
 
+  // The header is the layout's, not the page's. A page that renders its own title puts it
+  // wherever its own markup lands, which is the bug this table exists to make impossible.
+  it("leaves the header entirely to the layout", () => {
+    for (const { route, src } of PAGES) {
+      expect(src, route).not.toContain("<h1");
+      expect(src, route).not.toContain("<ModeToggle");
+    }
+  });
+
   it("names a title key that exists", () => {
     for (const [route, entry] of Object.entries(CHROME)) {
       expect(Object.keys(DICTIONARIES[DEFAULT_LOCALE]), route).toContain(entry.title);

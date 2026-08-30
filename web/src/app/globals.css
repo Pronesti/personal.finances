@@ -92,6 +92,12 @@ body {
   font-family: var(--font-sans);
 }
 
+/* The content column must not shift sideways between a short route and a long one: reserve the
+   scrollbar's width whether or not this page happens to overflow. */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Numbers stacked in a column only read as a column when the digits line up. */
 table {
   font-variant-numeric: tabular-nums;

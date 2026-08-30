@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { reviewableAlerts, staleReviews, periodTotals } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, valueOpts, withModes } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { MessageKey } from "@/lib/i18n";
-import type { Granularity } from "@/lib/months";
 import { periodOf } from "@/lib/months";
 import { fmtArs } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { AnomalyTimeline } from "@/components/AnomalyTimeline";
 import { reviewAlert } from "./actions";
 
@@ -39,21 +35,10 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
   const tr = await getT();
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("anomalies.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
-      </div>
       <p className="mb-4 text-sm text-ink-muted">
         {tr("anomalies.summary", { open: open.length, total: alerts.length })}
         {cleared > 0 && tr.plural("anomalies.cleared", cleared)}
       </p>
-      {/* Granularity moves the timeline only: the table below is a list of alerts, not a
-          time series, so grouping it would hide the very rows this page exists to show. */}
-      <Pills
-        options={GRANULARITIES} current={g}
-        href={x => withModes("/anomalies", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
       <AnomalyTimeline
         totals={totals}
         flaggedPeriods={open.map(a => periodOf(a.month, g))}

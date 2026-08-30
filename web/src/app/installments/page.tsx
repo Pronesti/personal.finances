@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { installmentBurden, activePlans } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, spanLabel, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, spanLabel, valueOpts, withModes } from "@/lib/params";
 import { getT } from "@/lib/locale";
-import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { InstallmentBurdenChart } from "@/components/InstallmentBurdenChart";
 
@@ -28,18 +24,6 @@ export default async function Installments({ searchParams }: { searchParams: Pro
   const tr = await getT();
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("installments.title")}</h1>
-        {/* spend toggle hidden: this page is cash by definition — see installmentBurden */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
-      </div>
-
-      <Pills
-        options={GRANULARITIES} current={g}
-        href={x => withModes("/installments", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-
       <StatRail stats={
         <>
           <Stat

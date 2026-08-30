@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { categoryDrill, coverage } from "@/lib/queries";
-import { periodOf, type Granularity } from "@/lib/months";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, withModes, valueOpts } from "@/lib/params";
+import { parseModes, parseGranularity, withModes, valueOpts, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import { CATEGORIES, type Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { DrillBars } from "@/components/DrillBars";
 import { RecategorizeButton } from "@/components/RecategorizeButton";
 
@@ -20,12 +16,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   const g = parseGranularity(sp);
   const db = getDb();
 
-  // coverage() comes back ordered by cycle month, so collapsing to period labels keeps them
-  // chronological without a second sort — and dedupes the months sharing a quarter or year.
-  const periods = [...new Set(coverage(db).map(c => periodOf(c.month, g)))];
-  const period = typeof sp.period === "string" && periods.includes(sp.period)
-    ? sp.period
-    : periods.at(-1) ?? "";
+  // The same two functions the chrome uses, so the page and its period pills can never disagree
+  // about which period is selected.
+  const period = resolvePeriod(periodsFor(coverage(db).map(c => c.month), g), sp.period, "latest");
 
   const filter = {
     category: typeof sp.category === "string" ? sp.category : undefined,
@@ -40,10 +33,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   const drilled = Object.fromEntries(
     Object.entries(filter).filter(([, v]) => v != null)
   ) as Record<string, string>;
-  // The granularity links deliberately omit `period`: a month label is not a valid year, so
-  // the new granularity re-defaults to its newest period rather than falling back to all-time.
-  const granularityHref = (x: Granularity) => withModes("/categories", modes, { g: x, ...drilled });
-  const periodHref = (p: string) => withModes("/categories", modes, { g, period: p, ...drilled });
   const crumbHref = (extra: Record<string, string> = {}) =>
     withModes("/categories", modes, { g, period, ...extra });
 
@@ -53,16 +42,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return (
     <main>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("categories.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
-      </div>
-      <Pills
-        options={GRANULARITIES} current={g} href={x => granularityHref(x as Granularity)}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-      {/* One bucket at "all" granularity — a period picker with a single choice is noise. */}
-      {g !== "all" && <Pills options={periods} current={period} href={periodHref} />}
       {/* A one-item breadcrumb has nowhere to go back to, and its root label sat directly under
           the granularity pills where "all" read as a second, broken period row. */}
       {Object.keys(drilled).length > 0 && (

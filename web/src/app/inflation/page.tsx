@@ -13,7 +13,6 @@ export default async function Inflation() {
   const tr = await getT();
   return (
     <main>
-      <h1 className="text-xl font-semibold mb-2">{tr("inflation.title")}</h1>
       {last && (
         <p className="text-sm mb-4">
           {tr("inflation.lead.since", { month: points[0].month })}{" "}

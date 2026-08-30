@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { CHROME } from "@/lib/chrome";
 import { ALL_PERIOD, type Granularity } from "@/lib/months";
@@ -6,6 +7,39 @@ import { granularityLabel, parseGranularity, parseModes, periodsFor, resolvePeri
 import { useT } from "./I18nProvider";
 import { ModeToggle } from "./ModeToggle";
 import { Pills } from "./Pills";
+
+/**
+ * The two rows, with their heights, and nothing about what goes in them. Both the chrome and
+ * the placeholder the layout shows while it loads are built from this, so the frame is one
+ * definition and the page below cannot start at one height and settle at another.
+ */
+function Frame({ children, filters }: { children?: ReactNode; filters?: ReactNode }) {
+  return (
+    <header className="mb-6">
+      {/* min-h, not h: 2rem clears both the 1.75rem title line box and the 1.875rem toggle box,
+          and still lets the toggles wrap onto a second line on a phone — where nothing is being
+          compared between routes anyway. */}
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        {children}
+      </div>
+      {/* One line, always. It scrolls sideways rather than wrapping: a period row is as long as
+          the statement history, and a second line would push the whole page down. The height is
+          fixed rather than fitted so the focus ring has room and an empty row still holds it. */}
+      <div className="mt-3 flex h-9 items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {filters}
+      </div>
+    </header>
+  );
+}
+
+/**
+ * The frame with nothing in it. The chrome reads the URL, so it is a client component behind a
+ * Suspense boundary — and on the routes where that boundary streams, this is what holds its
+ * space until the real one arrives. Without it the page renders 104px too high and drops.
+ */
+export function PageChromeFallback() {
+  return <Frame />;
+}
 
 /**
  * The top of every page — title, mode toggles, filter pills — rendered by the root layout and
@@ -51,49 +85,44 @@ export function PageChrome({ months, latestClosing, baseMonth }: {
   };
 
   return (
-    <header className="mb-6">
-      {/* min-h, not h: 2rem clears both the 1.75rem title line box and the 1.875rem toggle box,
-          and still lets the toggles wrap onto a second line on a phone — where nothing is being
-          compared between routes anyway. */}
-      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h1 className="text-xl font-semibold">
-          {t(chrome.title, chrome.titleVars?.({ latestClosing, period, t }))}
-        </h1>
-        {chrome.toggles && (
-          <ModeToggle
-            modes={parseModes(query)}
-            baseMonth={baseMonth}
-            spendToggle={chrome.toggles.spend !== false}
-            taxToggle={chrome.toggles.tax !== false}
-          />
-        )}
-        {chrome.basisCaption && (
-          <span className="text-xs text-ink-subtle">{t("mode.inPesos", { month: baseMonth })}</span>
-        )}
-      </div>
-      {/* One line, always. It scrolls sideways rather than wrapping: a period row is as long as
-          the statement history, and a second line would push the whole page down. The height is
-          fixed rather than fitted so the focus ring has room and an empty row still holds it. */}
-      <div className="mt-3 flex h-9 items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {chrome.granularities && (
-          <Pills
-            options={chrome.granularities}
-            current={g}
-            href={x => href({ g: x, period: undefined })}
-            label={x => granularityLabel(x as Granularity, t.locale)}
-          />
-        )}
-        {/* At "all" granularity every month is already one bucket, so the picker would offer
-            "all" and nothing else — the granularity pill has said it. */}
-        {chrome.period && g !== "all" && (
-          <Pills
-            options={chrome.period === "all-first" ? [ALL_PERIOD, ...periods] : periods}
-            current={period}
-            href={p => href({ period: p === ALL_PERIOD ? undefined : p })}
-            label={p => (p === ALL_PERIOD ? granularityLabel("all", t.locale) : p)}
-          />
-        )}
-      </div>
-    </header>
+    <Frame
+      filters={
+        <>
+          {chrome.granularities && (
+            <Pills
+              options={chrome.granularities}
+              current={g}
+              href={x => href({ g: x, period: undefined })}
+              label={x => granularityLabel(x as Granularity, t.locale)}
+            />
+          )}
+          {/* At "all" granularity every month is already one bucket, so the picker would offer
+              "all" and nothing else — the granularity pill has said it. */}
+          {chrome.period && g !== "all" && (
+            <Pills
+              options={chrome.period === "all-first" ? [ALL_PERIOD, ...periods] : periods}
+              current={period}
+              href={p => href({ period: p === ALL_PERIOD ? undefined : p })}
+              label={p => (p === ALL_PERIOD ? granularityLabel("all", t.locale) : p)}
+            />
+          )}
+        </>
+      }
+    >
+      <h1 className="text-xl font-semibold">
+        {t(chrome.title, chrome.titleVars?.({ latestClosing, period, t }))}
+      </h1>
+      {chrome.toggles && (
+        <ModeToggle
+          modes={parseModes(query)}
+          baseMonth={baseMonth}
+          spendToggle={chrome.toggles.spend !== false}
+          taxToggle={chrome.toggles.tax !== false}
+        />
+      )}
+      {chrome.basisCaption && (
+        <span className="text-xs text-ink-subtle">{t("mode.inPesos", { month: baseMonth })}</span>
+      )}
+    </Frame>
   );
 }

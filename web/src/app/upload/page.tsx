@@ -10,7 +10,6 @@ export default async function Upload() {
   const tr = await getT();
   return (
     <main>
-      <h1 className="mb-4 text-xl font-semibold">{tr("upload.title")}</h1>
       <PdfDrop />
       <table className="w-full text-sm">
         <thead><tr className="border-b border-line text-left text-ink-muted">

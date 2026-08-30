@@ -5,7 +5,6 @@ import { parseModes, withModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { MessageKey } from "@/lib/i18n";
 import { fmtMoney, fmtPct } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
 import { Sparkline } from "@/components/Sparkline";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +30,6 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const openCount = t.alerts.length + t.openAnomalies.length;
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("overview.title", { date: t.latestClosing })}</h1>
-        <ModeToggle modes={modes} baseMonth={t.baseMonth} />
-      </div>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 3xl:grid-cols-6">
         <Tile href={withModes("/trends", modes)} label={tr("overview.spent", { value: valueLabel })}>
           <div className="text-2xl font-bold">{fmtMoney(t.spentThisMonth, modes.value)}</div>

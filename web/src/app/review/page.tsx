@@ -19,7 +19,6 @@ export default async function Review() {
   const tr = await getT();
   return (
     <main>
-      <h1 className="mb-2 text-xl font-semibold">{tr("review.title")}</h1>
       <p className="mb-4 text-sm text-ink-muted">
         {tr("review.summary.rules", { count: data.rules.length })} ·{" "}
         {tr("review.summary.awaiting", { count: data.proposals.length })} ·{" "}

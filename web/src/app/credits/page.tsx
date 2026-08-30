@@ -1,13 +1,9 @@
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { moneyBack, type CreditKind } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { MessageKey } from "@/lib/i18n";
-import type { Granularity } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { CreditBars } from "@/components/CreditBars";
 
@@ -31,18 +27,6 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("credits.title")}</h1>
-        {/* spend toggle hidden: credits are billed lines, cash by nature; tax toggle: a credit is not taxed */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
-      </div>
-
-      <Pills
-        options={GRANULARITIES} current={g}
-        href={x => withModes("/credits", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-
       <StatRail stats={
         <>
           <Stat label={tr("credits.total")} value={fmtMoney(total, modes.value)} detail={tr("credits.total.detail")} />

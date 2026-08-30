@@ -1,24 +1,20 @@
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { categoryMovers } from "@/lib/queries";
-import { parseModes, parseGranularity, granularityLabel, periodWord, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, periodWord, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Granularity } from "@/lib/months";
 import type { MessageKey } from "@/lib/i18n";
 import { fmtMoney, fmtPct } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { MoverBars } from "@/components/MoverBars";
 import { Stat, StatRail } from "@/components/Stat";
 
 export const dynamic = "force-dynamic";
 
-// "all" collapses history into one bucket — there is no previous period to move against.
-const MOVER_GRANULARITIES = ["month", "quarter", "year"] as const;
-
 export default async function Movers({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
   const sp = await searchParams;
   const modes = parseModes(sp);
+  // "all" collapses history into one bucket — there is no previous period to move against, so
+  // this page never offers it and clamps a hand-typed one back to months.
   const parsed = parseGranularity(sp);
   const g: Granularity = parsed === "all" ? "month" : parsed;
   const opts = valueOpts(modes);
@@ -35,17 +31,6 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("movers.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
-      </div>
-
-      <Pills
-        options={MOVER_GRANULARITIES} current={g}
-        href={x => withModes("/movers", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-
       {res == null ? (
         <p className="text-sm text-ink-muted">{tr("movers.empty", { word: periodWord(g, tr.locale) })}</p>
       ) : (

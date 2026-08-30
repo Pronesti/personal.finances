@@ -1,10 +1,9 @@
 import { getDb } from "@/lib/db";
-import { latestMonth, trailingMonthlyInflation } from "@/lib/cpi";
+import { trailingMonthlyInflation } from "@/lib/cpi";
 import { installmentProjection } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
 import { ProjectionChart } from "@/components/ProjectionChart";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +17,6 @@ export default async function Future({ searchParams }: { searchParams: Promise<{
   const tr = await getT();
   return (
     <main>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">{tr("future.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
-      </div>
       <ProjectionChart data={data} value={modes.value} />
       <table className="w-full text-sm mt-6">
         <thead><tr className="border-b border-line text-left text-ink-muted">

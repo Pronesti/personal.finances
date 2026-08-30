@@ -1,12 +1,10 @@
 import { getDb } from "@/lib/db";
-import { loadCpi, latestMonth } from "@/lib/cpi";
+import { loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
 import { paymentFloat, taxBurden } from "@/lib/queries";
-import { parseGranularity, GRANULARITIES, granularityLabel, periodWord } from "@/lib/params";
+import { parseGranularity, periodWord } from "@/lib/params";
 import { getT } from "@/lib/locale";
-import type { Granularity } from "@/lib/months";
 import { fmtArs } from "@/lib/format";
-import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { FloatChart } from "@/components/FloatChart";
 
@@ -20,7 +18,6 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
   const cpi = loadCpi();
   const db = getDb();
   const periods = paymentFloat(db, cpi, g);
-  const base = latestMonth(cpi);
   const totalGain = periods.reduce((s, m) => s + m.gain, 0);
   const installmentGain = periods.reduce((s, m) => s + m.gainInstallment, 0);
   // Plain mean over buckets, not over rows: this reads "what a typical bucket looked like".
@@ -32,16 +29,6 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("float.title")}</h1>
-        <span className="text-xs text-ink-subtle">{tr("mode.inPesos", { month: base })}</span>
-      </div>
-
-      <Pills
-        options={GRANULARITIES} current={g} href={x => `/float?g=${x}`}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-
       <StatRail stats={
         <>
           <Stat

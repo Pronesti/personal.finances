@@ -102,7 +102,6 @@ export default async function Recurring() {
   return (
     <main className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold mb-4">{tr("recurring.title")}</h1>
         <p className="text-sm text-ink-muted mb-4">{tr("recurring.intro")}</p>
         <Table rows={subscriptions} mep={mep} tr={tr} />
       </div>

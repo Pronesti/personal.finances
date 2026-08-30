@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { latestMonth } from "@/lib/cpi";
 import { merchantConcentration, merchantNovelty, coverage } from "@/lib/queries";
-import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
+import { parseModes, parseGranularity, valueOpts, withModes, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Category } from "@/lib/categorize";
-import type { Granularity } from "@/lib/months";
-import { periodOf, ALL_PERIOD } from "@/lib/months";
+import { ALL_PERIOD } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Pills } from "@/components/Pills";
 import { Stat, StatRail } from "@/components/Stat";
 import { ParetoBars } from "@/components/ParetoBars";
 import { NoveltyBars } from "@/components/NoveltyBars";
@@ -27,37 +23,15 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const g = parseGranularity(sp);
   const opts = valueOpts(modes);
   const db = getDb();
-  const periods = [...new Set(coverage(db).map(c => periodOf(c.month, g)))];
-  // ALL_PERIOD is the default and the fallback for a period label from another granularity —
-  // switching granularity deliberately drops `period` back to the full history.
-  const period = typeof sp.period === "string" && periods.includes(sp.period) ? sp.period : ALL_PERIOD;
+  // The same two functions the chrome uses, so the page and its period pills can never disagree
+  // about which period is selected. ALL_PERIOD is both this page's default and its fallback.
+  const period = resolvePeriod(periodsFor(coverage(db).map(c => c.month), g), sp.period, "all-first");
   const scope = period === ALL_PERIOD ? undefined : { granularity: g, period };
   const { merchants, totalSpend } = merchantConcentration(db, opts, scope);
   const novelty = merchantNovelty(db, opts, g);
   const tr = await getT();
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("merchants.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
-      </div>
-
-      <Pills
-        options={GRANULARITIES} current={g}
-        href={x => withModes("/merchants", modes, { g: x })}
-        label={x => granularityLabel(x as Granularity, tr.locale)}
-      />
-      {/* At "all" granularity every month is already one bucket, so the scope row would offer
-          "all" and nothing else — the granularity pill has said it. */}
-      {g !== "all" && (
-        <Pills
-          options={[ALL_PERIOD, ...periods]}
-          current={period}
-          href={p => withModes("/merchants", modes, p === ALL_PERIOD ? { g } : { g, period: p })}
-          label={p => (p === ALL_PERIOD ? granularityLabel("all", tr.locale) : p)}
-        />
-      )}
-
       <StatRail stats={
         <>
           <Stat

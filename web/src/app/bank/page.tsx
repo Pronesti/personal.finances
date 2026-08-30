@@ -1,11 +1,10 @@
 import { getDb } from "@/lib/db";
-import { latestMonth, loadCpi } from "@/lib/cpi";
+import { loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
 import { bankTerms, bankBrands } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import { fmtMoney, fmtPct } from "@/lib/format";
-import { ModeToggle } from "@/components/ModeToggle";
 import { BankChart } from "@/components/BankChart";
 import { RateChart } from "@/components/RateChart";
 import { Stat, StatRail } from "@/components/Stat";
@@ -58,13 +57,6 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{tr("bank.title")}</h1>
-        {/* Spend/tax toggles hidden: limits, balances and rates are statement-header facts —
-            no purchase-level accounting view applies to them. */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
-      </div>
-
       <StatRail stats={
         <>
           <Stat

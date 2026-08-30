@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-// Server-rendered pill row for granularity/period pickers — the same look /compare and
-// /categories inline, shared by the pages added later.
+// A row of link pills — the granularity and period pickers. Layout-neutral on purpose: the
+// caller owns the spacing, because in the page chrome this row is one line of a fixed-height
+// filter bar that must not wrap.
 export function Pills({ options, current, href, label }: {
   options: readonly string[];
   current: string;
@@ -10,12 +11,12 @@ export function Pills({ options, current, href, label }: {
   label?: (option: string) => string;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap gap-1 text-sm">
+    <div className="flex shrink-0 items-center gap-1 text-sm">
       {options.map(x => (
         <Link
           key={x}
           href={href(x)}
-          className={`rounded-md px-2 py-0.5 transition-colors ${
+          className={`whitespace-nowrap rounded-md px-2 py-0.5 transition-colors ${
             x === current
               ? "bg-accent text-accent-ink font-medium"
               : "text-ink-muted hover:bg-surface-2 hover:text-ink"
