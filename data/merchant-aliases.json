@@ -25,6 +25,7 @@
     { "match": "NICKYCHEESE", "alias": "NICKYCHEESE" },
     { "match": "CASASSA Y LORENZO", "alias": "CASASSA Y LORENZO" },
     { "match": "LEF CASA DE MUSICA", "alias": "LEF CASA DE MUSICA" },
-    { "match": "OREGON HOTEL", "alias": "OREGON HOTEL SABANAS" }
+    { "match": "OREGON HOTEL", "alias": "OREGON HOTEL SABANAS" },
+    { "match": "PLANOVALO", "alias": "PLAN OVALO SA" }
   ]
 }

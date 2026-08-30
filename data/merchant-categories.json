@@ -230,12 +230,16 @@
     {"match":"AMAYTA","category":"food","subcategory":"restaurant"},
     {"match":"TRES CERDITOS","category":"food","subcategory":"restaurant"},
     {"match":"PONTECSA","category":"shopping","subcategory":"general"},
-    {"match":"CACMERCH","category":"entertainment","subcategory":"merchandise"}
+    {"match":"CACMERCH","category":"entertainment","subcategory":"merchandise"},
+    {"match":"PHOTOSTORE","category":"shopping","subcategory":"general"},
+    {"match":"TICKETEKARGEN","category":"entertainment","subcategory":"tickets"},
+    {"match":"DODOCHE","category":"food","subcategory":"restaurant"},
+    {"match":"MUNTRESFESEM","category":"transport","subcategory":"parking"},
+    {"match":"CURUPET","category":"shopping","subcategory":"pet food"}
   ],
   "proposals": [
     {"merchant":"SPLITTERMP9676C3C","sent":"SPLITTERMP9676C3C","category":"other","subcategory":"general","confidence":"low"},
     {"merchant":"AUTOSPECIALSA","sent":"AUTOSPECIALSA","category":"transport","subcategory":"car service","confidence":"low"},
-    {"merchant":"PHOTOSTORE","sent":"PHOTOSTORE","category":"shopping","subcategory":"photo","confidence":"low"},
     {"merchant":"LEONARDO","sent":"LEONARDO","category":"other","subcategory":"general","confidence":"low"},
     {"merchant":"AGUSTINAARNAUD","sent":"AGUSTINAARNAUD","category":"shopping","subcategory":"general","confidence":"low"},
     {"merchant":"FUSSETTI","sent":"FUSSETTI","category":"food","subcategory":"pasta","confidence":"low"},
