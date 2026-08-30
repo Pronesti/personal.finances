@@ -1,5 +1,6 @@
 {
   "rules": [
+    {"match":"K9DOGTRAINERS","category":"shopping","subcategory":"pet food"},
     {"match":"MOVISTAR AR","category":"entertainment","subcategory":"events"},
     {"match":"MOVISTAR","category":"services","subcategory":"phone"},
     {"match":"SPOTIFY","category":"subscriptions","subcategory":"music"},
