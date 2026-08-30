@@ -42,16 +42,19 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return (
     <main>
-      {/* A one-item breadcrumb has nowhere to go back to, and its root label sat directly under
-          the granularity pills where "all" read as a second, broken period row. */}
-      {Object.keys(drilled).length > 0 && (
-        <div className="mb-4 flex gap-2 text-sm">
-          <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>
-          {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{tr(`category.${filter.category as Category}`)}</Link></>}
-          {filter.subcategory && <><span>/</span><span className="font-medium">{filter.subcategory}</span></>}
-          {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
-        </div>
-      )}
+      {/* Rendered at every level, drilled or not: this is the page's "you are here", and a row
+          that only appeared once you drilled moved everything under it down. It used to sit
+          directly beneath the granularity pills, where its root label read as a second, broken
+          period row — the header owns those pills now, so it reads as the crumb it is. At the
+          root there is nowhere to go back to, so the label is plain text rather than a link. */}
+      <div className="mb-4 flex gap-2 text-sm">
+        {Object.keys(drilled).length === 0
+          ? <span className="font-medium">{tr("categories.crumb.all")}</span>
+          : <Link href={crumbHref()} className="text-accent hover:underline">{tr("categories.crumb.all")}</Link>}
+        {filter.category && <><span>/</span><Link href={crumbHref({ category: filter.category })} className="text-accent hover:underline">{tr(`category.${filter.category as Category}`)}</Link></>}
+        {filter.subcategory && <><span>/</span><span className="font-medium">{filter.subcategory}</span></>}
+        {filter.merchant && <><span>/</span><span className="font-medium">{filter.merchant}</span></>}
+      </div>
       {groups.length === 0
         ? <p className="text-sm text-ink-muted">
             {tr("categories.empty", {
