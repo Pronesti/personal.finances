@@ -199,7 +199,7 @@ const en = {
   "categories.table.description": "Description",
   "categories.table.amount": "Amount",
   "categories.table.usd": "USD",
-  "categories.table.rule": "Rule",
+  "categories.table.actions": "Actions",
   "categories.recategorize": "recategorize",
   "categories.modal.title": "Recategorize {merchant}",
   "categories.modal.match": "Rule text",
@@ -210,6 +210,18 @@ const en = {
   "categories.modal.saving": "Saving\u2026",
   "categories.modal.cancel": "Cancel",
   "categories.footer": "This page shows your costs divided by category. The goal is to find where your money goes in one period. Use the first row of pills to select month, quarter, year, or all, which drills the whole history at once, and the second row to select the period itself. Click a bar to go down one level: category, then subcategory, then merchant. The table shows the purchases of the selected level. Use the path line above the chart to go back. Compare a category with the same category in an earlier period. A category that grows without a known cause is a signal. Examine its merchants.",
+
+  // ── merging two merchants into one ────────────────────────────────────────
+  "merge.action": "merge",
+  "merge.modal.title": "Merge {merchant}",
+  "merge.modal.match": "Merchant to merge",
+  "merge.modal.match.note": "A prefix of the merchant name the statement carries, not of the whole line. Shorten it to take in every variant that starts the same way.",
+  "merge.modal.alias": "Shown as",
+  "merge.modal.alias.note": "A merchant that already exists, or a new name. Stored in capitals, because the category rules match on it.",
+  "merge.modal.note": "Two names for one shop become one merchant here, and the name you pick is the name every page shows. Matching is on a prefix, so a shorter text takes in every longer variant of it \u2014 and a more specific text still wins, which is what keeps PEDIDOSYA PLUS apart from PEDIDOSYA. The statement line itself is never touched: the charge still reads back to the exact text on the PDF. Saving applies the merge to the charges already loaded and re-derives their categories, so the next statement you load computes the same thing.",
+  "merge.modal.save": "Merge",
+  "merge.modal.saving": "Merging\u2026",
+  "merge.modal.cancel": "Cancel",
 
   // ── merchants ─────────────────────────────────────────────────────────────
   "merchants.title": "Merchant concentration",
@@ -235,6 +247,7 @@ const en = {
   "merchants.table.charges": "Charges",
   "merchants.table.share": "Share",
   "merchants.table.active": "Active",
+  "merchants.table.actions": "Actions",
   "merchants.footer": "This page shows how your money divides across merchants. The goal of this analysis is to show if a small group of merchants gets a large part of your money. Read the bars to see the top merchants by total. Read the dashed line to see the cumulative share of all your costs. The point where the line crosses 50% shows the number of merchants that get half of your money. Concentration alone is not good or bad. Concentration in merchants that you selected, for example a supermarket, is normal. Concentration in one merchant that you do not know well is a signal. Examine that merchant. The second chart compares new merchants with known merchants. A large first-time band shows exploration, or purchases that are not part of your normal pattern.",
 
   // ── sankey ────────────────────────────────────────────────────────────────
@@ -698,7 +711,7 @@ const es: Dictionary = {
   "categories.table.description": "Descripción",
   "categories.table.amount": "Monto",
   "categories.table.usd": "USD",
-  "categories.table.rule": "Regla",
+  "categories.table.actions": "Acciones",
   "categories.recategorize": "recategorizar",
   "categories.modal.title": "Recategorizar {merchant}",
   "categories.modal.match": "Texto de la regla",
@@ -709,6 +722,18 @@ const es: Dictionary = {
   "categories.modal.saving": "Guardando\u2026",
   "categories.modal.cancel": "Cancelar",
   "categories.footer": "Esta página muestra tus costos divididos por categoría. El objetivo es encontrar adónde va tu plata en un período. Usá la primera fila de pastillas para elegir mes, trimestre, año o todo, que abre toda la historia de una vez, y la segunda fila para elegir el período. Hacé clic en una barra para bajar un nivel: categoría, después subcategoría, después comercio. La tabla muestra las compras del nivel elegido. Usá la línea de ruta arriba del gráfico para volver. Compará una categoría con la misma categoría en un período anterior. Una categoría que crece sin una causa conocida es una señal. Examiná sus comercios.",
+
+  // ── unificar dos comercios en uno ─────────────────────────────────────────
+  "merge.action": "unificar",
+  "merge.modal.title": "Unificar {merchant}",
+  "merge.modal.match": "Comercio a unificar",
+  "merge.modal.match.note": "Un prefijo del nombre de comercio que trae el resumen, no de la l\u00ednea entera. Acortalo para abarcar todas las variantes que empiezan igual.",
+  "merge.modal.alias": "Se muestra como",
+  "merge.modal.alias.note": "Un comercio que ya existe, o un nombre nuevo. Se guarda en may\u00fasculas, porque las reglas de categor\u00eda coinciden sobre \u00e9l.",
+  "merge.modal.note": "Dos nombres de un mismo comercio pasan a ser uno solo ac\u00e1, y el nombre que elijas es el que muestra cada p\u00e1gina. La coincidencia es por prefijo, as\u00ed que un texto m\u00e1s corto abarca todas sus variantes m\u00e1s largas \u2014 y un texto m\u00e1s espec\u00edfico sigue ganando, que es lo que mantiene PEDIDOSYA PLUS separado de PEDIDOSYA. La l\u00ednea del resumen no se toca: el cargo se sigue leyendo hasta el texto exacto del PDF. Guardar aplica la unificaci\u00f3n a los cargos ya cargados y vuelve a derivar sus categor\u00edas, as\u00ed el pr\u00f3ximo resumen que cargues calcula lo mismo.",
+  "merge.modal.save": "Unificar",
+  "merge.modal.saving": "Unificando\u2026",
+  "merge.modal.cancel": "Cancelar",
 
   // ── comercios ─────────────────────────────────────────────────────────────
   "merchants.title": "Concentración de comercios",
@@ -734,6 +759,7 @@ const es: Dictionary = {
   "merchants.table.charges": "Cargos",
   "merchants.table.share": "Participación",
   "merchants.table.active": "Activo",
+  "merchants.table.actions": "Acciones",
   "merchants.footer": "Esta página muestra cómo se reparte tu plata entre comercios. El objetivo de este análisis es mostrar si un grupo chico de comercios se lleva una parte grande de tu plata. Mirá las barras para ver los comercios principales por total. Mirá la línea punteada para ver la participación acumulada de todos tus costos. El punto donde la línea cruza el 50% muestra la cantidad de comercios que se lleva la mitad de tu plata. La concentración sola no es buena ni mala. La concentración en comercios que elegiste, por ejemplo un supermercado, es normal. La concentración en un comercio que no conocés bien es una señal. Examiná ese comercio. El segundo gráfico compara comercios nuevos con comercios conocidos. Una banda grande de comercios nuevos muestra exploración, o compras que no son parte de tu patrón normal.",
 
   // ── sankey ────────────────────────────────────────────────────────────────

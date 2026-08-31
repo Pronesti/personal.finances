@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { cycleMonth, statementToRows, ingestFile } from "@/lib/ingest";
+import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
+import { realias } from "@/lib/queries";
+import { mergeAlias } from "@/lib/aliases";
+import type { Rule } from "@/lib/categorize";
 import type { StatementJson } from "@/lib/integrity";
 import { fixture, rules, aliases } from "@/lib/__fixtures__/statement";
 
@@ -89,5 +93,90 @@ describe("ingestFile idempotency", () => {
     ingestFile(db, fixture, rules, aliases);
     ingestFile(db, { ...fixture, file: "mc.pdf", brand: "mastercard" } satisfies StatementJson, rules, aliases);
     expect(db.prepare("SELECT COUNT(*) n FROM statements").get()).toEqual({ n: 2 });
+  });
+});
+
+// The property the whole alias feature rests on: applyAlias runs at ingest time, so a merge saved
+// from the UI has to rewrite the rows already loaded — and it has to rewrite them to exactly what
+// the next `npm run ingest` will compute, or that ingest silently reverts the merge.
+describe("realias", () => {
+  const rules: Rule[] = [
+    { match: "PLAYSTATION NETWORK", category: "entertainment", subcategory: "games" },
+  ];
+
+  // Two statement lines the parser has no way to see as one shop: only PLAYSTATION NETWORK is
+  // claimed by a rule, so merging them has to move a category as well as a name.
+  function statement(): StatementJson {
+    const json = structuredClone(fixture);
+    json.transactions = [
+      { section: "purchases", block: 1, date: "2026-07-10", description: "PLAYSTATION", ars: 1000, usd: null, installment_number: null, installment_count: null },
+      { section: "purchases", block: 1, date: "2026-07-11", description: "PLAYSTATION NETWORK", ars: 2000, usd: null, installment_number: null, installment_count: null },
+      { section: "taxes_and_charges", block: null, date: null, description: "IVA RG 4240 21%", ars: 210, usd: null, installment_number: null, installment_count: null },
+    ];
+    return json;
+  }
+
+  type Derived = { description: string; merchant: string; category: string; subcategory: string | null };
+  const derived = (db: Database.Database) => db.prepare(
+    "SELECT description, merchant, category, subcategory FROM transactions ORDER BY description"
+  ).all() as Derived[];
+
+  it("collapses two merchants into one and re-derives the category that follows the name", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, statement(), rules, []);
+    expect(derived(db)).toMatchObject([
+      { merchant: "IVA RG 4240 21%", category: "taxes_fees" },
+      { merchant: "PLAYSTATION", category: "other", subcategory: null },
+      { merchant: "PLAYSTATION NETWORK", category: "entertainment", subcategory: "games" },
+    ]);
+
+    const aliases = mergeAlias([], "PLAYSTATION", "PLAYSTATION NETWORK");
+    expect(realias(db, rules, aliases)).toBe(1);
+    expect(derived(db)).toMatchObject([
+      { merchant: "IVA RG 4240 21%", category: "taxes_fees" },
+      // The name moved, and the category moved with it: the rule matches on the merchant, so
+      // leaving it on "other" is precisely the disagreement the next ingest would resolve.
+      { description: "PLAYSTATION", merchant: "PLAYSTATION NETWORK", category: "entertainment", subcategory: "games" },
+      { description: "PLAYSTATION NETWORK", merchant: "PLAYSTATION NETWORK", category: "entertainment" },
+    ]);
+  });
+
+  it("computes exactly what the next `npm run ingest` computes", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, statement(), rules, []);
+    const aliases = mergeAlias([], "PLAYSTATION", "PLAYSTATION NETWORK");
+    realias(db, rules, aliases);
+    const afterMerge = derived(db);
+
+    // What scripts/ingest.ts does on the next run: same JSON, same rules, the saved aliases.
+    ingestFile(db, statement(), rules, aliases);
+    expect(derived(db)).toEqual(afterMerge);
+  });
+
+  it("leaves the statement line alone, so a charge still reads back to the PDF", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, statement(), rules, []);
+    realias(db, rules, mergeAlias([], "PLAYSTATION", "PLAYSTATION NETWORK"));
+    expect(derived(db).map(r => r.description))
+      .toEqual(["IVA RG 4240 21%", "PLAYSTATION", "PLAYSTATION NETWORK"]);
+  });
+
+  it("changes nothing on a second run, so it can follow every save", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, statement(), rules, []);
+    const aliases = mergeAlias([], "PLAYSTATION", "PLAYSTATION NETWORK");
+    realias(db, rules, aliases);
+    expect(realias(db, rules, aliases)).toBe(0);
+  });
+
+  it("keeps a hand correction, because a correction is a rule and rules win here too", () => {
+    const db = openDb(":memory:");
+    // What recategorizeAction stores: the corrected rule goes FIRST, ahead of the one that
+    // categorized the merchant before it.
+    const corrected: Rule[] = [{ match: "PLAYSTATION", category: "subscriptions" }, ...rules];
+    ingestFile(db, statement(), rules, []);
+    realias(db, corrected, mergeAlias([], "PLAYSTATION", "PLAYSTATION NETWORK"));
+    expect(derived(db).filter(r => r.merchant === "PLAYSTATION NETWORK"))
+      .toMatchObject([{ category: "subscriptions" }, { category: "subscriptions" }]);
   });
 });

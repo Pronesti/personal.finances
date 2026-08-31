@@ -1,13 +1,14 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { categoryDrill, coverage } from "@/lib/queries";
+import { categoryDrill, coverage, merchantNames } from "@/lib/queries";
 import { parseModes, parseGranularity, withModes, valueOpts, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import { DrillBars } from "@/components/DrillBars";
 import { RecategorizeButton } from "@/components/RecategorizeButton";
+import { MergeMerchantButton, MerchantNameList } from "@/components/MergeMerchantButton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
   };
   const opts = valueOpts(modes);
   const { level, rows, groups } = categoryDrill(db, opts, { ...filter, granularity: g, period });
+  // Every merchant, not just the ones this drill shows: a merge targets a name the current
+  // filter has no reason to contain.
+  const names = merchantNames(db);
   const tr = await getT();
 
   // A crumb names one level, so it carries only the scope and the filter down to that level —
@@ -88,17 +92,26 @@ export default async function Categories({ searchParams }: { searchParams: Promi
                 <thead><tr className="border-b border-line text-left text-ink-muted">
                   <th className="py-1">{tr("categories.table.date")}</th><th>{tr("categories.table.description")}</th>
                   <th className="text-right">{tr("categories.table.amount")}</th><th className="text-right">{tr("categories.table.usd")}</th>
-                  <th className="text-right">{tr("categories.table.rule")}</th>
+                  <th className="text-right">{tr("categories.table.actions")}</th>
                 </tr></thead>
                 <tbody>
                   {rows.slice(0, 200).map((r, i) => (
                     <tr key={i} className="border-t border-line">
                       <td className="py-1 whitespace-nowrap">{r.date ?? r.month}</td>
-                      <td>{r.description}</td>
+                      {/* The merchant leads and the statement line sits under it: the merchant
+                          is the name every other page groups by, and the raw line is what ties
+                          the row back to the PDF. Both, because an alias renames the first and
+                          must never look like it rewrote the second. */}
+                      <td>
+                        <span className="block">{r.merchant}</span>
+                        <span className="block text-xs text-ink-subtle">{r.description}</span>
+                      </td>
                       <td className="text-right">{r.amount != null ? fmtMoney(r.amount, modes.value) : "—"}</td>
                       <td className="text-right">{r.usd ?? "—"}</td>
                       <td className="text-right whitespace-nowrap">
                         <RecategorizeButton row={r} />
+                        <span className="px-1.5 text-ink-subtle">·</span>
+                        <MergeMerchantButton merchant={r.merchant} detail={r.description} />
                       </td>
                     </tr>
                   ))}
@@ -107,6 +120,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
             )}
           </div>
         )}
+
+      {/* Rendered once for every merge dialog on the page — see MERCHANT_LIST_ID. */}
+      <MerchantNameList names={names} />
 
       <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("categories.footer")}</p>
     </main>

@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { categorize, normalizeMerchant, type Rule } from "@/lib/categorize";
+import { categorize, normalizeMerchant, type Category, type Rule } from "@/lib/categorize";
 import { applyAlias, type Alias } from "@/lib/aliases";
 import { checkStatement, type StatementJson, type Alert } from "@/lib/integrity";
 
@@ -9,6 +9,18 @@ export function cycleMonth(closingDate: string, prevClosingDate: string | null):
     ? new Date(prevClosingDate + "T00:00:00Z").getTime()
     : end - 30 * 86400_000;
   return new Date((start + end) / 2).toISOString().slice(0, 7);
+}
+
+// The merchant and the category one statement line resolves to. Ingest and the alias backfill in
+// queries.ts both go through here, so a row rebuilt by `npm run ingest` and a row rewritten from
+// the UI cannot disagree about what a description means — which is also why the category comes
+// out of the same call rather than being carried over: the rules match on the merchant, so
+// changing the merchant can change which rule claims the row.
+export function deriveTransaction(
+  description: string, section: string, rules: Rule[], aliases: Alias[]
+): { merchant: string; category: Category; subcategory: string | null } {
+  const merchant = applyAlias(normalizeMerchant(description), aliases);
+  return { merchant, ...categorize(merchant, section, rules) };
 }
 
 export function statementToRows(json: StatementJson, rules: Rule[], aliases: Alias[]) {
@@ -29,8 +41,7 @@ export function statementToRows(json: StatementJson, rules: Rule[], aliases: Ali
     rate_tem_pct: json.rates?.monthly_effective_ars ?? null,
   };
   const transactions = json.transactions.map(t => {
-    const merchant = applyAlias(normalizeMerchant(t.description), aliases);
-    const { category, subcategory } = categorize(merchant, t.section, rules);
+    const { merchant, category, subcategory } = deriveTransaction(t.description, t.section, rules, aliases);
     return {
       section: t.section,
       date: t.date,

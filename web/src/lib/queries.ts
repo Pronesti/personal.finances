@@ -8,7 +8,9 @@ import { trailingMonthlyInflation } from "@/lib/cpi";
 import { addMonth, periodOf, type Granularity } from "@/lib/months";
 import { personalInflationIndex, type BasketPoint } from "@/lib/inflation";
 import { translate, DEFAULT_LOCALE, type MessageKey, type Vars } from "@/lib/i18n";
-import type { Category } from "@/lib/categorize";
+import type { Category, Rule } from "@/lib/categorize";
+import type { Alias } from "@/lib/aliases";
+import { deriveTransaction } from "@/lib/ingest";
 
 export type SpendMode = "cash" | "accrual";
 export type ValueMode = "nominal" | "real" | "usd";
@@ -907,6 +909,56 @@ export function recategorize(
      WHERE section <> 'taxes_and_charges' AND instr(merchant, ?) > 0
        ${scope === "unknown" ? "AND category = 'other'" : ""}`
   ).run(category, subcategory, match.toUpperCase()).changes;
+}
+
+// The alias sibling of recategorize() above: applies a freshly saved merge to rows already
+// loaded, so two names collapse into one everywhere without a full re-ingest.
+//
+// It rebuilds each row from its raw statement line rather than rewriting merchant in place, and
+// that is the whole design. applyAlias matches the NORMALIZED description, while
+// transactions.merchant already holds the ALIASED value — ingest applies the alias on the way in
+// — so a prefix update written against the stored merchant would fire on the wrong rows: nothing
+// normalizes to "HBO MAX", it is only ever an alias output. Going back through
+// deriveTransaction, the same function ingest calls, makes this by construction what the next
+// `npm run ingest` computes for the same description, which is what stops an ingest from
+// silently reverting a merge.
+//
+// The category is re-derived for the same reason, not as a side effect: the rules match on the
+// merchant (categorize does merchant.includes(r.match)), so a re-aliased row can fall to a
+// different rule, and keeping the old category would be a disagreement the next ingest resolves
+// against the UI. Nothing decided by hand is lost to it — a hand correction IS a rule, stored
+// first in category_rules, so it wins here exactly as it wins during an ingest.
+export function realias(db: Database.Database, rules: Rule[], aliases: Alias[]): number {
+  type Row = {
+    id: number; section: string; description: string;
+    merchant: string; category: string; subcategory: string | null;
+  };
+  const rows = db.prepare(
+    "SELECT id, section, description, merchant, category, subcategory FROM transactions"
+  ).all() as Row[];
+  const update = db.prepare(
+    "UPDATE transactions SET merchant = ?, category = ?, subcategory = ? WHERE id = ?"
+  );
+  let changed = 0;
+  db.transaction(() => {
+    for (const r of rows) {
+      const next = deriveTransaction(r.description, r.section, rules, aliases);
+      if (next.merchant === r.merchant && next.category === r.category
+        && next.subcategory === r.subcategory) continue;
+      update.run(next.merchant, next.category, next.subcategory, r.id);
+      changed += 1;
+    }
+  })();
+  return changed;
+}
+
+// Every merchant name in use, for the merge dialog to offer as a target. A merge is a choice
+// between names that already exist far more often than it is an invention of a new one, and the
+// name has to be typed exactly to land on the right merchant.
+export function merchantNames(db: Database.Database): string[] {
+  return (db.prepare(
+    "SELECT DISTINCT merchant FROM transactions ORDER BY merchant"
+  ).all() as { merchant: string }[]).map(r => r.merchant);
 }
 
 export type WeekdayRow = {

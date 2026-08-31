@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { merchantConcentration, merchantNovelty, coverage } from "@/lib/queries";
+import { merchantConcentration, merchantNames, merchantNovelty, coverage } from "@/lib/queries";
 import { parseModes, parseGranularity, valueOpts, withModes, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Category } from "@/lib/categorize";
@@ -9,6 +9,7 @@ import { fmtMoney } from "@/lib/format";
 import { Stat, StatRail } from "@/components/Stat";
 import { ParetoBars } from "@/components/ParetoBars";
 import { NoveltyBars } from "@/components/NoveltyBars";
+import { MergeMerchantButton, MerchantNameList } from "@/components/MergeMerchantButton";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const scope = period === ALL_PERIOD ? undefined : { granularity: g, period };
   const { merchants, totalSpend } = merchantConcentration(db, opts, scope);
   const novelty = merchantNovelty(db, opts, g);
+  // The whole list, not the fifteen rows below: the name you merge INTO is usually the one
+  // that fell short of the table.
+  const names = merchantNames(db);
   const tr = await getT();
   return (
     <main>
@@ -72,6 +76,7 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
               <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
               <th className="pr-3 text-right">{tr("merchants.table.total")}</th><th className="pr-3 text-right">{tr("merchants.table.charges")}</th>
               <th className="pr-3 text-right">{tr("merchants.table.share")}</th><th className="pr-3">{tr("merchants.table.active")}</th>
+              <th className="pr-3 text-right">{tr("merchants.table.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -89,10 +94,17 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
                 <td className="pr-3 text-ink-muted">
                   {m.firstMonth === m.lastMonth ? m.firstMonth : `${m.firstMonth} – ${m.lastMonth}`}
                 </td>
+                {/* "These two rows are the same shop" is the thought this page provokes, so the
+                    merge lives on the row rather than a drill away on /categories. */}
+                <td className="pr-3 text-right whitespace-nowrap">
+                  <MergeMerchantButton merchant={m.merchant} />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {/* Rendered once for every merge dialog on the page — see MERCHANT_LIST_ID. */}
+        <MerchantNameList names={names} />
       </StatRail>
 
       <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
