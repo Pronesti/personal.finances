@@ -95,6 +95,9 @@ export const CHROME: Record<string, RouteChrome> = {
     // the accrual reading by construction.
     toggles: { spend: false },
   },
+  "/receipts": { title: "receipts.title" },
+  // The dynamic segment is the route as chrome.test derives it from the directory name.
+  "/receipts/[id]": { title: "receipts.detail.title" },
   "/recurring": { title: "recurring.title" },
   "/review": { title: "review.title" },
   "/sankey": {

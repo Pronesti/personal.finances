@@ -37,6 +37,10 @@ const GROUPS: readonly Group[] = [
     links: [["/future", "nav.future"], ["/installments", "nav.installments"], ["/bank", "nav.bank"]],
   },
   {
+    heading: "nav.group.supermarket",
+    links: [["/receipts", "nav.receipts"]],
+  },
+  {
     heading: "nav.group.data",
     links: [["/upload", "nav.upload"], ["/review", "nav.review"]],
   },
