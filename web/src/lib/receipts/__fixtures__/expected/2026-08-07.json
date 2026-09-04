@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-07",
+  "store": "SUC 90 COTO CICSA, SEGUROLA 1743, MONTE CASTRO - COTO CENTRO INTEGRAL DE COMERCIALIZACION S.A. (CUIT 30-54808315-6) - FACTURA B ORIGINAL (Cod.006), 07/08/2026 10:35:54, NRO.CAJA:0044, NRO.TERM:8058, NRO.T.:2090-06442149, NRO.TRAN:6766",
+  "total_printed": 115370.80,
+  "items": [
+    {"desc": "=CYCLAMEN", "qty": 1, "unit_price": null, "line_total": 6990.00, "discount": 0, "discount_desc": null},
+    {"desc": "PAN P/PANCHO X6 UNI.ARTESANO BSA 240 GRM", "qty": 1, "unit_price": null, "line_total": 4647.00, "discount": -1161.75, "discount_desc": "3 *25% MARCAS [A]"},
+    {"desc": "PAN ARTESANO", "qty": 1, "unit_price": null, "line_total": 8908.00, "discount": -2227.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "FLAN CASERO SAB.VAINILLAFLANCHELLO POT 180 GRM", "qty": 2, "unit_price": 2535.00, "line_total": 5070.00, "discount": -1267.50, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC", "qty": 2, "unit_price": 3670.00, "line_total": 7340.00, "discount": -1835.00, "discount_desc": "1 *50% 2DA MARCAS [A]"},
+    {"desc": "UNION GANADERA", "qty": 1, "unit_price": null, "line_total": 3999.00, "discount": -999.75, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "JAMON COCIDO FETEADOCAGNOLI PAQ 200 GRM", "qty": 1, "unit_price": null, "line_total": 7699.00, "discount": -3079.60, "discount_desc": "1 *40% MARCAS [A]"},
+    {"desc": "MAYONESA LIGHTHEINZ DOY 350 GRM", "qty": 1, "unit_price": null, "line_total": 3499.00, "discount": -874.75, "discount_desc": "1 *25% CLASES [A]"},
+    {"desc": "OREO", "qty": 1, "unit_price": null, "line_total": 5589.00, "discount": -1397.25, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "QUESO TYBO FETEADOLA PAULINA PAQ 180 GRM", "qty": 1, "unit_price": null, "line_total": 5145.00, "discount": -1286.25, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "SALAME MILAN FETEADACALCHAQUI BLI 130 GRM", "qty": 1, "unit_price": null, "line_total": 5515.00, "discount": -1930.25, "discount_desc": "1 *CALCHAQUI 35% [A]"},
+    {"desc": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR", "qty": 12, "unit_price": 3495.00, "line_total": 41940.00, "discount": -14679.00, "discount_desc": "12 *35% GLACIAR [A]"},
+    {"desc": "PESCADO FILET A LA ROMANACOTO X KG", "qty": 0.246, "unit_price": 21319.00, "line_total": 5244.47, "discount": -1311.12, "discount_desc": "1 *25% ELABORADOS [A]"},
+    {"desc": "PAPAS A LA CREMACOTO X KG", "qty": 0.344, "unit_price": 9449.00, "line_total": 3250.46, "discount": -812.62, "discount_desc": "1 *25% ELABORADOS [A] -812,61 + MERCADO PAGO 25% - V [M] -0,01"},
+    {"desc": "JAB.LIQ.SKIP", "qty": 1, "unit_price": null, "line_total": 11286.99, "discount": -4588.16, "discount_desc": "1 *SKIP 40% [A]"},
+    {"desc": "=BANANA CAVENDISHX KG", "qty": 0.954, "unit_price": 2299.00, "line_total": 2193.25, "discount": 0, "discount_desc": null},
+    {"desc": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G", "qty": 2, "unit_price": 2400.00, "line_total": 4800.00, "discount": -1200.00, "discount_desc": "3 *25% MARCAS [A]"},
+    {"desc": "=ZAPALLO ANCO SELECCIONX KG", "qty": 1.264, "unit_price": 2199.00, "line_total": 2779.54, "discount": 0, "discount_desc": null},
+    {"desc": "=AJO GIGANTE. UNI 1 UNI", "qty": 1, "unit_price": null, "line_total": 999.00, "discount": 0, "discount_desc": null},
+    {"desc": "PAPA BLANCAX KG", "qty": 0.666, "unit_price": 2299.00, "line_total": 1531.13, "discount": -382.78, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "CEBOLLA A GRANELX KG", "qty": 0.324, "unit_price": 1999.00, "line_total": 647.68, "discount": -161.92, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "PALMOLIVE", "qty": 3, "unit_price": 2660.99, "line_total": 7982.97, "discount": -2660.99, "discount_desc": "1 *3X2 JABON TOCADOR [A]"},
+    {"desc": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT", "qty": 4, "unit_price": 3390.00, "line_total": 13560.00, "discount": -3390.00, "discount_desc": "MERCADO PAGO 25% - V [M]"}
+  ],
+  "notes": "Footer: SUBTOT. SIN DESCUENTOS 160616,49; DESCUENTOS POR PROMOCIONES -45245,69; TOTAL 115370,80. Paid with MERCADO PAG 171622685955 for 115370,80, SU VUELTO 0,00. ART:042 TRX:6766 EMP:206427-GALLO. DATOS DE IDENTIFICACION 6031670912019718874. DETALLE DE OFERTAS APLICADAS: 12*35% GLACIAR 14679,00; 1*SKIP 40% 4588,16; 1*40% MARCAS 3079,60; 1*3X2 JABON TOCADOR 2660,99; 3*25% MARCAS 2361,75; 1*25% ELABORADOS 2123,73; 1*CALCHAQUI 35% 1930,25; 1*50% 2DA MARCAS 1835,00; 1*25% CLASES 874,75; MERCADO PAGO 25% - V 11112,46; TOT.AHORRO 45245,69. IVA CONTENIDO 19425,73; C.A.E.Nro.:86327275609362 Vto.:20260817. Cross-checks: sum of line totals = 160616.49 (matches printed subtotal), sum of discounts = 45245.69 (matches printed promo discounts), all per-offer subtotals reconcile. Ambiguities: PAN P/PANCHO and PAN ARTESANO printed no qty line, so qty=1 assumed (the leading '3' in '3 *25% MARCAS' is the promo label, since FID.TIRABUZON with qty 2 carries the same '3 *25% MARCAS' label). PAPAS A LA CREMA had two discount lines (-812,61 and -0,01), combined into -812.62. First item description reads '=CYCLAMEN' (a plant), price 6990,00, no other text. FID.TIRABUZON description printed as 'N?34' (likely N°34). Some kg line_totals differ from qty*unit_price by <0.01 due to rounding on the receipt (e.g. 0.954x2299.00 printed as 2193,25)."
+}

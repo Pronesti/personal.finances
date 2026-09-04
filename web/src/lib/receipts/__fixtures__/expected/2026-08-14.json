@@ -1,0 +1,29 @@
+{
+  "date": "2026-08-14",
+  "store": "COTO SUC 90 COTO CICSA - SEGUROLA 1743, MONTE CASTRO - COTO CENTRO INTEGRAL DE COMERCIALIZACION S.A. (CUIT 30-54808315-6) - 14/08/2026 18:33:11 - NRO.T.:2090-06462724 NRO.CAJA:0009 NRO.TERM:3788 NRO.TRAN:8402 - FACTURA B ORIGINAL (Cod.006) - DNI 39371789 A CONSUMIDOR FINAL",
+  "total_printed": 84288.50,
+  "items": [
+    {"desc": "PA?O PARA PISO CAPULLOGRIS X 1 UNI", "qty": 1, "unit_price": null, "line_total": 1779.99, "discount": -445.00, "discount_desc": "1 *25% CLASES [A]"},
+    {"desc": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT", "qty": 4, "unit_price": 3390.00, "line_total": 13560.00, "discount": -3390.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "GASEOSA COCA COLA S/AZUCARESBOT 1.75 LTR", "qty": 1, "unit_price": null, "line_total": 4900.00, "discount": 0, "discount_desc": null},
+    {"desc": "FID.PENNE RIGATE N?4", "qty": 1, "unit_price": null, "line_total": 2400.00, "discount": -600.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "PERA PACKAMSX KG", "qty": 0.388, "unit_price": 2299.00, "line_total": 892.01, "discount": 0, "discount_desc": null},
+    {"desc": "ZAPALLO ANCO SELECCIONX KG", "qty": 1.470, "unit_price": 2199.00, "line_total": 3232.53, "discount": 0, "discount_desc": null},
+    {"desc": "PAPA NEGRA SELECCIONX KG", "qty": 0.918, "unit_price": 2299.00, "line_total": 2110.48, "discount": -527.62, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "BANANA CAVENDISHX KG", "qty": 0.762, "unit_price": 3499.00, "line_total": 2666.24, "discount": -666.56, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "CEBOLLA A GRANELX KG", "qty": 0.382, "unit_price": 2499.00, "line_total": 954.62, "discount": -238.66, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "SAL GRUESA DOS ANCLASSAL 500 GRM", "qty": 1, "unit_price": null, "line_total": 3187.00, "discount": -796.75, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "DETER.LAVAV.ULTRA LI", "qty": 1, "unit_price": null, "line_total": 9319.99, "discount": -3262.00, "discount_desc": "1 *35% MARCAS [A]"},
+    {"desc": "ROLLO D/COCINA MAXIR", "qty": 1, "unit_price": null, "line_total": 3070.99, "discount": -971.97, "discount_desc": "1 *FELPITA 30% [A]"},
+    {"desc": "LECHE C/PROTEINA TRE", "qty": 2, "unit_price": 2865.00, "line_total": 5730.00, "discount": -1432.50, "discount_desc": "3 *50% 2DA MARCAS [A]"},
+    {"desc": "SALCHICHAS COR.EST.G", "qty": 1, "unit_price": null, "line_total": 3999.00, "discount": -999.75, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "POSTRE SAB DDL Y CREMADADANETTE POT 100 GRM", "qty": 4, "unit_price": 2715.00, "line_total": 10860.00, "discount": -2715.00, "discount_desc": "3 *50% 2DA MARCAS [A]"},
+    {"desc": "PESCADO FILET A LA ROMANACOTO X KG", "qty": 0.310, "unit_price": 21319.00, "line_total": 6608.89, "discount": -1982.67, "discount_desc": "1 *PESCADO 30% [A]"},
+    {"desc": "TORTILLA DE PAPAS COTOX KG", "qty": 0.274, "unit_price": 9769.00, "line_total": 2676.71, "discount": -803.01, "discount_desc": "1 *30% ELABORADOS [A]"},
+    {"desc": "ASADO ESTANCIA X KG", "qty": 0.915, "unit_price": 12499.00, "line_total": 11436.59, "discount": 0, "discount_desc": null},
+    {"desc": "MORCILLA BB VERDEO E/VCABA?A ARG PAQ 440GRM", "qty": 1, "unit_price": null, "line_total": 5500.00, "discount": -1375.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "PATA MUSLO C/P 3 COTO PAQ 2 UNI", "qty": 1, "unit_price": null, "line_total": 6804.29, "discount": -2381.50, "discount_desc": "2 *35% TROZADOS POLLO [A]"},
+    {"desc": "PATA MUSLO C/P 4 COTO PAQ 2 UNI", "qty": 1, "unit_price": null, "line_total": 7980.24, "discount": -2793.08, "discount_desc": "2 *35% TROZADOS POLLO [A]"}
+  ],
+  "notes": "Footer: SUBTOT. SIN DESCUENTOS 109669.57; DESCUENTOS POR PROMOCIONES -25381.07; TOTAL 84288.50; paid MERCADO PAG 173877221334 84288.50, SU VUELTO 0.00; ART:028 TRX:8402 EMP:601013-SelfCheckO 3, PEDIDO:3707002328205. DETALLE DE OFERTAS APLICADAS: 2*35% TROZADOS POLLO 5174.58, 3*50% 2DA MARCAS 4147.50, 1*35% MARCAS 3262.00, 1*PESCADO 30% 1982.67, 1*FELPITA 30% 971.97, 1*30% ELABORADOS 803.01, 1*25% CLASES 445.00, MERCADO PAGO 25% - V 8594.34, TOT.AHORRO 25381.07. IVA CONTENIDO 12314.31. C.A.E.Nro.:86338421236116 Vto.:20260824. All arithmetic cross-checks: sum of line totals = 109669.57 and sum of discounts = -25381.07 exactly. Some characters printed with '?' by the thermal printer (PA?O = PAÑO, N?4 = N°4, E/VCABA?A = presumably CABAÑA); transcribed as printed. Item descriptions run into unit suffixes without spaces (e.g. SELECCIONX KG, COTOX KG) as printed. Page 001 slices s0-s1 fully overlapped page 000 content (FID.PENNE through ROLLO D/COCINA); duplicates removed."
+}

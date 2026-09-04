@@ -1,0 +1,29 @@
+{
+  "date": "2026-08-21",
+  "store": "COTO CICSA SUC 90, Segurola 1743, Monte Castro - COTO Centro Integral de Comercializacion S.A. (CUIT 30-54808315-6)",
+  "total_printed": 127061.63,
+  "items": [
+    {"desc": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT", "qty": 4, "unit_price": 3390.00, "line_total": 13560.00, "discount": -3390.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR", "qty": 12, "unit_price": 3495.00, "line_total": 41940.00, "discount": -14679.00, "discount_desc": "12 *35% GLACIAR [A]"},
+    {"desc": "=TAPA DE ASADO ESPECIAL X KG", "qty": 1.285, "unit_price": 13299.00, "line_total": 17089.22, "discount": 0, "discount_desc": null},
+    {"desc": "=HUEVO BLANCO EXTRA GRANDEAVICOPER CJA 10 UNI", "qty": 1, "unit_price": null, "line_total": 3390.00, "discount": 0, "discount_desc": null},
+    {"desc": "MANTECA MILKAUTPAN 200 GRM", "qty": 2, "unit_price": 5099.00, "line_total": 10198.00, "discount": -2549.50, "discount_desc": "1 *50% 2DA MARCAS [A]"},
+    {"desc": "PAPAS AL HORNOCOTO X KG", "qty": 0.408, "unit_price": 8249.00, "line_total": 3365.59, "discount": -841.40, "discount_desc": "1 *25% ELABORADOS [A]"},
+    {"desc": "PESCADO FILET A LA ROMANACOTO X KG", "qty": 0.254, "unit_price": 21319.00, "line_total": 5415.03, "discount": -1353.76, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "=BANANA CAVENDISHX KG", "qty": 1.072, "unit_price": 2999.00, "line_total": 3214.93, "discount": 0, "discount_desc": null},
+    {"desc": "=ZAPALLO ANCO SELECCIONX KG", "qty": 1.846, "unit_price": 1999.00, "line_total": 3690.15, "discount": 0, "discount_desc": null},
+    {"desc": "=PAPA LAVADA  XKG", "qty": 0.760, "unit_price": 2599.00, "line_total": 1975.24, "discount": 0, "discount_desc": null},
+    {"desc": "=PERA PACKAMSX KG", "qty": 0.380, "unit_price": 2299.00, "line_total": 873.62, "discount": 0, "discount_desc": null},
+    {"desc": "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC", "qty": 2, "unit_price": 3670.00, "line_total": 7340.00, "discount": -2569.00, "discount_desc": "1 *70% 2DA MARCAS [A]"},
+    {"desc": "LA PERLA", "qty": 1, "unit_price": null, "line_total": 2566.00, "discount": -641.50, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "ARROZ DOBLE CAROLINA SELECCIONGALLO CJA 1 KGM", "qty": 1, "unit_price": null, "line_total": 4170.00, "discount": -1042.50, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "MATARAZZO", "qty": 1, "unit_price": null, "line_total": 2400.00, "discount": -600.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G", "qty": 1, "unit_price": null, "line_total": 2400.00, "discount": -600.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "CEBOLLA A GRANELX KG", "qty": 0.282, "unit_price": 2499.00, "line_total": 704.72, "discount": -176.18, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "BOLSAS DE RESIDUOS ASURIN 50 X 65 PAQ 50 UNI", "qty": 1, "unit_price": null, "line_total": 17373.99, "discount": -4343.50, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "MAGISTRAL", "qty": 1, "unit_price": null, "line_total": 5049.99, "discount": -1262.50, "discount_desc": "1 *25% MAGISTRAL [A]"},
+    {"desc": "AROMATIZANTE TEXTIL MAGNOLIAVAINILLA AROMASS SPR", "qty": 1, "unit_price": null, "line_total": 7783.99, "discount": -1946.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "TRES NI?AS", "qty": 4, "unit_price": 2865.00, "line_total": 11460.00, "discount": -2904.00, "discount_desc": "1 *TRES NI?AS 4X3 [A]"}
+  ],
+  "notes": "Header: FACTURA B ORIGINAL (Cod.006), 21/08/2026 09:18:29, NRO.T.:2090-06479025, NRO.CAJA 0014, NRO.TERM:3793, NRO.TRAN:6882. Footer: SUBTOT. SIN DESCUENTOS 165960,47; DESCUENTOS POR PROMOCIONES -38898,84; TOTAL 127061,63; paid MERCADO PAG 174916611190 127061,63, vuelto 0,00; ART:040 TRX:6882 EMP:197801-Ramirez; IVA CONTENIDO 19902,49; CAE 86349277421726 Vto 20260831. DETALLE DE OFERTAS APLICADAS cross-check: 12*35% GLACIAR 14679,00; 1*TRES NI?AS 4X3 2904,00; 1*70% 2DA MARCAS 2569,00; 1*50% 2DA MARCAS 2549,50; 1*25% MAGISTRAL 1262,50; 1*25% ELABORADOS 841,40; MERCADO PAGO 25% - V 14093,44; TOT.AHORRO 38898,84 - all match item-level discounts exactly. sum(line_total)=165960.47 and sum(discount)=-38898.84 both reconcile with printed values; 165960.47-38898.84=127061.63 = printed TOTAL. Page 001 slice s0 overlapped page 000 content (ZAPALLO through ARROZ) - deduplicated. Ambiguities: 'TRES NI?AS' and 'FID.TIRABUZON N?34' printed with '?' (receipt encoding of Ñ/°); LA PERLA, MATARAZZO, MAGISTRAL, TRES NI?AS are short/brand-only description lines as printed."
+}

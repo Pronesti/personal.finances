@@ -31,9 +31,14 @@ export type ParsedReceipt = { header: ParsedHeader; items: ParsedItem[]; footer:
 // Line shapes, in the order the state machine tests them. Vision writes the multiplication sign
 // as x, ×, or the Cyrillic х; the tag brackets come back as [A], LA], (M) and worse.
 const QTY_RE = /^(\d+,\d{3})\s*[xX×хХ]\s*(-?\d[\d.]*,\d{2})$/;
-export const CODE_RE = /^(\d{10})\s+(\d{12,14})$/;
+// A stray period or comma sometimes lands between the two digit runs (noise bled in from
+// nearby amount text).
+export const CODE_RE = /^(\d{10})[.,]?\s+(\d{12,14})$/;
 // The L/I readings of "[" only count after a space, or FRUTILLA and SANDIA would end in a tag.
-export const TAG_RE = /(?:\[|\(|\||\s[LI])\s*([AM])\s*[\])|]?\s*$/;
+export const TAG_RE = /(?:\[|\(|\||\s[LI])\s*([AM])\s*[\])|J]?\s*$/;
+// The two known discount-line shapes when the bracket tag is dropped entirely: "N *label" and
+// "MERCADO PAGO...". Used both to recognise such a line and to know a page-boundary row is one.
+const DISCOUNT_SHAPE_RE = /^(?:\d+\s*[x×хX]?\s*\*|MERCADO\s*PAGO)/i;
 const DATE_RE = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/;
 const FISCAL_RE = /NRO\.?\s*[TI1l]\.?\s*:?\s*(\d{4}-\d{8})/i;
 const REGISTER_RE = /NRO[.,]?\s*CAJA\s*:?\s*(\d+)/i;
@@ -77,8 +82,11 @@ function scanHeader(label: string, h: ParsedHeader): void {
   if (e && !h.cae) { h.cae = e[1]; h.caeDue = `${e[2]}-${e[3]}-${e[4]}`; }
 }
 
+// Box-grouping sometimes glues the code row to the description that follows it (a page-boundary
+// artifact only, never seen mid-page): anchor on the code prefix and ignore what trails it.
+const CODE_ANCHOR_RE = /^(\d{10})[.,]?\s+(\d{12,14})\b/;
 function codeOf(row: Row): { sku: string; ean: string } | null {
-  const m = CODE_RE.exec(norm(row.label));
+  const m = CODE_ANCHOR_RE.exec(norm(row.label));
   return m ? { sku: m[1], ean: m[2] } : null;
 }
 
@@ -104,18 +112,64 @@ export function mergePages(rows: Row[]): Row[] {
       if (tailA.every((x, j) => same(x.code!, headB[j].code!))) { k = n; break; }
     }
     if (k === 0) { merged = merged.concat(next); continue; }
-    const isTrailer = (r: Row) => TAG_RE.test(norm(r.label)) || (r.label.trim() === "" && r.amount !== null);
+    // Every duplicated item's own quantity line (two rows up: the description sits in between)
+    // is kept from page k too, except when that copy fails to parse as one at all (a stray
+    // character breaks it) and page k+1's reads clean.
+    for (let j = 0; j < k; j++) {
+      const aIdx = a[a.length - k + j].i - 2, bIdx = b[j].i - 2;
+      if (aIdx < 0 || bIdx < 0) continue;
+      const prevA = merged[aIdx], prevB = next[bIdx];
+      if (!QTY_RE.test(norm(prevA.label)) && QTY_RE.test(norm(prevB.label))) merged[aIdx] = prevB;
+    }
+    const isDiscount = (r: Row) => TAG_RE.test(norm(r.label)) || DISCOUNT_SHAPE_RE.test(norm(r.label));
+    const isTrailer = (r: Row) => isDiscount(r) || (r.label.trim() === "" && r.amount !== null);
     // Rows of page k+1 that belong to its k-th duplicated item: its code row and what trails it.
     let end = b[k - 1].i + 1;
     while (end < next.length && isTrailer(next[end])) end++;
     const lastCodeA = a[a.length - 1].i;
     const tailA = merged.slice(lastCodeA + 1);
     const tailB = next.slice(b[k - 1].i + 1, end);
-    const discounts = (rs: Row[]) => rs.filter(r => TAG_RE.test(norm(r.label))).length;
+    const discounts = (rs: Row[]) => rs.filter(isDiscount).length;
     const keptTail = discounts(tailB) > discounts(tailA) ? tailB : tailA;
-    merged = merged.slice(0, lastCodeA + 1).concat(keptTail, next.slice(end));
+    // The boundary code row itself is kept from page k, except when that copy is the mangled
+    // one (extra text glued on breaks the exact code shape) and page k+1's copy reads clean.
+    const boundaryRow = !CODE_RE.test(norm(merged[lastCodeA].label)) && CODE_RE.test(norm(next[b[k - 1].i].label))
+      ? next[b[k - 1].i] : merged[lastCodeA];
+    merged = merged.slice(0, lastCodeA).concat([boundaryRow], keptTail, next.slice(end));
   }
   return merged;
+}
+
+// Vision only treats a box as an amount when it reads the printed decimal comma; when it misreads
+// that comma as a period the box-grouping step doesn't recognise it as one, so it stays glued
+// (space-joined) to whatever text box sits on the same printed line instead of splitting off —
+// whether that is a code+ean, a footer marker like TOTAL, or nothing at all (the row is only
+// the amount).
+const TRAILING_PERIOD_AMOUNT_RE = /^(.*?)\s+(-?\d[\d.,]*\.\d{2})$/;
+function parseLenientCents(raw: string): number | null {
+  const m = /^(-?)(\d+(?:[.,]\d{3})*)[.,](\d{2})$/.exec(raw.replace(/\s+/g, ""));
+  if (!m) return null;
+  const cents = Number(m[2].replace(/[.,]/g, "")) * 100 + Number(m[3]);
+  return m[1] === "-" ? -cents : cents;
+}
+function centsToAmountString(cents: number): string {
+  const sign = cents < 0 ? "-" : "";
+  return `${sign}${(Math.abs(cents) / 100).toFixed(2).replace(".", ",")}`;
+}
+function ungluePeriodAmounts(rows: Row[]): Row[] {
+  return rows.map(row => {
+    if (row.amount !== null) return row;
+    const trimmed = row.label.trim();
+    if (!/\s/.test(trimmed) && /\.\d{2}$/.test(trimmed)) {
+      const cents = parseLenientCents(trimmed);
+      if (cents !== null) return { ...row, label: "", amount: centsToAmountString(cents) };
+    }
+    const m = TRAILING_PERIOD_AMOUNT_RE.exec(row.label);
+    if (!m) return row;
+    const cents = parseLenientCents(m[2]);
+    if (cents === null) return row;
+    return { ...row, label: m[1].trim(), amount: centsToAmountString(cents) };
+  });
 }
 
 /**
@@ -124,7 +178,7 @@ export function mergePages(rows: Row[]): Row[] {
  * every discount row until the next quantity line, code line or footer marker.
  */
 export function parseRows(input: Row[]): ParsedReceipt {
-  const rows = mergePages(input);
+  const rows = ungluePeriodAmounts(mergePages(input));
   const header = emptyHeader();
   const footer: ParsedFooter = { subtotalCents: null, discountsCents: null, totalCents: null, savingsCents: null, offers: [] };
   const items: ParsedItem[] = [];
@@ -132,6 +186,10 @@ export function parseRows(input: Row[]): ParsedReceipt {
   let pending: { qtyMilli: number; unitPriceCents: number } | null = null;
   let candidate: Row | null = null;     // the last unclassified label row: the next description
   let current: ParsedItem | null = null; // the item still accepting a line total and discounts
+  // A discount label read before the item's own line total: its amount box landed on the line
+  // total instead, and the discount's real amount follows as a bare row. Waits for that row.
+  let pendingDiscount: { label: string; tag: "M" | "A" } | null = null;
+  let awaitingTotal = false; // TOTAL printed with its amount on the next row instead of this one
   let inOffers = false;
   const offerLabels: string[] = [];
   const offerAmounts: number[] = [];
@@ -152,9 +210,12 @@ export function parseRows(input: Row[]): ParsedReceipt {
       if (amount !== null) offerAmounts.push(amount);
       continue;
     }
-    if (/^SUBTOT/i.test(label)) { footer.subtotalCents = amount; current = null; candidate = null; continue; }
+    if (/^SUBTOT/i.test(label)) { footer.subtotalCents = amount; current = null; candidate = null; pendingDiscount = null; continue; }
     if (/^DESCUENTOS POR PROMOCIONES/i.test(label)) { footer.discountsCents = amount; continue; }
-    if (/^TOTAL\.?$/i.test(label)) { footer.totalCents = amount; continue; }
+    if (/^TOTAL\.?$/i.test(label)) {
+      if (amount !== null) footer.totalCents = amount; else awaitingTotal = true;
+      continue;
+    }
     const pay = PAYMENT_RE.exec(label);
     if (pay) { header.paymentMethod = pay[1].toUpperCase(); header.paymentRef = pay[2]; header.paymentCents = amount; continue; }
 
@@ -164,13 +225,14 @@ export function parseRows(input: Row[]): ParsedReceipt {
       const u = parseAmountCents(qty[2]);
       if (q === null || u === null) notes.push(`unreadable quantity line "${label}"`);
       else pending = { qtyMilli: q, unitPriceCents: u };
-      current = null; candidate = null;
+      current = null; candidate = null; pendingDiscount = null;
       continue;
     }
 
     const code = CODE_RE.exec(label);
     if (code) {
       if (!candidate) notes.push(`code line ${code[1]} has no description above it`);
+      if (pendingDiscount) notes.push(`discount "${pendingDiscount.label}" never got its amount`);
       const desc = candidate ? norm(candidate.label) : "";
       const marker = /^[=\-−]/.test(desc);
       const descPrinted = marker ? "=" + desc.slice(1).trimStart() : desc;
@@ -185,24 +247,50 @@ export function parseRows(input: Row[]): ParsedReceipt {
         discounts: [],
       };
       items.push(current);
-      pending = null; candidate = null;
+      pending = null; candidate = null; pendingDiscount = null;
       continue;
     }
 
     const tag = TAG_RE.exec(label);
     if (tag) {
-      if (amount === null) { notes.push(`discount "${label}" has no amount`); continue; }
-      const discount: DiscountLine = {
-        label: norm(label.slice(0, tag.index)), tag: tag[1] as "M" | "A",
-        amountCents: amount > 0 ? -amount : amount,
-      };
+      const tagged = { label: norm(label.slice(0, tag.index)), tag: tag[1] as "M" | "A" };
+      // Box-grouping sometimes splits the discount label from its amount, leaving this row bare
+      // and the amount on the row that follows: wait for it instead of dropping the line.
+      if (amount === null) {
+        if (current) pendingDiscount = tagged;
+        else notes.push(`discount "${label}" has no item to attach to`);
+        continue;
+      }
+      // Normally the discount row carries its own (already negative) amount. But box-grouping
+      // sometimes puts the item's line total on this row instead, ahead of a bare amount row
+      // that then carries the real discount — recognisable by the open line total together with
+      // a positive amount here (a real discount is always printed negative already).
+      if (current && current.lineTotalCents === null && amount > 0) {
+        current.lineTotalCents = amount;
+        pendingDiscount = tagged;
+        continue;
+      }
+      const discount: DiscountLine = { ...tagged, amountCents: amount > 0 ? -amount : amount };
       if (current) current.discounts.push(discount);
       else notes.push(`discount "${label}" has no item to attach to`);
       continue;
     }
 
+    // The bracket tag is occasionally dropped from OCR entirely, leaving no [A]/[M] at all. The
+    // "N *label" / "MERCADO PAGO..." shape together with an already-negative amount is still
+    // enough to recognise the line and infer which of the two tags it is.
+    if (current && amount !== null && amount < 0 && DISCOUNT_SHAPE_RE.test(label)) {
+      const tag = /^MERCADO\s*PAGO/i.test(label) ? "M" : "A";
+      current.discounts.push({ label, tag, amountCents: amount });
+      continue;
+    }
+
     if (!label && amount !== null) {
-      if (current && current.lineTotalCents === null) current.lineTotalCents = amount;
+      if (awaitingTotal) { footer.totalCents = amount; awaitingTotal = false; }
+      else if (current && pendingDiscount) {
+        current.discounts.push({ ...pendingDiscount, amountCents: amount > 0 ? -amount : amount });
+        pendingDiscount = null;
+      } else if (current && current.lineTotalCents === null) current.lineTotalCents = amount;
       else notes.push(`stray amount ${row.amount}`);
       continue;
     }

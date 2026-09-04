@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-04",
+  "time": "09:42:15",
+  "store": "COTO CICSA SUC 90 - Segurola 1743, Monte Castro (COTO Centro Integral de Comercializacion S.A.)",
+  "total_printed": 109728.34,
+  "items": [
+    {"desc": "VERDURAS GRILLADAS COTOX KG", "qty": 0.172, "unit_price": 25899.00, "line_total": 4454.63, "discount": -1336.39, "discount_desc": "1 *30% ELABORADOS [A]"},
+    {"desc": "PESCADO FILET A LA ROMANACOTO X KG", "qty": 0.212, "unit_price": 21319.00, "line_total": 4519.63, "discount": -1355.90, "discount_desc": "1 *PESCADO 30% [A] -1355,89 + MERCADO PAGO 25% - V [M] -0,01"},
+    {"desc": "CHORIZO PARRILLEROX 320GR DOINA", "qty": 1, "unit_price": null, "line_total": 6400.00, "discount": -1600.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "MORCILLA ENV VACIO COTO XKG 1 KGM", "qty": 0.374, "unit_price": 9800.00, "line_total": 3665.20, "discount": -916.30, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "UNION GANADERA", "qty": 1, "unit_price": null, "line_total": 3999.00, "discount": -999.75, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "=ASADO ESTANCIA X KG", "qty": 0.965, "unit_price": 12999.00, "line_total": 12544.04, "discount": 0, "discount_desc": null},
+    {"desc": "=HUEVO BLANCOCJA 12 UNI", "qty": 1, "unit_price": null, "line_total": 3490.00, "discount": 0, "discount_desc": null},
+    {"desc": "QUESO CREMA CLASICOCASANCREM POT 290 GRM", "qty": 1, "unit_price": null, "line_total": 5765.00, "discount": -2018.33, "discount_desc": "1 *35 CASANCREM [A]"},
+    {"desc": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR", "qty": 12, "unit_price": 3495.00, "line_total": 41940.00, "discount": -14679.00, "discount_desc": "12 *35% BEBIDAS SELEC [A]"},
+    {"desc": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT", "qty": 4, "unit_price": 3390.00, "line_total": 13560.00, "discount": -3390.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "AGUA MINERAL S/GASVILLAVICENCIO BOT 2000 CMQ", "qty": 2, "unit_price": 3050.00, "line_total": 6100.00, "discount": -2135.00, "discount_desc": "2 *35% AGUAS SELEC [A]"},
+    {"desc": "ELITE", "qty": 1, "unit_price": null, "line_total": 2587.99, "discount": -647.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "=BANANA CAVENDISHX KG", "qty": 1.072, "unit_price": 2299.00, "line_total": 2464.53, "discount": 0, "discount_desc": null},
+    {"desc": "=CEBOLLA A GRANELX KG", "qty": 0.336, "unit_price": 1999.00, "line_total": 671.66, "discount": 0, "discount_desc": null},
+    {"desc": "ANTITRANSPIRANTE NIVEA MENINVISIBLE POWER B&W RO", "qty": 3, "unit_price": 3108.99, "line_total": 9326.97, "discount": -3108.99, "discount_desc": "1 *3X2 CLASES [A]"},
+    {"desc": "PAPA NEGRA SELECCIONX KG", "qty": 0.912, "unit_price": 2299.00, "line_total": 2096.69, "discount": -524.17, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "=PERA D'ANJOU XKG", "qty": 0.388, "unit_price": 2499.00, "line_total": 969.61, "discount": 0, "discount_desc": null},
+    {"desc": "PA?UELOS CAMPANITACJA 75 UNI", "qty": 3, "unit_price": 1775.99, "line_total": 5327.97, "discount": -1331.99, "discount_desc": "3 *25% MARCAS [A]"},
+    {"desc": "SAL FINA CELUSALSAL 250 GRM", "qty": 1, "unit_price": null, "line_total": 3172.00, "discount": -793.00, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "BOLSA P/HECES MASCOTA ASURING UNID. 33X22 20 BOL", "qty": 1, "unit_price": null, "line_total": 9470.99, "discount": -2367.75, "discount_desc": "MERCADO PAGO 25% - V [M]"},
+    {"desc": "=ACEITE GIRASOL .NATURA PET 900 CMQ", "qty": 1, "unit_price": null, "line_total": 4406.00, "discount": 0, "discount_desc": null}
+  ],
+  "subtotal_sin_descuentos_printed": 146931.91,
+  "descuentos_por_promociones_printed": -37203.57,
+  "detalle_ofertas_aplicadas": [
+    {"desc": "12 *35% BEBIDAS SELEC", "amount": 14679.00},
+    {"desc": "1 *3X2 CLASES", "amount": 3108.99},
+    {"desc": "2 *35% AGUAS SELEC", "amount": 2135.00},
+    {"desc": "1 *35 CASANCREM", "amount": 2018.33},
+    {"desc": "1 *PESCADO 30%", "amount": 1355.89},
+    {"desc": "1 *30% ELABORADOS", "amount": 1336.39},
+    {"desc": "3 *25% MARCAS", "amount": 1331.99},
+    {"desc": "MERCADO PAGO 25% - V", "amount": 11237.98}
+  ],
+  "notes": "Factura B ORIGINAL (Cod.006), 04/09/2026 09:42:15, NRO.T:2090-06514979, CAJA 0012, TERM 3791, TRAN 4969, ART:040, EMP:123859-SORIA. Paid MERCADO PAG 177204174592 for 109728,34, vuelto 0,00. IVA CONTENIDO 17612,74; OTROS IMPUESTOS NACIONALES INDIRECTOS 0,00. CAE 86361418114640 Vto 20260914. Cross-checks: sum(line_total)=146931.91 = printed SUBTOT. SIN DESCUENTOS; sum(discount)=-37203.57 = printed DESCUENTOS POR PROMOCIONES = TOT.AHORRO; 146931.91-37203.57=109728.34 = printed TOTAL. Detalle de ofertas sums to 37203.57 and each entry matches its item's discount line; MERCADO PAGO 25% total 11237.98 equals the sum of the nine per-item MP lines (incl. the -0,01 on the pescado item, folded into that item's discount of -1355.90). In the printed detalle the amount column appears vertically offset by one row in the scan; amounts were mapped to labels so both per-item lines and totals reconcile. 'PA?UELOS' is printed with '?' (Ñ of PAÑUELOS mis-rendered by the printer) - transcribed as printed. Ambiguity: the aceite unit reads 'PET 900 CHQ' in the scan, transcribed as CMQ (cm3) consistent with the Villavicencio line. CASANCREM 35% discount printed as 2018.33 (35% of 5765.00 would be 2017.75) - printed value kept. Page 001 slices s0-s1 repeat items from page 000 (LEVITE through BOLSA P/HECES); deduplicated."
+}
