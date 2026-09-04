@@ -524,9 +524,17 @@ const en = {
   "failure.llm_failed.noTool": "The model replied without classifying anything.",
   "failure.llm_failed.noItems": "The model's answer had no items array.",
   "failure.llm_failed.unusable": "The model returned {count} classifications and none were usable.",
+  "failure.ocr_unavailable": "Apple Vision OCR is not available: {detail}",
+  "failure.ocr_failed.timeout": "ocr_receipt.py timed out after {seconds}s.",
+  "failure.ocr_failed.detail": "{detail}",
+  "failure.duplicate_receipt.file": "This PDF was already uploaded: receipt of {date} (#{id}).",
+  "failure.duplicate_receipt.ticket": "Receipt {fiscal} of {date} is already stored (#{id}).",
+  "failure.pending_missing": "No pending upload matches that file. Upload the PDF again.",
+  "failure.bad_rows": "The corrected text has no rows to read.",
   "hint.pythonSetup": "From the repo root: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
   "hint.badName": "Rename it to letters, digits, dots, dashes or underscores, ending in .pdf.",
   "hint.apiKey": "Put ANTHROPIC_API_KEY=sk-ant-... in web/.env.local and restart npm run dev.",
+  "hint.visionSetup": "Receipts are read with Apple Vision (macOS only). From the repo root: .venv/bin/pip install -r requirements.txt",
 };
 
 
@@ -1032,9 +1040,17 @@ const es: Dictionary = {
   "failure.llm_failed.noTool": "El modelo respondió sin clasificar nada.",
   "failure.llm_failed.noItems": "La respuesta del modelo no tenía un array items.",
   "failure.llm_failed.unusable": "El modelo devolvió {count} clasificaciones y ninguna era utilizable.",
+  "failure.ocr_unavailable": "El OCR de Apple Vision no está disponible: {detail}",
+  "failure.ocr_failed.timeout": "ocr_receipt.py superó los {seconds}s.",
+  "failure.ocr_failed.detail": "{detail}",
+  "failure.duplicate_receipt.file": "Este PDF ya fue cargado: ticket del {date} (#{id}).",
+  "failure.duplicate_receipt.ticket": "El ticket {fiscal} del {date} ya está guardado (#{id}).",
+  "failure.pending_missing": "Ningún archivo pendiente coincide. Volvé a cargar el PDF.",
+  "failure.bad_rows": "El texto corregido no tiene filas para leer.",
   "hint.pythonSetup": "Desde la raíz del repo: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
   "hint.badName": "Renombralo con letras, dígitos, puntos, guiones o guiones bajos, terminado en .pdf.",
   "hint.apiKey": "Poné ANTHROPIC_API_KEY=sk-ant-... en web/.env.local y reiniciá npm run dev.",
+  "hint.visionSetup": "Los tickets se leen con Apple Vision (solo macOS). Desde la raíz del repo: .venv/bin/pip install -r requirements.txt",
 };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = { en, es };

@@ -7,7 +7,8 @@ import { DEFAULT_LOCALE, translate, type Locale, type MessageKey, type Vars } fr
 export type FailureCode =
   | "bad_name" | "too_large" | "not_pdf"
   | "python_missing" | "parse_failed" | "ingest_failed"
-  | "llm_unavailable" | "llm_failed";
+  | "llm_unavailable" | "llm_failed"
+  | "ocr_unavailable" | "ocr_failed" | "duplicate_receipt" | "pending_missing" | "bad_rows";
 
 export class Failure extends Error {
   constructor(
