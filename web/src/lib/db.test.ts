@@ -46,4 +46,37 @@ describe("db", () => {
       .toEqual({ limit_purchase: 20000000, rate_tem_pct: 5.707 });
     migrate(db); // idempotent: a second run must not re-ALTER
   });
+
+  it("stores a receipt with its items and discounts, and cascades on delete", () => {
+    const db = openDb(":memory:");
+    const r = db.prepare(
+      `INSERT INTO receipts (chain, date, fiscal_number, file_sha256, file_path, subtotal_cents, discounts_cents, total_cents,
+         header_json, verification_json, transcript_source, ocr_scale, created_at)
+       VALUES ('coto', '2026-09-04', '2090-06514979', 'abc', '/x/abc.pdf', 14693191, -3720357, 10972834, '{}', '{}', 'ocr', 3, '2026-09-04T12:00:00Z')`
+    ).run();
+    const item = db.prepare(
+      `INSERT INTO receipt_items (receipt_id, position, desc_printed, sku, ean, qty_milli, unit, unit_price_cents, line_total_cents)
+       VALUES (?, 1, 'VERDURAS GRILLADAS COTOX KG', '0000038072', '02538072001727', 172, 'kg', 2589900, 445463)`
+    ).run(r.lastInsertRowid);
+    db.prepare(`INSERT INTO receipt_discounts (item_id, position, label, tag, amount_cents) VALUES (?, 1, '1 *30% ELABORADOS', 'A', -133639)`)
+      .run(item.lastInsertRowid);
+    db.prepare(`INSERT INTO receipt_transcripts (receipt_id, kind, text) VALUES (?, 'ocr', 'TOTAL\t1,00')`).run(r.lastInsertRowid);
+    expect(db.prepare("SELECT COUNT(*) n FROM receipt_discounts").get()).toEqual({ n: 1 });
+    db.prepare("DELETE FROM receipts").run();
+    expect(db.prepare("SELECT COUNT(*) n FROM receipt_items").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT COUNT(*) n FROM receipt_discounts").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT COUNT(*) n FROM receipt_transcripts").get()).toEqual({ n: 0 });
+  });
+
+  it("refuses a second receipt with the same ticket number or the same file hash", () => {
+    const db = openDb(":memory:");
+    const ins = (fiscal: string, sha: string) => db.prepare(
+      `INSERT INTO receipts (chain, date, fiscal_number, file_sha256, file_path, subtotal_cents, discounts_cents, total_cents,
+         header_json, verification_json, transcript_source, ocr_scale, created_at)
+       VALUES ('coto', '2026-09-04', ?, ?, '/x', 1, 0, 1, '{}', '{}', 'ocr', 3, 'now')`).run(fiscal, sha);
+    ins("2090-1", "sha-1");
+    expect(() => ins("2090-1", "sha-2")).toThrow();
+    expect(() => ins("2090-2", "sha-1")).toThrow();
+    expect(() => db.prepare(`INSERT INTO receipt_items (receipt_id, position, desc_printed, qty_milli, unit, line_total_cents) VALUES (1, 1, 'x', 1000, 'lb', 1)`).run()).toThrow();
+  });
 });

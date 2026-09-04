@@ -94,6 +94,65 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
       match TEXT NOT NULL UNIQUE,
       alias TEXT NOT NULL
     );
+    -- Supermarket receipts (spec: docs/superpowers/specs/2026-09-04-supermarket-receipts.md).
+    -- Money is integer cents and quantities integer thousandths: the ingest gate reconciles a
+    -- receipt to the cent, and a REAL that lands 0.004 off would fail one that is right on paper.
+    -- fiscal_number (NRO.T.) and the file hash are the two identities; the file NAME is nothing.
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY,
+      chain TEXT NOT NULL,
+      branch_code TEXT,
+      branch_name TEXT,
+      date TEXT NOT NULL,
+      time TEXT,
+      fiscal_number TEXT NOT NULL UNIQUE,
+      file_sha256 TEXT NOT NULL UNIQUE,
+      file_path TEXT NOT NULL,
+      register TEXT,
+      terminal TEXT,
+      trx TEXT,
+      cae TEXT,
+      cae_due TEXT,
+      payment_method TEXT,
+      payment_ref TEXT,
+      subtotal_cents INTEGER NOT NULL,
+      discounts_cents INTEGER NOT NULL,
+      total_cents INTEGER NOT NULL,
+      header_json TEXT NOT NULL,
+      verification_json TEXT NOT NULL,
+      transcript_source TEXT NOT NULL CHECK (transcript_source IN ('ocr','corrected')),
+      ocr_scale REAL NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS receipt_items (
+      id INTEGER PRIMARY KEY,
+      receipt_id INTEGER NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      desc_printed TEXT NOT NULL,
+      no_promo INTEGER NOT NULL DEFAULT 0,
+      sku TEXT,
+      ean TEXT,
+      qty_milli INTEGER NOT NULL,
+      unit TEXT NOT NULL CHECK (unit IN ('un','kg')),
+      unit_price_cents INTEGER,
+      line_total_cents INTEGER NOT NULL,
+      UNIQUE (receipt_id, position)
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt ON receipt_items(receipt_id);
+    CREATE TABLE IF NOT EXISTS receipt_discounts (
+      id INTEGER PRIMARY KEY,
+      item_id INTEGER NOT NULL REFERENCES receipt_items(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      tag TEXT NOT NULL CHECK (tag IN ('M','A')),
+      amount_cents INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS receipt_transcripts (
+      receipt_id INTEGER NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL CHECK (kind IN ('ocr','corrected')),
+      text TEXT NOT NULL,
+      PRIMARY KEY (receipt_id, kind)
+    );
   `);
   // CREATE IF NOT EXISTS never widens an existing table, so a database created before the
   // bank-terms columns existed gets them here. Values stay NULL until the next ingest.
