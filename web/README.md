@@ -59,3 +59,30 @@ Only merchant name strings are ever sent (spec §1, §7) — never amounts, date
 the cardholder name. Voucher and policy digit tails are stripped, and any merchant name that still
 looks like money (the payment lines carry amounts and exchange rates in the description) is not
 sent at all. Without a key, `/review` says so and everything else keeps working.
+
+## Supermarket receipts
+
+Receipts (`/receipts`) are read on this machine with Apple Vision, so this part is **macOS only**.
+It needs the same Python environment as the statement pipeline, plus the Vision bindings:
+
+```bash
+# from the repo root
+.venv/bin/pip install -r requirements.txt
+```
+
+Uploads land in `pdfs/receipts/<sha256>.pdf` (`TARJETAS_RECEIPT_DIR` to move them). A receipt
+that does not reconcile to the cent is not stored; its PDF waits in `pdfs/receipts/.pending/`
+until the transcript is corrected on the page, and those files can be deleted at any time.
+
+The acceptance suite runs the real pipeline over `pdfs/receipts-acceptance/`
+(`TARJETAS_RECEIPT_ACCEPTANCE_DIR` to point elsewhere) and compares with the verified JSON in
+`src/lib/receipts/__fixtures__/expected/`:
+
+```bash
+npm run test:receipts                       # 10-15 minutes, macOS
+RECEIPT_RECORD=1 npm run test:receipts      # also re-records the transcripts replay.test.ts uses
+```
+
+Two of the five receipts pass the exact-cent gate; the other three are rejected due to OCR misreads, which is expected.
+
+Spec: `docs/superpowers/specs/2026-09-04-supermarket-receipts.md`.
