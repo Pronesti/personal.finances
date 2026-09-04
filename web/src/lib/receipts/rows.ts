@@ -9,11 +9,22 @@ function median(xs: number[]): number {
   return s.length ? s[Math.floor(s.length / 2)] : 0;
 }
 
+/** True if the box sits in the amount column and reads as money. */
+function looksLikeAmount(box: { x: number; text: string }): boolean {
+  return box.x >= 0.5 && isAmount(box.text);
+}
+
 /**
  * Vision returns boxes in no order and splits a printed line into two or three of them (label,
  * tag, amount). Boxes whose vertical centres sit within 0.6 median box heights of the row's
  * first box are one row. The amount is the rightmost amount-shaped box in the right half of the
  * page: line totals and discounts are right-aligned, and nothing else there looks like money.
+ *
+ * A printed row has at most one such amount. Two amount-shaped boxes landing within tolerance of
+ * each other is not evidence they share a row — it is evidence they don't: on a page where a
+ * discount's amount sits unusually close (vertically) to the line total above it, a fixed
+ * tolerance can't otherwise tell the two printed lines apart. So a box that would make a second
+ * amount box in the group starts a new row instead, splitting the group there.
  */
 export function boxesToRows(boxes: Box[]): Row[] {
   const rows: Row[] = [];
@@ -37,7 +48,8 @@ export function boxesToRows(boxes: Box[]): Row[] {
       group = [];
     };
     for (const box of sorted) {
-      if (group.length > 0 && box.cy - group[0].cy > tolerance) flush();
+      const wouldBeSecondAmount = looksLikeAmount(box) && group.some(looksLikeAmount);
+      if (group.length > 0 && (box.cy - group[0].cy > tolerance || wouldBeSecondAmount)) flush();
       group.push(box);
     }
     flush();
