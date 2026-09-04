@@ -535,6 +535,9 @@ const en = {
   "hint.badName": "Rename it to letters, digits, dots, dashes or underscores, ending in .pdf.",
   "hint.apiKey": "Put ANTHROPIC_API_KEY=sk-ant-... in web/.env.local and restart npm run dev.",
   "hint.visionSetup": "Receipts are read with Apple Vision (macOS only). From the repo root: .venv/bin/pip install -r requirements.txt",
+
+  // ── receipts ──────────────────────────────────────────────────────────────
+  "receipts.rejected": "The receipt did not reconcile, so nothing was stored. Fix the text below and verify again.",
 };
 
 
@@ -1051,6 +1054,9 @@ const es: Dictionary = {
   "hint.badName": "Renombralo con letras, dígitos, puntos, guiones o guiones bajos, terminado en .pdf.",
   "hint.apiKey": "Poné ANTHROPIC_API_KEY=sk-ant-... en web/.env.local y reiniciá npm run dev.",
   "hint.visionSetup": "Los tickets se leen con Apple Vision (solo macOS). Desde la raíz del repo: .venv/bin/pip install -r requirements.txt",
+
+  // ── receipts ──────────────────────────────────────────────────────────────
+  "receipts.rejected": "El ticket no cierra, así que no se guardó nada. Corregí el texto de abajo y verificá de nuevo.",
 };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = { en, es };
