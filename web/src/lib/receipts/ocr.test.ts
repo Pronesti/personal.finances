@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import * as mupdf from "mupdf";
 import { ocrPages } from "@/lib/receipts/ocr";
+import { planSlices } from "@/lib/receipts/slice";
 import { Failure } from "@/lib/failure";
 
 // Python stubs stand in for scripts/ocr_receipt.py: these tests never need Vision or a Mac.
@@ -79,5 +81,73 @@ print(json.dumps({"page": 1, "x": 0, "y": 0, "w": 0, "h": 0, "text": "leaked" if
     const [box] = await ocrPages(pages.slice(0, 1));
     delete process.env.ANTHROPIC_API_KEY;
     expect(box.text).toBe("clean");
+  });
+
+  describe("slicing a tall page before OCR", () => {
+    // A real, mupdf-decodable PNG (built directly from a Pixmap, no PDF involved) tall enough
+    // that planSlices splits it into several overlapping chunks.
+    function tallPng(width: number, height: number): Buffer {
+      const pix = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, [0, 0, width, height], false);
+      try {
+        pix.clear(255);
+        return Buffer.from(pix.asPNG());
+      } finally {
+        pix.destroy();
+      }
+    }
+
+    it("sends one chunk per slice to the OCR script, not one file per page", async () => {
+      const width = 200, height = 1600;
+      const plans = planSlices(width, height);
+      expect(plans.length).toBeGreaterThan(1); // otherwise this test proves nothing
+      // Hand the received file count back via "text" so ocrPages can still parse it as a Box.
+      useStub(`
+import sys, json
+print(json.dumps({"page": 1, "x": 0, "y": 0, "w": 0, "h": 0, "text": str(len(sys.argv) - 1)}))
+`);
+      const [box] = await ocrPages([{ page: 1, png: tallPng(width, height), width, height }]);
+      expect(box.text).toBe(String(plans.length));
+    });
+
+    it("maps a box found in a lower slice to a whole-page fraction, and dedupes an overlap duplicate", async () => {
+      const width = 200, height = 1600;
+      const plans = planSlices(width, height);
+      const j = 0;
+      // The overlap band shared by slice j and slice j+1, in whole-page pixels.
+      const overlapStart = plans[j + 1].y0;
+      const overlapEnd = plans[j].y1;
+      expect(overlapEnd).toBeGreaterThan(overlapStart); // must actually overlap
+      const targetPx = (overlapStart + overlapEnd) / 2;
+      const hFrac = 0.004;
+      const localY = (s: { y0: number; y1: number }) => (targetPx - s.y0) / (s.y1 - s.y0);
+      // Chunks are numbered 1-based by argv position == slice index + 1.
+      const chunkForJ = j + 1;
+      const chunkForJPlus1 = j + 2;
+      const boxes: Record<number, { x: number; y: number; w: number; h: number; text: string }[]> = {
+        [chunkForJ]: [{ x: 0.1, y: localY(plans[j]), w: 0.3, h: hFrac, text: "DUPLICATE LINE" }],
+        [chunkForJPlus1]: [{ x: 0.1, y: localY(plans[j + 1]), w: 0.3, h: hFrac, text: "DUPLICATE LINE" }],
+      };
+      useStub(`
+import sys, json
+boxes = ${JSON.stringify(boxes)}
+for page, p in enumerate(sys.argv[1:], start=1):
+    for b in boxes.get(str(page), []):
+        print(json.dumps({"page": page, **b}))
+`);
+      const result = await ocrPages([{ page: 1, png: tallPng(width, height), width, height }]);
+      const dup = result.filter(b => b.text === "DUPLICATE LINE");
+      expect(dup).toHaveLength(1);
+      expect(dup[0].page).toBe(1);
+      expect(dup[0].y).toBeCloseTo(targetPx / height, 2);
+    });
+
+    it("does not slice (or otherwise alter) a page whose aspect ratio doesn't call for it", async () => {
+      useStub(ECHO_PAGES);
+      const boxes = await ocrPages(pages); // the module-level `pages` fixture is 10x10, square
+      expect(boxes).toEqual([
+        { page: 1, x: 0.1, y: 0.2, w: 0.3, h: 0.01, text: "TOTAL" },
+        { page: 2, x: 0.1, y: 0.2, w: 0.3, h: 0.01, text: "TOTAL" },
+      ]);
+    });
   });
 });

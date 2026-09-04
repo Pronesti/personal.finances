@@ -84,10 +84,17 @@ function scanHeader(label: string, h: ParsedHeader): void {
 
 // Box-grouping sometimes glues the code row to the description that follows it (a page-boundary
 // artifact only, never seen mid-page): anchor on the code prefix and ignore what trails it.
-const CODE_ANCHOR_RE = /^(\d{10})[.,]?\s+(\d{12,14})\b/;
+// A round letter Vision sometimes substitutes for a "0" inside the sku/ean digit run (seen at a
+// slice's own crop edge, where a "0"'s stroke goes thin enough to read as a similarly-round
+// letter). Only the anchor used to detect a duplicated page tolerates this — codeOf() is never
+// consulted for what actually gets stored, so a wrongly-read digit here can only ever help two
+// duplicate copies of the same item recognise each other, never corrupt an item's real sku/ean.
+const ANCHOR_DIGIT_RE = "[0-9OoCcQqDd]";
+const CODE_ANCHOR_RE = new RegExp(`^(${ANCHOR_DIGIT_RE}{10})[.,]?\\s+(${ANCHOR_DIGIT_RE}{12,14})\\b`);
+const normalizeAnchorDigits = (s: string) => s.replace(/[OoCcQqDd]/g, "0");
 function codeOf(row: Row): { sku: string; ean: string } | null {
   const m = CODE_ANCHOR_RE.exec(norm(row.label));
-  return m ? { sku: m[1], ean: m[2] } : null;
+  return m ? { sku: normalizeAnchorDigits(m[1]), ean: normalizeAnchorDigits(m[2]) } : null;
 }
 
 /**

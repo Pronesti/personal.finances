@@ -215,6 +215,17 @@ describe("mergePages", () => {
     const boundary = merged.find(r => r.label.startsWith("0000000002"))!;
     expect(boundary).toEqual({ page: 2, label: "0000000002 000000000002", amount: "2,00" });
   });
+  it("still anchors when a mid-run code had a '0' misread as a round letter", () => {
+    // A real failure mode: page k+1's own scan reads one duplicated item's leading digit as a
+    // similarly-round letter ("C" for "0"). Filtering that item's code out entirely (rather than
+    // still recognising it) would misalign every code after it and break the whole overlap run.
+    const merged = mergePages(rows(
+      "## page 1\nA\n0000000001 000000000001\t1,00\nB\nC000000002 000000000002\t2,00\nC\n0000000003 000000000003\t3,00\n" +
+      "## page 2\nB\nC000000002 000000000002\t2,00\nC\n0000000003 000000000003\t3,00\nD\n0000000004 000000000004\t4,00\n"));
+    expect(merged.filter(r => /^[0-9C]{10} /.test(r.label)).map(r => r.label.slice(0, 10)))
+      .toEqual(["0000000001", "C000000002", "0000000003", "0000000004"]);
+  });
+
   it("concatenates pages that do not overlap", () => {
     const merged = mergePages(rows("## page 1\nA\n0000000001 000000000001\t1,00\n## page 2\nTOTAL\t1,00\n"));
     expect(merged).toHaveLength(3);
