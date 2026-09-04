@@ -65,4 +65,10 @@ describe("rows text", () => {
   it("skips blank lines", () => {
     expect(parseRowsText("\n\n## page 3\n\nX\n")).toEqual([{ page: 3, label: "X", amount: null }]);
   });
+
+  it("rejects a tab followed by a non-amount tail, falling through to space-based parsing", () => {
+    expect(parseRowsText("A\tB  100,00\n")).toEqual([
+      { page: 1, label: "A\tB", amount: "100,00" },
+    ]);
+  });
 });

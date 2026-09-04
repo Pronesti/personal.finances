@@ -70,8 +70,10 @@ export function parseRowsText(text: string): Row[] {
     const tab = line.lastIndexOf("\t");
     if (tab >= 0) {
       const amount = line.slice(tab + 1).trim();
-      rows.push({ page, label: line.slice(0, tab).trim(), amount: amount || null });
-      continue;
+      if (isAmount(amount)) {
+        rows.push({ page, label: line.slice(0, tab).trim(), amount });
+        continue;
+      }
     }
     const sm = SPACED_AMOUNT.exec(line);
     if (sm && isAmount(sm[2])) rows.push({ page, label: sm[1].trim(), amount: sm[2] });
