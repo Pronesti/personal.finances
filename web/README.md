@@ -86,3 +86,18 @@ RECEIPT_RECORD=1 npm run test:receipts      # also re-records the transcripts re
 Not all five receipts pass the exact-cent gate; the rest are rejected due to OCR misreads and go through the correction flow instead, which is expected.
 
 Spec: `docs/superpowers/specs/2026-09-04-supermarket-receipts.md`.
+
+**Products.** Every receipt line is matched to a canonical product at ingest: by Coto article
+code first (`product_codes`), then by an ordered description rule (`product_rules`), else a
+product is created flagged for review (`/super/review`). The starting set comes from
+`data/products-seed.json`, loaded once into an empty `products` table; it was built from the
+prototype's `master.json` (the curated copy under `src/lib/receipts/__fixtures__/`, in which two article codes the prototype had split are merged into one product each) and the recorded transcripts with
+
+```bash
+npm run build-products-seed -- src/lib/receipts/__fixtures__/master.json
+```
+
+and is not rebuilt automatically. `/super`, `/super/products` and `/super/categories` compute
+everything on read from `receipts`, `receipt_items` and `product_matches`; nothing derived is stored.
+`src/lib/receipts/analytics.replay.test.ts` replays the five recorded receipts and checks the
+numbers against the prototype's `master.json`.
