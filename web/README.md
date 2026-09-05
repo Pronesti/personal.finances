@@ -101,3 +101,11 @@ and is not rebuilt automatically. `/super`, `/super/products` and `/super/catego
 everything on read from `receipts`, `receipt_items` and `product_matches`; nothing derived is stored.
 `src/lib/receipts/analytics.replay.test.ts` replays the five recorded receipts and checks the
 numbers against the prototype's `master.json`.
+
+**Charges.** Every statement line gets a `fingerprint` at ingest (a hash of card, date, printed
+description, amounts and installment position — stable across re-ingests, unlike the row id; older
+rows are backfilled by `migrate()`). `receipt_charge_links` ties one receipt to one fingerprint.
+After a receipt is stored and after a statement is ingested, a receipt with exactly one candidate
+charge (supermarket purchase, first installment, within ±3 days, same amount or amount × installments)
+is linked automatically; `/super/charges` shows both sides, lets you link or unlink by hand, and
+lists the supermarket charges with no receipt. Linking never edits a charge or a receipt.
