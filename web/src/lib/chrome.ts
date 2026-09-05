@@ -107,6 +107,9 @@ export const CHROME: Record<string, RouteChrome> = {
     granularities: GRANULARITIES,
     period: "latest",
   },
+  "/super": { title: "super.title" },
+  "/super/categories": { title: "super.categories.title" },
+  "/super/products": { title: "super.products.title" },
   "/taxes": {
     title: "taxes.title",
     // tax toggle hidden: this page IS the tax view — "true cost" would double-count
