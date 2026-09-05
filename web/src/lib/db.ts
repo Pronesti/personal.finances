@@ -5,6 +5,7 @@ import { DATA_DIR } from "@/lib/paths";
 import { seedCategoryData } from "@/lib/rules";
 import { seedAliases } from "@/lib/aliases";
 import { seedProducts } from "@/lib/receipts/seed";
+import { backfillFingerprints } from "@/lib/fingerprint";
 
 // `seedDir` is where the tracked JSON files that these tables replaced still live. Null means do
 // not seed at all, which is the default because seeding is an openDb-level concern: a caller
@@ -39,7 +40,8 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
       ars REAL,
       usd REAL,
       installment_number INTEGER,
-      installment_count INTEGER
+      installment_count INTEGER,
+      fingerprint TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_tx_statement ON transactions(statement_id);
     CREATE TABLE IF NOT EXISTS upcoming_installments (
@@ -196,6 +198,16 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
   for (const col of ["prev_balance_ars", "limit_purchase", "rate_tna_pct", "rate_tem_pct"]) {
     if (!have.has(col)) db.exec(`ALTER TABLE statements ADD COLUMN ${col} REAL`);
   }
+  // Same widening for transactions.fingerprint (charge identity for receipt links), then a
+  // one-time backfill so rows from before the column can be linked too.
+  const txCols = new Set(
+    (db.prepare("PRAGMA table_info(transactions)").all() as { name: string }[]).map(c => c.name)
+  );
+  if (!txCols.has("fingerprint")) {
+    db.exec("ALTER TABLE transactions ADD COLUMN fingerprint TEXT");
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_tx_fingerprint ON transactions(fingerprint)");
+  backfillFingerprints(db);
   // One-time import, guarded on the tables being empty, so a second run is a no-op and an
   // existing database is never overwritten by the file it was seeded from.
   if (seedDir !== null) {

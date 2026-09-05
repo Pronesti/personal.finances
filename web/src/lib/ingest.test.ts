@@ -46,6 +46,13 @@ describe("statementToRows", () => {
     bad.declared_totals![0].ars = 999999;
     expect(statementToRows(bad, rules, aliases).alerts).toHaveLength(1);
   });
+  it("gives every transaction a fingerprint, stable across two runs", () => {
+    const a = statementToRows(fixture, rules, aliases).transactions.map(t => t.fingerprint);
+    const b = statementToRows(fixture, rules, aliases).transactions.map(t => t.fingerprint);
+    expect(a).toEqual(b);
+    expect(new Set(a).size).toBe(a.length);
+    for (const fp of a) expect(fp).toMatch(/^[0-9a-f]{40}$/);
+  });
 });
 
 describe("ingestFile", () => {
@@ -59,6 +66,15 @@ describe("ingestFile", () => {
     expect(db.prepare("SELECT COUNT(*) n FROM transactions").get()).toEqual({ n: 6 });
     expect(db.prepare("SELECT COUNT(*) n FROM upcoming_installments").get()).toEqual({ n: 1 });
     expect(db.prepare("SELECT COUNT(*) n FROM alerts").get()).toEqual({ n: 1 });
+  });
+  it("keeps the same fingerprints when a statement is ingested again", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, fixture, rules, aliases);
+    const before = db.prepare("SELECT fingerprint FROM transactions ORDER BY id").all();
+    ingestFile(db, fixture, rules, aliases);
+    const after = db.prepare("SELECT fingerprint FROM transactions ORDER BY id").all();
+    expect(after).toEqual(before);
+    expect(db.prepare("SELECT COUNT(*) n FROM transactions WHERE fingerprint IS NULL").get()).toEqual({ n: 0 });
   });
 });
 

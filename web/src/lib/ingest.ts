@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import { categorize, normalizeMerchant, type Category, type Rule } from "@/lib/categorize";
 import { applyAlias, type Alias } from "@/lib/aliases";
 import { checkStatement, type StatementJson, type Alert } from "@/lib/integrity";
+import { fingerprintAll } from "@/lib/fingerprint";
 
 export function cycleMonth(closingDate: string, prevClosingDate: string | null): string {
   const end = new Date(closingDate + "T00:00:00Z").getTime();
@@ -40,7 +41,8 @@ export function statementToRows(json: StatementJson, rules: Rule[], aliases: Ali
     rate_tna_pct: json.rates?.annual_nominal_ars ?? null,
     rate_tem_pct: json.rates?.monthly_effective_ars ?? null,
   };
-  const transactions = json.transactions.map(t => {
+  const fingerprints = fingerprintAll(json.brand, json.transactions);
+  const transactions = json.transactions.map((t, i) => {
     const { merchant, category, subcategory } = deriveTransaction(t.description, t.section, rules, aliases);
     return {
       section: t.section,
@@ -51,6 +53,8 @@ export function statementToRows(json: StatementJson, rules: Rule[], aliases: Ali
       ars: t.ars, usd: t.usd,
       installment_number: t.installment_number,
       installment_count: t.installment_count,
+      // Stable across re-ingest; rows are deleted and re-inserted, ids are not (see receipt links).
+      fingerprint: fingerprints[i],
     };
   });
   const installments = (json.upcoming_installments ?? [])
@@ -83,8 +87,8 @@ export function ingestFile(
        VALUES (@file, @brand, @closing_date, @cycle_month, @due_date, @prev_closing_date, @balance_ars, @balance_usd, @minimum_payment_ars, @prev_balance_ars, @limit_purchase, @rate_tna_pct, @rate_tem_pct)`
     ).run(statement).lastInsertRowid;
     const insTx = db.prepare(
-      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
-       VALUES (?, @section, @date, @description, @merchant, @category, @subcategory, @ars, @usd, @installment_number, @installment_count)`
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count, fingerprint)
+       VALUES (?, @section, @date, @description, @merchant, @category, @subcategory, @ars, @usd, @installment_number, @installment_count, @fingerprint)`
     );
     for (const t of transactions) insTx.run(sid, t);
     const insUp = db.prepare("INSERT INTO upcoming_installments (statement_id, month, amount_ars) VALUES (?, ?, ?)");

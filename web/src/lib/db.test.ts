@@ -105,4 +105,27 @@ describe("db", () => {
     // the receipt item itself is untouched: products are a layer over receipts, not part of them
     expect(db.prepare("SELECT COUNT(*) n FROM receipt_items").get()).toEqual({ n: 1 });
   });
+
+  it("adds fingerprint to an older transactions table and backfills it, numbering identical lines", () => {
+    const db = new Database(":memory:");
+    db.exec(`
+      CREATE TABLE statements (id INTEGER PRIMARY KEY, file TEXT UNIQUE NOT NULL, brand TEXT NOT NULL,
+        closing_date TEXT NOT NULL, cycle_month TEXT NOT NULL, due_date TEXT, prev_closing_date TEXT,
+        balance_ars REAL, balance_usd REAL, minimum_payment_ars REAL);
+      CREATE TABLE transactions (id INTEGER PRIMARY KEY, statement_id INTEGER NOT NULL REFERENCES statements(id) ON DELETE CASCADE,
+        section TEXT NOT NULL, date TEXT, description TEXT NOT NULL, merchant TEXT NOT NULL, category TEXT NOT NULL,
+        subcategory TEXT, ars REAL, usd REAL, installment_number INTEGER, installment_count INTEGER);
+      INSERT INTO statements (file, brand, closing_date, cycle_month) VALUES ('v.pdf', 'visa', '2026-08-29', '2026-08');
+      INSERT INTO transactions (statement_id, section, date, description, merchant, category, ars) VALUES
+        (1, 'purchases', '2026-08-07', 'MERPAGO*COTO', 'COTO', 'food', 115370.8),
+        (1, 'purchases', '2026-08-07', 'MERPAGO*COTO', 'COTO', 'food', 115370.8),
+        (1, 'purchases', '2026-08-09', 'CAFE', 'CAFE', 'food', 2500);
+    `);
+    migrate(db);
+    const fps = (db.prepare("SELECT fingerprint FROM transactions ORDER BY id").all() as { fingerprint: string }[]).map(r => r.fingerprint);
+    expect(fps.every(f => /^[0-9a-f]{40}$/.test(f))).toBe(true);
+    expect(new Set(fps).size).toBe(3);
+    migrate(db); // idempotent: no re-ALTER, no rewrite
+    expect((db.prepare("SELECT fingerprint FROM transactions ORDER BY id").all() as { fingerprint: string }[]).map(r => r.fingerprint)).toEqual(fps);
+  });
 });
