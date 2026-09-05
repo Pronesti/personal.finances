@@ -40,7 +40,7 @@ const GROUPS: readonly Group[] = [
     heading: "nav.group.supermarket",
     links: [
       ["/super", "nav.super"], ["/super/products", "nav.superProducts"], ["/super/categories", "nav.superCategories"],
-      ["/receipts", "nav.receipts"], ["/super/review", "nav.superReview"],
+      ["/receipts", "nav.receipts"], ["/super/charges", "nav.superCharges"], ["/super/review", "nav.superReview"],
     ],
   },
   {

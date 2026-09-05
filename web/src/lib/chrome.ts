@@ -109,6 +109,7 @@ export const CHROME: Record<string, RouteChrome> = {
   },
   "/super": { title: "super.title" },
   "/super/categories": { title: "super.categories.title" },
+  "/super/charges": { title: "super.charges.title" },
   "/super/products": { title: "super.products.title" },
   "/super/review": { title: "super.review.title" },
   "/taxes": {
