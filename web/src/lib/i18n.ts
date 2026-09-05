@@ -613,6 +613,14 @@ const en = {
   "productCategory.personal_care": "personal care",
   "productCategory.pets": "pets",
   "productCategory.other": "other",
+
+  "super.legend.paid": "paid",
+  "super.legend.discount": "discounts",
+  "super.legend.list": "list price",
+  "super.legend.effective": "effective price",
+  "super.legend.mp": "Mercado Pago",
+  "super.legend.coto": "Coto offers",
+  "super.legend.mixed": "mixed",
 };
 
 
@@ -1207,6 +1215,14 @@ const es: Dictionary = {
   "productCategory.personal_care": "perfumería",
   "productCategory.pets": "mascotas",
   "productCategory.other": "otros",
+
+  "super.legend.paid": "pagado",
+  "super.legend.discount": "descuentos",
+  "super.legend.list": "precio de lista",
+  "super.legend.effective": "precio efectivo",
+  "super.legend.mp": "Mercado Pago",
+  "super.legend.coto": "ofertas Coto",
+  "super.legend.mixed": "mixto",
 };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = { en, es };
