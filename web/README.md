@@ -83,6 +83,6 @@ npm run test:receipts                       # 10-15 minutes, macOS
 RECEIPT_RECORD=1 npm run test:receipts      # also re-records the transcripts replay.test.ts uses
 ```
 
-Two of the five receipts pass the exact-cent gate; the other three are rejected due to OCR misreads, which is expected.
+Not all five receipts pass the exact-cent gate; the rest are rejected due to OCR misreads and go through the correction flow instead, which is expected.
 
 Spec: `docs/superpowers/specs/2026-09-04-supermarket-receipts.md`.

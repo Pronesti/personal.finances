@@ -128,13 +128,23 @@ export function mergePages(rows: Row[]): Row[] {
       const prevA = merged[aIdx], prevB = next[bIdx];
       if (!QTY_RE.test(norm(prevA.label)) && QTY_RE.test(norm(prevB.label))) merged[aIdx] = prevB;
     }
-    const isDiscount = (r: Row) => TAG_RE.test(norm(r.label)) || DISCOUNT_SHAPE_RE.test(norm(r.label));
+    // The untagged "N *label" shape is only trustworthy together with an already-negative amount
+    // (mirrors the same guard on its main-loop counterpart below) — otherwise a garbled footer's
+    // "N *label" offer lines would count as discounts here too.
+    const isDiscount = (r: Row) => {
+      const l = norm(r.label);
+      if (TAG_RE.test(l)) return true;
+      const amt = r.amount === null ? null : parseAmountCents(r.amount);
+      return DISCOUNT_SHAPE_RE.test(l) && amt !== null && amt < 0;
+    };
     const isTrailer = (r: Row) => isDiscount(r) || (r.label.trim() === "" && r.amount !== null);
     // Rows of page k+1 that belong to its k-th duplicated item: its code row and what trails it.
     let end = b[k - 1].i + 1;
     while (end < next.length && isTrailer(next[end])) end++;
     const lastCodeA = a[a.length - 1].i;
-    const tailA = merged.slice(lastCodeA + 1);
+    let endA = lastCodeA + 1;
+    while (endA < merged.length && isTrailer(merged[endA])) endA++;
+    const tailA = merged.slice(lastCodeA + 1, endA);
     const tailB = next.slice(b[k - 1].i + 1, end);
     const discounts = (rs: Row[]) => rs.filter(isDiscount).length;
     const keptTail = discounts(tailB) > discounts(tailA) ? tailB : tailA;
@@ -217,8 +227,14 @@ export function parseRows(input: Row[]): ParsedReceipt {
       if (amount !== null) offerAmounts.push(amount);
       continue;
     }
-    if (/^SUBTOT/i.test(label)) { footer.subtotalCents = amount; current = null; candidate = null; pendingDiscount = null; continue; }
-    if (/^DESCUENTOS POR PROMOCIONES/i.test(label)) { footer.discountsCents = amount; continue; }
+    if (/^SUBTOT/i.test(label)) {
+      if (amount !== null) footer.subtotalCents = amount;
+      current = null; candidate = null; pendingDiscount = null; continue;
+    }
+    if (/^DESCUENTOS POR PROMOCIONES/i.test(label)) {
+      if (amount !== null) footer.discountsCents = amount;
+      continue;
+    }
     if (/^TOTAL\.?$/i.test(label)) {
       if (amount !== null) footer.totalCents = amount; else awaitingTotal = true;
       continue;
@@ -302,7 +318,13 @@ export function parseRows(input: Row[]): ParsedReceipt {
       continue;
     }
 
-    if (label) candidate = row;
+    if (label) {
+      // TOTAL printed with no amount, then never followed by a bare amount row (it landed on a
+      // labelled row instead, which we don't recognise as the total). Disarm here rather than
+      // let some unrelated bare amount further down silently become the total.
+      awaitingTotal = false;
+      candidate = row;
+    }
   }
 
   for (const it of items) {

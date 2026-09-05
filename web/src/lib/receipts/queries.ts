@@ -70,7 +70,10 @@ export function receiptDetail(db: Database.Database, id: number): ReceiptDetail 
   `).get(id) as { text: string } | undefined;
   return {
     receipt,
-    header: JSON.parse(header_json) as ReceiptHeaderExtras,
+    header: (() => {
+      const parsedHeader = JSON.parse(header_json) as ReceiptHeaderExtras;
+      return { ...parsedHeader, notes: parsedHeader.notes ?? [] };
+    })(),
     items: items.map(it => ({ ...it, discounts: byItem.get(it.id) ?? [] })),
     report: JSON.parse(verification_json) as VerificationReport,
     transcript: transcript?.text ?? "",

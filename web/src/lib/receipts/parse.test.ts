@@ -156,6 +156,29 @@ describe("parseRows: footer", () => {
       "DESCUENTOS POR PROMOCIONES\t0,00\nTOTAL\n\t1,00\n");
     expect(parseRows(rows).footer.totalCents).toBe(100);
   });
+  it("does not let a garbled footer with an unread amount null out a good footer that came before it", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t1,00\n" +
+      "SUBTOT. SIN DESCUENTOS\t100,00\nDESCUENTOS POR PROMOCIONES\t-25,00\nTOTAL\t75,00\n" +
+      "SUBTOT. SIN DESCUENTOS\nDESCUENTOS POR PROMOCIONES\nTOTAL\n");
+    expect(parseRows(rows).footer).toMatchObject({ subtotalCents: 10000, discountsCents: -2500, totalCents: 7500 });
+  });
+  it("does not let a garbled footer with an unread amount null out a good footer that comes after it", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t1,00\n" +
+      "SUBTOT. SIN DESCUENTOS\nDESCUENTOS POR PROMOCIONES\nTOTAL\n" +
+      "SUBTOT. SIN DESCUENTOS\t100,00\nDESCUENTOS POR PROMOCIONES\t-25,00\nTOTAL\t75,00\n");
+    expect(parseRows(rows).footer).toMatchObject({ subtotalCents: 10000, discountsCents: -2500, totalCents: 7500 });
+  });
+
+  it("disarms awaitingTotal at the next labelled row, so a later stray bare amount doesn't " +
+    "silently become the total", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t1,00\nSUBTOT. SIN DESCUENTOS\t1,00\n" +
+      "DESCUENTOS POR PROMOCIONES\t0,00\nTOTAL\nSOME OTHER LABEL\n\t999,99\n");
+    expect(parseRows(rows).footer.totalCents).toBeNull();
+  });
+
   it("pairs offer labels with amounts by order, surviving the row offset", () => {
     expect(parsed().footer.offers).toEqual([
       { label: "1 *30% ELABORADOS", amountCents: 133639 },
@@ -224,6 +247,21 @@ describe("mergePages", () => {
       "## page 2\nB\nC000000002 000000000002\t2,00\nC\n0000000003 000000000003\t3,00\nD\n0000000004 000000000004\t4,00\n"));
     expect(merged.filter(r => /^[0-9C]{10} /.test(r.label)).map(r => r.label.slice(0, 10)))
       .toEqual(["0000000001", "C000000002", "0000000003", "0000000004"]);
+  });
+
+  it("bounds tailA at the boundary item's own trailer, dropping page k's footer rather than " +
+    "letting it outscore page k+1's real footer on discount count", () => {
+    const merged = mergePages(rows(
+      "## page 1\nA\n0000000001 000000000001\t1,00\n" +
+      "1 *25% MARCAS [A]\t-0,25\n" + // boundary item's own trailer (tailA/tailB candidate)
+      "SUBTOT\nDESCUENTOS POR PROMOCIONES\n2 *X\n3 *Y\n4 *Z\n" + // page k's garbled footer: junk plus 3 fake "N *" discounts
+      "## page 2\n0000000001 000000000001\t1,00\n1 *25% MARCAS [A]\t-0,25\n" +
+      "SUBTOT. SIN DESCUENTOS\t100,00\n"));
+    // page k's junk footer (SUBTOT/DESCUENTOS/2 *X/3 *Y/4 *Z) must not survive the merge.
+    expect(merged.some(r => /SUBTOT$/.test(r.label))).toBe(false);
+    expect(merged.some(r => /^[234] \*/.test(r.label))).toBe(false);
+    expect(merged.filter(r => /^1 \*25% MARCAS/.test(r.label))).toHaveLength(1);
+    expect(merged.some(r => /^SUBTOT\. SIN DESCUENTOS/.test(r.label))).toBe(true);
   });
 
   it("concatenates pages that do not overlap", () => {

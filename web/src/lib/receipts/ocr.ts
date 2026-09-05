@@ -43,18 +43,22 @@ function sliceIntoChunks(pages: PageImage[]): Chunk[] {
       continue;
     }
     const image = new mupdf.Image(p.png);
-    const pix = image.toPixmap();
     try {
-      for (const slice of plans) {
-        const cropped = cropSlice(pix, p.width, slice);
-        try {
-          chunks.push({ page: p.page, slice, pageHeight: p.height, png: Buffer.from(cropped.asPNG()) });
-        } finally {
-          cropped.destroy();
+      const pix = image.toPixmap();
+      try {
+        for (const slice of plans) {
+          const cropped = cropSlice(pix, p.width, slice);
+          try {
+            chunks.push({ page: p.page, slice, pageHeight: p.height, png: Buffer.from(cropped.asPNG()) });
+          } finally {
+            cropped.destroy();
+          }
         }
+      } finally {
+        pix.destroy();
       }
     } finally {
-      pix.destroy();
+      image.destroy();
     }
   }
   return chunks;
@@ -100,13 +104,20 @@ export async function ocrPages(pages: PageImage[]): Promise<Box[]> {
         throw new Failure("python_missing", "failure.python_missing.cannotRun", { python }, "hint.pythonSetup");
       if (err.code === 3 || stderr.includes("VISION UNAVAILABLE"))
         throw new Failure("ocr_unavailable", "failure.ocr_unavailable", { detail: stderr }, "hint.visionSetup");
+      if (err.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER")
+        throw new Failure("ocr_failed", "failure.ocr_failed.tooMuchOutput");
       if (err.killed)
         throw new Failure("ocr_failed", "failure.ocr_failed.timeout", { seconds: TIMEOUT_MS / 1000 });
       throw new Failure("ocr_failed", "failure.ocr_failed.detail", { detail: stderr || err.message });
     }
     // The script numbers boxes by argv position ("page" 1-based), which is the chunk index here,
     // not the real page number — map each box back to its chunk's real page and pixel slice.
-    const raw = stdout.split("\n").filter(line => line.trim()).map(line => JSON.parse(line) as Box);
+    let raw: Box[];
+    try {
+      raw = stdout.split("\n").filter(line => line.trim()).map(line => JSON.parse(line) as Box);
+    } catch (e) {
+      throw new Failure("ocr_failed", "failure.ocr_failed.detail", { detail: (e as Error).message });
+    }
     const mapped = raw.map(box => {
       const chunkIndex = box.page; // 1-based, matches the chunk this box's slice came from
       const chunk = chunks[chunkIndex - 1];
