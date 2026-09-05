@@ -5,6 +5,7 @@ import type { StatementJson } from "@/lib/integrity";
 import type { Rule } from "@/lib/categorize";
 import {
   MATCH_WINDOW_DAYS, amountMatches, candidateCharges, autoLink, linkReceipt, unlinkReceipt,
+  receiptSide, reconciliation,
 } from "@/lib/receipts/charges";
 
 type Db = ReturnType<typeof openDb>;
@@ -140,5 +141,52 @@ describe("hooks", () => {
     receipt(db, "2026-08-07", 11537080);
     ingestFile(db, statement("visa", "v.pdf", "2026-08-29", [{ date: "2026-08-07", description: "MERPAGO*COTO", ars: 115370.8 }]), RULES, []);
     expect(links(db)).toEqual([{ receipt_id: 1, method: "auto" }]);
+  });
+});
+
+describe("reconciliation reads", () => {
+  function world() {
+    const db = openDb(":memory:");
+    ingestFile(db, statement("visa", "v.pdf", "2026-08-29", [
+      { date: "2026-08-07", description: "MERPAGO*COTO", ars: 115370.8 },          // matched
+      { date: "2026-08-21", description: "COTO SUCURSAL 90", ars: 6666.5, n: 1, of: 3 }, // no receipt → unmatched charge
+      { date: "2026-08-10", description: "MERPAGO*COTO", ars: 5000 },              // two candidates for one receipt
+      { date: "2026-08-09", description: "MERPAGO*COTO", ars: 5000 },
+    ]), RULES, []);
+    receipt(db, "2026-08-07", 11537080, "m");
+    receipt(db, "2026-08-08", 500000, "p");   // pending: two candidates
+    receipt(db, "2026-08-28", 12188854, "u"); // unmatched: no charge yet
+    autoLink(db);
+    return db;
+  }
+
+  it("describes one receipt: its charge, or its candidates", () => {
+    const db = world();
+    expect(receiptSide(db, 1)).toMatchObject({
+      id: 1, date: "2026-08-07", totalCents: 11537080, state: "matched", method: "auto",
+      charge: { description: "MERPAGO*COTO", ars: 115370.8, brand: "visa", purchaseCents: 11537080, cycle_month: "2026-08" },
+      candidates: [],
+    });
+    const pending = receiptSide(db, 2)!;
+    expect(pending.state).toBe("pending");
+    expect(pending.charge).toBeNull();
+    expect(pending.candidates.map(c => c.date)).toEqual(["2026-08-09", "2026-08-10"]);
+    expect(receiptSide(db, 3)).toMatchObject({ state: "unmatched", charge: null, candidates: [] });
+    expect(receiptSide(db, 99)).toBeNull();
+  });
+
+  it("lists both sides with a summary", () => {
+    const r = reconciliation(world());
+    expect(r.receipts.map(x => x.state)).toEqual(["unmatched", "pending", "matched"]); // newest first
+    expect(r.charges.map(c => [c.date, c.receiptId])).toEqual([
+      ["2026-08-21", null], ["2026-08-10", null], ["2026-08-09", null], ["2026-08-07", 1],
+    ]);
+    expect(r.charges[0].purchaseCents).toBe(1999950); // 6666.5 × 3
+    expect(r.summary).toEqual({
+      chargedCents: 11537080 + 1999950 + 500000 + 500000,
+      analyzedCents: 11537080 + 500000 + 12188854,
+      matchedCents: 11537080,
+      unmatchedCharges: 3, pendingReceipts: 1, unmatchedReceipts: 1,
+    });
   });
 });

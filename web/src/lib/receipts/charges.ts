@@ -95,3 +95,73 @@ export function linkReceipt(db: Database.Database, receiptId: number, fingerprin
 export function unlinkReceipt(db: Database.Database, receiptId: number): void {
   db.prepare("DELETE FROM receipt_charge_links WHERE receipt_id = ?").run(receiptId);
 }
+
+export type ReceiptSide = {
+  id: number; date: string; totalCents: number;
+  state: "matched" | "pending" | "unmatched";
+  charge: ChargeRef | null; method: LinkMethod | null; candidates: ChargeRef[];
+};
+export type ChargeSide = ChargeRef & { receiptId: number | null; receiptDate: string | null; method: LinkMethod | null };
+export type Reconciliation = {
+  receipts: ReceiptSide[];
+  charges: ChargeSide[];
+  summary: {
+    chargedCents: number; analyzedCents: number; matchedCents: number;
+    unmatchedCharges: number; pendingReceipts: number; unmatchedReceipts: number;
+  };
+};
+
+const LINKED_CHARGE_SQL = `
+  SELECT t.fingerprint, s.brand, t.date, t.description, t.merchant, t.ars, t.installment_number, t.installment_count,
+         s.cycle_month, s.file AS statement_file, l.method
+  FROM receipt_charge_links l
+  JOIN transactions t ON t.fingerprint = l.fingerprint
+  JOIN statements s ON s.id = t.statement_id
+  WHERE l.receipt_id = ?
+  ORDER BY t.installment_number LIMIT 1`;
+
+/** One receipt's side of the ledger: the charge it is linked to, or what it could be linked to. */
+export function receiptSide(db: Database.Database, receiptId: number): ReceiptSide | null {
+  const r = db.prepare("SELECT id, date, total_cents AS totalCents FROM receipts WHERE id = ?").get(receiptId) as
+    { id: number; date: string; totalCents: number } | undefined;
+  if (!r) return null;
+  const linked = db.prepare(LINKED_CHARGE_SQL).get(receiptId) as (ChargeRow & { method: LinkMethod }) | undefined;
+  if (linked) {
+    const { method, ...charge } = linked;
+    return { ...r, state: "matched", charge: withPurchase(charge), method, candidates: [] };
+  }
+  const candidates = candidateCharges(db, r);
+  return { ...r, state: candidates.length > 1 ? "pending" : "unmatched", charge: null, method: null, candidates };
+}
+
+/**
+ * Both sides, newest first. The charge side is every supermarket purchase (first installments
+ * only), linked or not: the unlinked ones are shopping trips with no receipt uploaded — the
+ * completeness check receipts alone cannot give.
+ */
+export function reconciliation(db: Database.Database): Reconciliation {
+  const receiptIds = (db.prepare("SELECT id FROM receipts ORDER BY date DESC, time DESC, id DESC").all() as { id: number }[]).map(x => x.id);
+  const receipts = receiptIds.map(id => receiptSide(db, id)!);
+  const chargeRows = db.prepare(`
+    SELECT t.fingerprint, s.brand, t.date, t.description, t.merchant, t.ars, t.installment_number, t.installment_count,
+           s.cycle_month, s.file AS statement_file, l.receipt_id AS receiptId, r.date AS receiptDate, l.method
+    FROM transactions t JOIN statements s ON s.id = t.statement_id
+    LEFT JOIN receipt_charge_links l ON l.fingerprint = t.fingerprint
+    LEFT JOIN receipts r ON r.id = l.receipt_id
+    WHERE t.section = 'purchases' AND t.category = 'food' AND t.subcategory = 'supermarket'
+      AND t.ars IS NOT NULL AND t.ars > 0 AND t.fingerprint IS NOT NULL
+      AND (t.installment_number IS NULL OR t.installment_number = 1)
+    ORDER BY t.date DESC, t.id DESC`).all() as (ChargeRow & { receiptId: number | null; receiptDate: string | null; method: LinkMethod | null })[];
+  const charges: ChargeSide[] = chargeRows.map(c => ({ ...withPurchase(c), receiptId: c.receiptId, receiptDate: c.receiptDate, method: c.method }));
+  return {
+    receipts, charges,
+    summary: {
+      chargedCents: charges.reduce((s, c) => s + c.purchaseCents, 0),
+      analyzedCents: receipts.reduce((s, r) => s + r.totalCents, 0),
+      matchedCents: charges.filter(c => c.receiptId !== null).reduce((s, c) => s + c.purchaseCents, 0),
+      unmatchedCharges: charges.filter(c => c.receiptId === null).length,
+      pendingReceipts: receipts.filter(r => r.state === "pending").length,
+      unmatchedReceipts: receipts.filter(r => r.state === "unmatched").length,
+    },
+  };
+}
