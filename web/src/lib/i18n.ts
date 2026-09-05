@@ -599,6 +599,20 @@ const en = {
   "receipts.stat.items": "Items",
   "receipts.stat.ofGross": "{pct} of the gross",
   "receipts.detail.footer": "This page shows one receipt as it was read. The three checks at the top compare what the lines add up to with what the receipt prints; all three must be equal for the receipt to be here at all. Warnings do not block anything: they point at a unit price or an offer total that reads oddly. The items table lists every line in printed order with its code, quantity, price and discounts. The transcript at the bottom is the text the reader produced, or the text you corrected.",
+
+  // ── supermarket products ──────────────────────────────────────────────────
+  "productCategory.produce": "produce",
+  "productCategory.meat_fish": "meat, poultry and fish",
+  "productCategory.dairy": "dairy and desserts",
+  "productCategory.deli": "deli and cured meats",
+  "productCategory.pantry": "pantry",
+  "productCategory.bakery": "bakery",
+  "productCategory.prepared": "prepared food",
+  "productCategory.beverages": "beverages",
+  "productCategory.cleaning": "cleaning and home",
+  "productCategory.personal_care": "personal care",
+  "productCategory.pets": "pets",
+  "productCategory.other": "other",
 };
 
 
@@ -1179,6 +1193,20 @@ const es: Dictionary = {
   "receipts.stat.items": "Artículos",
   "receipts.stat.ofGross": "{pct} del bruto",
   "receipts.detail.footer": "Esta página muestra un ticket tal como se leyó. Los tres controles de arriba comparan lo que suman las líneas con lo que imprime el ticket; los tres tienen que ser iguales para que el ticket esté acá. Las advertencias no bloquean nada: señalan un precio unitario o un total de oferta que se lee raro. La tabla de artículos lista cada línea en el orden impreso con su código, cantidad, precio y descuentos. La transcripción del final es el texto que produjo el lector, o el que corregiste.",
+
+  // ── supermarket products ──────────────────────────────────────────────────
+  "productCategory.produce": "frutas y verduras",
+  "productCategory.meat_fish": "carnes, pollo y pescado",
+  "productCategory.dairy": "lácteos y postres",
+  "productCategory.deli": "fiambres y embutidos",
+  "productCategory.pantry": "almacén",
+  "productCategory.bakery": "panadería",
+  "productCategory.prepared": "comidas elaboradas",
+  "productCategory.beverages": "bebidas",
+  "productCategory.cleaning": "limpieza y hogar",
+  "productCategory.personal_care": "perfumería",
+  "productCategory.pets": "mascotas",
+  "productCategory.other": "otros",
 };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = { en, es };

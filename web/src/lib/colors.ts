@@ -1,4 +1,5 @@
 import type { Category } from "@/lib/categorize";
+import type { ProductCategory } from "@/lib/receipts/categories";
 
 // Chart marks are the one place a colour cannot come from a CSS variable: recharts writes
 // fill/stroke as SVG attributes at render time, so it needs a concrete string. Hence two
@@ -18,9 +19,22 @@ const CATEGORY_DARK: Record<Category, string> = {
   education: "#b3d94a", taxes_fees: "#9aa3b2", transfers: "#7d8695", other: "#737c8a",
 };
 
+// Same twelve tuned hues, fixed per department. `other` takes the grey, as it does for charges.
+const PRODUCT_LIGHT: Record<ProductCategory, string> = {
+  produce: "#1f9254", meat_fish: "#d43f4f", dairy: "#0b7fbb", deli: "#c8459a", pantry: "#cf7211",
+  bakery: "#6b8f19", prepared: "#10897f", beverages: "#4d5bd0", cleaning: "#7c4dcc",
+  personal_care: "#6b7280", pets: "#8a90a0", other: "#8f95a3",
+};
+const PRODUCT_DARK: Record<ProductCategory, string> = {
+  produce: "#3fcf82", meat_fish: "#ff7b8a", dairy: "#45b6f5", deli: "#ff7ac4", pantry: "#f5b13c",
+  bakery: "#b3d94a", prepared: "#35d4c2", beverages: "#8a97ff", cleaning: "#a98bff",
+  personal_care: "#9aa3b2", pets: "#7d8695", other: "#737c8a",
+};
+
 export type ChartTheme = {
   scheme: Scheme;
   category: Record<Category, string>;
+  productCategory: Record<ProductCategory, string>;
   /**
    * Series colours for charts that are not split by category. `mixed` is for a mark that spans
    * every category at once — a card in the sankey, which funds all of them — so it has to read
@@ -39,6 +53,7 @@ export type ChartTheme = {
 const LIGHT: ChartTheme = {
   scheme: "light",
   category: CATEGORY_LIGHT,
+  productCategory: PRODUCT_LIGHT,
   series: { primary: "#0b7fbb", secondary: "#7c4dcc", band: "#cf7211", alert: "#d43f4f", neutral: "#6b7280", mixed: "#4b5262" },
   ink: "#14161a",
   inkMuted: "#5a6371",
@@ -50,6 +65,7 @@ const LIGHT: ChartTheme = {
 const DARK: ChartTheme = {
   scheme: "dark",
   category: CATEGORY_DARK,
+  productCategory: PRODUCT_DARK,
   series: { primary: "#45b6f5", secondary: "#a98bff", band: "#f5b13c", alert: "#ff7b8a", neutral: "#9aa3b2", mixed: "#646c7a" },
   ink: "#e8eaee",
   inkMuted: "#a2abba",
