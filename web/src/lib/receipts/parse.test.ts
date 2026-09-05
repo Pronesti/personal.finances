@@ -120,6 +120,33 @@ describe("parseRows: items", () => {
     expect(parseRows(rows).items[0].discounts).toEqual([{ label: "1 *25% MARCAS", tag: "A", amountCents: -2500 }]);
   });
 
+  it("excludes a negative amount on the code row from the line total (a printed total is never " +
+    "negative), reattaching it to the bracketed discount label that follows", () => {
+    const rows = parseRowsText("BANANA CAVENDISHX KG\t3447,14\n0000000446 02500446008625\t-861,79\n" +
+      "MERCADO PAGO 25% - V [M]\n");
+    expect(parseRows(rows).items[0]).toMatchObject({
+      lineTotalCents: 344714,
+      discounts: [{ label: "MERCADO PAGO 25% - V", tag: "M", amountCents: -86179 }],
+    });
+  });
+
+  it("reattaches a negative code-row amount to an untagged discount label the same way", () => {
+    const rows = parseRowsText("GELATINA LIGHT SOB 25 GRM\t1670,00\n0000245683 07622201705011\t-421,01\n" +
+      "1 *ROYAL 25%\n");
+    expect(parseRows(rows).items[0]).toMatchObject({
+      lineTotalCents: 167000,
+      discounts: [{ label: "1 *ROYAL 25%", tag: "A", amountCents: -42101 }],
+    });
+  });
+
+  it("does not let a negative bare amount become an item's line total when no discount label is " +
+    "waiting for it either", () => {
+    const rows = parseRowsText("X\n0000000001 000000000001\n\t-50,00\n");
+    const item = parseRows(rows).items[0];
+    expect(item.lineTotalCents).toBeNull();
+    expect(parseRows(rows).notes.join(" ")).toContain("stray amount -50,00");
+  });
+
   it("still leaves the line total null for a genuine already-negative discount with no line total anywhere", () => {
     const rows = parseRowsText("X\n0000000001 000000000001\nMERCADO PAGO 25% - V [M]\t-1600,00\n");
     const item = parseRows(rows).items[0];
@@ -177,6 +204,44 @@ describe("parseRows: footer", () => {
       "X\n0000000001 000000000001\t1,00\nSUBTOT. SIN DESCUENTOS\t1,00\n" +
       "DESCUENTOS POR PROMOCIONES\t0,00\nTOTAL\nSOME OTHER LABEL\n\t999,99\n");
     expect(parseRows(rows).footer.totalCents).toBeNull();
+  });
+
+  it("recovers the subtotal and discounts when their amounts land shifted one row onto the SUBTOT " +
+    "marker: a bare amount above it is the true subtotal, and the marker's own amount is really " +
+    "the discounts figure", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t100,00\n" +
+      "\t165960,47\nSUBTOT. SIN DESCUENTOS\t38898,84\nDESCUENTOS POR PROMOCIONES\nTOTAL\t127061,63\n");
+    expect(parseRows(rows).footer).toMatchObject({
+      subtotalCents: 16596047, discountsCents: -3889884, totalCents: 12706163,
+    });
+  });
+
+  it("recovers the same shift when OCR glues the SUBTOT and DESCUENTOS marker text onto one row", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t100,00\n" +
+      "\t165960,47\nSUBTOT. SIN DESCUENTOS DESCUENTOS POR PROMOCIONES\t38898,84\n" +
+      "\t127061,63\nTOTAL\t127061,63\n");
+    expect(parseRows(rows).footer).toMatchObject({
+      subtotalCents: 16596047, discountsCents: -3889884, totalCents: 12706163,
+    });
+  });
+
+  it("does not mistake the previous item's own bare discount amount for a shifted subtotal: only a " +
+    "positive bare amount above SUBTOT counts, since a subtotal is never negative", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\n1 *35% TROZADOS POLLO [A]\t100,00\n\t-25,00\n" +
+      "SUBTOT. SIN DESCUENTOS\t900,00\nDESCUENTOS POR PROMOCIONES\t-25,00\nTOTAL\t875,00\n");
+    expect(parseRows(rows).footer).toMatchObject({
+      subtotalCents: 90000, discountsCents: -2500, totalCents: 87500,
+    });
+  });
+
+  it("forces a positive DESCUENTOS reading negative: the discount total is always a subtraction", () => {
+    const rows = parseRowsText(
+      "X\n0000000001 000000000001\t100,00\n" +
+      "SUBTOT. SIN DESCUENTOS\t100,00\nDESCUENTOS POR PROMOCIONES\t25,00\nTOTAL\t75,00\n");
+    expect(parseRows(rows).footer.discountsCents).toBe(-2500);
   });
 
   it("pairs offer labels with amounts by order, surviving the row offset", () => {
@@ -262,6 +327,26 @@ describe("mergePages", () => {
     expect(merged.some(r => /^[234] \*/.test(r.label))).toBe(false);
     expect(merged.filter(r => /^1 \*25% MARCAS/.test(r.label))).toHaveLength(1);
     expect(merged.some(r => /^SUBTOT\. SIN DESCUENTOS/.test(r.label))).toBe(true);
+  });
+
+  it("reconciles a duplicated item field by field instead of keeping one copy wholesale: the line " +
+    "total from whichever copy's own code row the qty × unit price arithmetic confirms, the " +
+    "discount from whichever copy's own quantity line parsed cleanly", () => {
+    const merged = mergePages(rows(
+      "## page 1\n" +
+      "1,000 x 200U,: 2661 90\nPALMOLIVE\n0000608115 07509546070988\t7982,97\n" +
+      "1 *3X2 JABON TOCADOR [A]\t-2060,99\n" +
+      "## page 2\n" +
+      "3,000 x 2660,99\nPALMOLIVE\n0000608115 07509546070988\t1982,97\n" +
+      "1 *3X2 JABON TOCADOR [A]\t-2660,99\nB\n0000000002 000000000002\t2,00\n"));
+    const palmolive = merged.find(r => r.label.startsWith("0000608115"))!;
+    // Page 1's line total (7982,97) is corroborated by 3 × 2660,99; page 2's own reading
+    // (1982,97, a misread "7") is not — even though page 2's quantity line is the one that
+    // parsed, and its own discount (-2660,99) is the one kept.
+    expect(palmolive.amount).toBe("7982,97");
+    expect(merged.filter(r => /JABON TOCADOR/.test(r.label))).toEqual([
+      { page: 2, label: "1 *3X2 JABON TOCADOR [A]", amount: "-2660,99" },
+    ]);
   });
 
   it("concatenates pages that do not overlap", () => {

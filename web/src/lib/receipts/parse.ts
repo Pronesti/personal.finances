@@ -100,9 +100,12 @@ function codeOf(row: Row): { sku: string; ean: string } | null {
 /**
  * The scans overlap: page k+1 starts with lines already on page k. Code lines are the anchors —
  * every item has exactly one — so the longest run of codes that ends page k and starts page k+1
- * is the duplicated stretch. Page k+1 loses it, except that the last duplicated item keeps
- * whichever copy carries more discount rows: the page break can fall between an item and its
- * discounts, leaving them on one page only.
+ * is the duplicated stretch. Each duplicated item is reconciled field by field rather than one
+ * copy being kept wholesale: the line total is corroborated when qty × unit price confirms it
+ * (see mergeDuplicateItem below); the discount amount has no such check, so it — like the
+ * quantity line itself — comes from whichever copy's own quantity line parsed cleanly, or
+ * (failing that signal on both sides) whichever copy carries more discount rows, since the page
+ * break can fall between an item and its discounts, leaving them on one page only.
  */
 export function mergePages(rows: Row[]): Row[] {
   const pageNumbers = [...new Set(rows.map(r => r.page))].sort((a, b) => a - b);
@@ -119,15 +122,7 @@ export function mergePages(rows: Row[]): Row[] {
       if (tailA.every((x, j) => same(x.code!, headB[j].code!))) { k = n; break; }
     }
     if (k === 0) { merged = merged.concat(next); continue; }
-    // Every duplicated item's own quantity line (two rows up: the description sits in between)
-    // is kept from page k too, except when that copy fails to parse as one at all (a stray
-    // character breaks it) and page k+1's reads clean.
-    for (let j = 0; j < k; j++) {
-      const aIdx = a[a.length - k + j].i - 2, bIdx = b[j].i - 2;
-      if (aIdx < 0 || bIdx < 0) continue;
-      const prevA = merged[aIdx], prevB = next[bIdx];
-      if (!QTY_RE.test(norm(prevA.label)) && QTY_RE.test(norm(prevB.label))) merged[aIdx] = prevB;
-    }
+
     // The untagged "N *label" shape is only trustworthy together with an already-negative amount
     // (mirrors the same guard on its main-loop counterpart below) — otherwise a garbled footer's
     // "N *label" offer lines would count as discounts here too.
@@ -138,21 +133,90 @@ export function mergePages(rows: Row[]): Row[] {
       return DISCOUNT_SHAPE_RE.test(l) && amt !== null && amt < 0;
     };
     const isTrailer = (r: Row) => isDiscount(r) || (r.label.trim() === "" && r.amount !== null);
-    // Rows of page k+1 that belong to its k-th duplicated item: its code row and what trails it.
-    let end = b[k - 1].i + 1;
-    while (end < next.length && isTrailer(next[end])) end++;
-    const lastCodeA = a[a.length - 1].i;
-    let endA = lastCodeA + 1;
-    while (endA < merged.length && isTrailer(merged[endA])) endA++;
-    const tailA = merged.slice(lastCodeA + 1, endA);
-    const tailB = next.slice(b[k - 1].i + 1, end);
-    const discounts = (rs: Row[]) => rs.filter(isDiscount).length;
-    const keptTail = discounts(tailB) > discounts(tailA) ? tailB : tailA;
-    // The boundary code row itself is kept from page k, except when that copy is the mangled
-    // one (extra text glued on breaks the exact code shape) and page k+1's copy reads clean.
-    const boundaryRow = !CODE_RE.test(norm(merged[lastCodeA].label)) && CODE_RE.test(norm(next[b[k - 1].i].label))
-      ? next[b[k - 1].i] : merged[lastCodeA];
-    merged = merged.slice(0, lastCodeA).concat([boundaryRow], keptTail, next.slice(end));
+    const trailerEnd = (rs: Row[], start: number, bound: number) => {
+      let end = start;
+      while (end < bound && isTrailer(rs[end])) end++;
+      return end;
+    };
+    const parseQty = (r: Row | null) => {
+      if (!r) return null;
+      const m = QTY_RE.exec(norm(r.label));
+      if (!m) return null;
+      const q = parseQtyMilli(m[1]), u = parseAmountCents(m[2]);
+      return q === null || u === null ? null : q * u;
+    };
+    const totalOf = (r: Row) => (r.amount === null ? null : parseAmountCents(r.amount));
+    const discountCount = (rs: Row[]) => rs.filter(isDiscount).length;
+
+    const aAnchors = a.slice(a.length - k);
+    const bAnchors = b.slice(0, k);
+    let out: Row[] = [];
+    let cursorA = 0;
+    let lastTrailBEnd = 0;
+    for (let j = 0; j < k; j++) {
+      const codeIdxA = aAnchors[j].i, codeIdxB = bAnchors[j].i;
+      const qtyIdxA = codeIdxA - 2, qtyIdxB = codeIdxB - 2;
+      const qtyRowA = qtyIdxA >= 0 ? merged[qtyIdxA] : null;
+      const qtyRowB = qtyIdxB >= 0 ? next[qtyIdxB] : null;
+      const qtyCleanA = qtyRowA !== null && QTY_RE.test(norm(qtyRowA.label));
+      const qtyCleanB = qtyRowB !== null && QTY_RE.test(norm(qtyRowB.label));
+
+      // Quantity line: kept from page k too, except when that copy fails to parse as one at all
+      // (a stray character breaks it) and page k+1's reads clean.
+      let headA = merged.slice(cursorA, codeIdxA);
+      if (qtyIdxA >= 0 && qtyIdxB >= 0 && !qtyCleanA && qtyCleanB) {
+        headA = headA.map((r, off) => (cursorA + off === qtyIdxA ? qtyRowB! : r));
+      }
+
+      const rowCodeA = merged[codeIdxA], rowCodeB = next[codeIdxB];
+      // Discount and code-row-cleanliness share one "which copy" decision, since the discount
+      // row's own shape can depend on whether its item's code row carried an amount (see the
+      // pendingDiscount/pendingDiscountAmount machinery) — mixing a code row from one copy with
+      // a trailer from the other would break that coupling. No arithmetic check applies to the
+      // discount itself, so the choice comes from whichever copy's own quantity line parsed
+      // cleanly — but only when both copies actually have a quantity line to compare; when the
+      // page break instead cut one copy off before (or after) its own quantity line entirely,
+      // that absence says nothing about which copy's discount rows survived, so fall back to
+      // whichever copy carries more of them (the page break can fall between an item and its
+      // discounts, leaving them on one page only).
+      const boundA = j + 1 < k ? aAnchors[j + 1].i : merged.length;
+      const boundB = j + 1 < k ? bAnchors[j + 1].i : next.length;
+      const trailAEnd = trailerEnd(merged, codeIdxA + 1, boundA);
+      const trailBEnd = trailerEnd(next, codeIdxB + 1, boundB);
+      const trailA = merged.slice(codeIdxA + 1, trailAEnd);
+      const trailB = next.slice(codeIdxB + 1, trailBEnd);
+      const preferB = qtyRowA !== null && qtyRowB !== null && qtyCleanA !== qtyCleanB
+        ? qtyCleanB
+        : discountCount(trailB) > discountCount(trailA);
+      const keptTrail = preferB ? trailB : trailA;
+      const chosenCodeRow = preferB ? rowCodeB : rowCodeA;
+      const otherCodeRow = preferB ? rowCodeA : rowCodeB;
+
+      // Line total: corroborated by qty × unit price. Only overridden when the chosen copy's own
+      // code row carries an amount that the arithmetic refutes AND the other copy's own code row
+      // carries one it confirms — swapping in just that number, never the row structure, so the
+      // kept trailer (still the chosen copy's) stays consistent with its own code row having (or
+      // lacking) an amount.
+      const expect = parseQty(qtyCleanB ? qtyRowB : qtyRowA) ?? parseQty(qtyRowA) ?? parseQty(qtyRowB);
+      let codeRow = chosenCodeRow;
+      const chosenTotal = totalOf(chosenCodeRow), otherTotal = totalOf(otherCodeRow);
+      if (expect !== null && chosenTotal !== null && otherTotal !== null) {
+        const roundedExpect = Math.round(expect / 1000);
+        const chosenMatches = Math.abs(chosenTotal - roundedExpect) <= 1;
+        const otherMatches = Math.abs(otherTotal - roundedExpect) <= 1;
+        if (!chosenMatches && otherMatches) codeRow = { ...chosenCodeRow, amount: otherCodeRow.amount };
+      }
+      // Independent of arithmetic: the chosen copy's own code text is the mangled one (extra
+      // glued text breaks the exact code shape) and the other copy's reads clean.
+      if (codeRow === chosenCodeRow && !CODE_RE.test(norm(chosenCodeRow.label)) && CODE_RE.test(norm(otherCodeRow.label))) {
+        codeRow = otherCodeRow;
+      }
+
+      out = out.concat(headA, [codeRow], keptTrail);
+      cursorA = trailAEnd;
+      lastTrailBEnd = trailBEnd;
+    }
+    merged = out.concat(next.slice(lastTrailBEnd));
   }
   return merged;
 }
@@ -189,6 +253,16 @@ function ungluePeriodAmounts(rows: Row[]): Row[] {
   });
 }
 
+// A row whose box-grouping left it with no label at all: the whole row is just an amount. Only
+// positive, since this is used to recognise a stray printed subtotal — never negative — and a
+// bare negative amount directly above a footer marker is routinely just the previous item's
+// discount landing on its own row (see the pendingDiscount/pendingDiscountAmount machinery).
+function barePositiveAmountOf(r: Row): number | null {
+  if (norm(r.label)) return null;
+  const amount = r.amount === null ? null : parseAmountCents(r.amount);
+  return amount !== null && amount > 0 ? amount : null;
+}
+
 /**
  * One pass over the rows. An item is born at its code line, takes the label row just above it
  * as its description and the quantity line above that (if any) as its quantity, and then owns
@@ -206,12 +280,22 @@ export function parseRows(input: Row[]): ParsedReceipt {
   // A discount label read before the item's own line total: its amount box landed on the line
   // total instead, and the discount's real amount follows as a bare row. Waits for that row.
   let pendingDiscount: { label: string; tag: "M" | "A" } | null = null;
-  let awaitingTotal = false; // TOTAL printed with its amount on the next row instead of this one
+  // The mirror image: a discount's amount read before its own label — box-grouping put it on the
+  // item's code row, excluded from the line total there because a printed line total is never
+  // negative (see below). Waits for the label that follows.
+  let pendingDiscountAmount: number | null = null;
+  let awaitingTotal = false;     // TOTAL printed with its amount on the next row instead of this one
+  let awaitingSubtotal = false;  // same, for SUBTOT. SIN DESCUENTOS
+  let awaitingDescuentos = false; // same, for DESCUENTOS POR PROMOCIONES
   let inOffers = false;
   const offerLabels: string[] = [];
   const offerAmounts: number[] = [];
+  // A printed discount total (DESCUENTOS POR PROMOCIONES) is always a subtraction, so it prints
+  // negative; OCR sometimes drops the minus sign when the row gets glued to something else.
+  const forceNegative = (n: number) => (n > 0 ? -n : n);
 
-  for (const row of rows) {
+  for (let idx = 0; idx < rows.length; idx++) {
+    const row = rows[idx];
     const label = norm(row.label);
     const amount = row.amount === null ? null : parseAmountCents(row.amount);
     if (row.amount !== null && amount === null) notes.push(`unreadable amount "${row.amount}" next to "${label}"`);
@@ -228,11 +312,27 @@ export function parseRows(input: Row[]): ParsedReceipt {
       continue;
     }
     if (/^SUBTOT/i.test(label)) {
-      if (amount !== null) footer.subtotalCents = amount;
-      current = null; candidate = null; pendingDiscount = null; continue;
+      // Box-grouping sometimes shifts every footer amount one row early: the true subtotal
+      // prints as a lone amount on the row right above this marker, and this row's own amount
+      // box is actually the DESCUENTOS figure that follows (whose own marker row then reads
+      // with no amount of its own, sometimes too garbled by OCR to even match its own label).
+      // Recognised by a combination that never happens on a cleanly-read footer: a bare amount
+      // immediately above AND this marker still carrying an amount of its own.
+      const prevBare = idx > 0 ? barePositiveAmountOf(rows[idx - 1]) : null;
+      if (amount !== null && prevBare !== null) {
+        footer.subtotalCents = prevBare;
+        footer.discountsCents = forceNegative(amount);
+      } else if (amount !== null) {
+        footer.subtotalCents = amount;
+      } else {
+        awaitingSubtotal = true;
+      }
+      current = null; candidate = null; pendingDiscount = null; pendingDiscountAmount = null;
+      continue;
     }
     if (/^DESCUENTOS POR PROMOCIONES/i.test(label)) {
-      if (amount !== null) footer.discountsCents = amount;
+      if (amount !== null) footer.discountsCents = forceNegative(amount);
+      else awaitingDescuentos = true;
       continue;
     }
     if (/^TOTAL\.?$/i.test(label)) {
@@ -248,7 +348,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
       const u = parseAmountCents(qty[2]);
       if (q === null || u === null) notes.push(`unreadable quantity line "${label}"`);
       else pending = { qtyMilli: q, unitPriceCents: u };
-      current = null; candidate = null; pendingDiscount = null;
+      current = null; candidate = null; pendingDiscount = null; pendingDiscountAmount = null;
       continue;
     }
 
@@ -256,25 +356,42 @@ export function parseRows(input: Row[]): ParsedReceipt {
     if (code) {
       if (!candidate) notes.push(`code line ${code[1]} has no description above it`);
       if (pendingDiscount) notes.push(`discount "${pendingDiscount.label}" never got its amount`);
+      if (pendingDiscountAmount !== null) notes.push(`stray amount ${centsToAmountString(pendingDiscountAmount)}`);
       const desc = candidate ? norm(candidate.label) : "";
       const marker = /^[=\-−]/.test(desc);
       const descPrinted = marker ? "=" + desc.slice(1).trimStart() : desc;
       const fromCandidate = candidate?.amount == null ? null : parseAmountCents(candidate.amount);
       const qtyMilli = pending?.qtyMilli ?? 1000;
+      // A printed line total is never negative. Box-grouping sometimes puts the following
+      // discount's amount on the code row instead of the item's own total (which then sits on
+      // the description row above, already read into fromCandidate) — exclude a negative amount
+      // here and hold it for the discount label that follows instead of taking it as the total.
       current = {
         position: items.length + 1,
         descPrinted, noPromo: marker, sku: code[1], ean: code[2], qtyMilli,
         unit: qtyMilli % 1000 !== 0 || KG_RE.test(descPrinted) ? "kg" : "un",
         unitPriceCents: pending?.unitPriceCents ?? null,
-        lineTotalCents: amount ?? fromCandidate,
+        lineTotalCents: amount !== null && amount >= 0 ? amount : fromCandidate,
         discounts: [],
       };
       items.push(current);
       pending = null; candidate = null; pendingDiscount = null;
+      pendingDiscountAmount = amount !== null && amount < 0 ? amount : null;
       continue;
     }
 
     const tag = TAG_RE.exec(label);
+    const untaggedDiscount = !tag && DISCOUNT_SHAPE_RE.test(label);
+    if ((tag || untaggedDiscount) && amount === null && pendingDiscountAmount !== null && current) {
+      // The item's code row carried this discount's amount, excluded above because a line total
+      // is never negative; its label follows here with none of its own. Reunite them.
+      const lbl = tag ? norm(label.slice(0, tag.index)) : label;
+      const inferredTag: "M" | "A" = tag ? (tag[1] as "M" | "A") : (/^MERCADO\s*PAGO/i.test(label) ? "M" : "A");
+      current.discounts.push({ label: lbl, tag: inferredTag, amountCents: pendingDiscountAmount });
+      pendingDiscountAmount = null;
+      continue;
+    }
+
     if (tag) {
       const tagged = { label: norm(label.slice(0, tag.index)), tag: tag[1] as "M" | "A" };
       // Box-grouping sometimes splits the discount label from its amount, leaving this row bare
@@ -310,10 +427,12 @@ export function parseRows(input: Row[]): ParsedReceipt {
 
     if (!label && amount !== null) {
       if (awaitingTotal) { footer.totalCents = amount; awaitingTotal = false; }
+      else if (awaitingSubtotal) { footer.subtotalCents = amount; awaitingSubtotal = false; }
+      else if (awaitingDescuentos) { footer.discountsCents = forceNegative(amount); awaitingDescuentos = false; }
       else if (current && pendingDiscount) {
         current.discounts.push({ ...pendingDiscount, amountCents: amount > 0 ? -amount : amount });
         pendingDiscount = null;
-      } else if (current && current.lineTotalCents === null) current.lineTotalCents = amount;
+      } else if (current && current.lineTotalCents === null && amount >= 0) current.lineTotalCents = amount;
       else notes.push(`stray amount ${row.amount}`);
       continue;
     }
@@ -322,7 +441,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
       // TOTAL printed with no amount, then never followed by a bare amount row (it landed on a
       // labelled row instead, which we don't recognise as the total). Disarm here rather than
       // let some unrelated bare amount further down silently become the total.
-      awaitingTotal = false;
+      awaitingTotal = false; awaitingSubtotal = false; awaitingDescuentos = false;
       candidate = row;
     }
   }
