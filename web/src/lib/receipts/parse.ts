@@ -277,7 +277,13 @@ export function mergePages(rows: Row[], notes: string[] = []): Row[] {
       return q === null || u === null ? null : q * u;
     };
     const totalOf = (r: Row) => (r.amount === null ? null : parseAmountCents(r.amount));
-    const discountCount = (rs: Row[]) => rs.filter(isDiscount).length;
+    // A discount-shaped row that never got its amount (box-grouping put the amount on the wrong
+    // row, or OCR mangled it past parsing) is broken evidence, not a discount that happened to be
+    // read: count only rows whose amount actually parsed via discountFields, so a copy with a
+    // bracketed-but-amountless discount label loses to a copy whose discount row carries its
+    // amount clean, while a copy whose only advantage is an unparseable amount on the other side
+    // still loses that comparison (0 either way falls through to the existing count).
+    const discountCount = (rs: Row[]) => rs.filter(r => discountFields(r) !== null).length;
 
     const aAnchors = a.slice(a.length - k);
     const bAnchors = b.slice(0, k);

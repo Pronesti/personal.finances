@@ -472,6 +472,50 @@ describe("mergePages", () => {
     expect(merged).toHaveLength(3);
   });
 
+  describe("discount tiebreak counts only discount rows that carry an amount", () => {
+    // Defect H shape: both copies of a duplicated item have exactly one discount-shaped row (so
+    // the old row-count tiebreak ties and falls through to "keep page k"), but only page k+1's
+    // discount row actually carries an amount — page k's label sits alone with amount stripped
+    // off (box-grouping shifted the amounts up one row, landing this discount's figure on some
+    // other row entirely). A discount label with no amount is broken evidence and must lose to a
+    // copy whose discount row is complete. Built as raw Row[] (not parseRowsText) so the mangled
+    // amount can be an unparseable string rather than folded into the label text.
+    it("prefers page k+1's copy when only its discount row carries an amount", () => {
+      const rowsIn = [
+        { page: 1, label: "A", amount: null },
+        { page: 1, label: "0000000001 000000000001", amount: "1,00" },
+        { page: 1, label: "PROMO [A]", amount: null },
+        { page: 2, label: "0000000001 000000000001", amount: "1,00" },
+        { page: 2, label: "PROMO [A]", amount: "-0,50" },
+        { page: 2, label: "B", amount: null },
+        { page: 2, label: "0000000002 000000000002", amount: "2,00" },
+      ];
+      const merged = mergePages(rowsIn);
+      expect(merged.filter(r => r.label === "PROMO [A]")).toEqual([
+        { page: 2, label: "PROMO [A]", amount: "-0,50" },
+      ]);
+    });
+
+    // Counter-example: page k+1's discount amount is present but unparseable ("mangled" — an
+    // OCR reading that fails to parse as money). That is not "carrying an amount" either, so the
+    // tiebreak must not prefer it over page k's clean, complete reading.
+    it("still prefers page k's copy when page k+1's discount amount is unparseable", () => {
+      const rowsIn = [
+        { page: 1, label: "A", amount: null },
+        { page: 1, label: "0000000001 000000000001", amount: "1,00" },
+        { page: 1, label: "PROMO [A]", amount: "-0,50" },
+        { page: 2, label: "0000000001 000000000001", amount: "1,00" },
+        { page: 2, label: "PROMO [A]", amount: "-/0,50" },
+        { page: 2, label: "B", amount: null },
+        { page: 2, label: "0000000002 000000000002", amount: "2,00" },
+      ];
+      const merged = mergePages(rowsIn);
+      expect(merged.filter(r => r.label === "PROMO [A]")).toEqual([
+        { page: 1, label: "PROMO [A]", amount: "-0,50" },
+      ]);
+    });
+  });
+
   describe("offers-section discount tiebreaker", () => {
     // Same duplicated item as the "reconciles a duplicated item field by field" test above (page
     // 1's quantity line mangled, page 2's clean, so the quantity-line proxy always prefers page
