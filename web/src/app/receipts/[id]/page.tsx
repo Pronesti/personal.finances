@@ -5,6 +5,9 @@ import { fmtArsCents, fmtCents } from "@/lib/receipts/money";
 import { ReceiptReport } from "@/components/ReceiptReport";
 import { Stat } from "@/components/Stat";
 import { getT } from "@/lib/locale";
+import { receiptSide } from "@/lib/receipts/charges";
+import { fmtArs } from "@/lib/format";
+import { linkChargeAction, unlinkChargeAction } from "@/app/super/charges/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +21,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   if (!Number.isInteger(n)) notFound();
   const d = receiptDetail(getDb(), n);
   if (!d) notFound();
+  const side = receiptSide(getDb(), n)!;
   const tr = await getT();
   const { receipt, items, report, header, transcript } = d;
   const saved = receipt.subtotal_cents === 0 ? 0 : -receipt.discounts_cents * 100 / receipt.subtotal_cents;
@@ -46,6 +50,39 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <dt className="text-ink-muted">{tr("receipts.detail.scale")}</dt>
           <dd>{receipt.transcript_source === "corrected" ? tr("receipts.source.corrected") : `${receipt.ocr_scale}×`}</dd>
         </dl>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold">{tr("receipts.detail.charge")}</h2>
+        {side.charge && (
+          <form action={unlinkChargeAction} className="flex flex-wrap items-center gap-3 text-sm">
+            <span>
+              <span className="font-medium">{side.charge.brand}</span> · {side.charge.date} · {side.charge.description} ·{" "}
+              <span className="font-mono">{fmtArsCents(side.charge.purchaseCents)}</span>
+              {side.charge.installment_count && side.charge.installment_count > 1 && (
+                <span className="text-ink-muted"> · {side.charge.installment_count} × {fmtArs(side.charge.ars)}</span>
+              )}
+              <span className="text-ink-muted"> · {tr("receipts.detail.charge.cycle", { month: side.charge.cycle_month })}</span>
+              <span className="text-xs text-ink-muted"> · {tr(`super.charges.method.${side.method!}`)}</span>
+            </span>
+            <input type="hidden" name="receipt" value={receipt.id} />
+            <button type="submit" className="rounded-lg px-2.5 py-1 text-xs text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink">{tr("super.charges.unlink")}</button>
+          </form>
+        )}
+        {!side.charge && side.candidates.length === 0 && <p className="text-sm text-ink-muted">{tr("receipts.detail.charge.none")}</p>}
+        {!side.charge && side.candidates.length > 0 && (
+          <div className="space-y-2 text-sm">
+            <p className="text-ink-muted">{tr("receipts.detail.charge.choose")}</p>
+            {side.candidates.map(c => (
+              <form key={c.fingerprint} action={linkChargeAction} className="flex flex-wrap items-center gap-3">
+                <span>{c.brand} · {c.date} · {c.description} · <span className="font-mono">{fmtArsCents(c.purchaseCents)}</span></span>
+                <input type="hidden" name="receipt" value={receipt.id} />
+                <input type="hidden" name="fingerprint" value={c.fingerprint} />
+                <button type="submit" className="rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-accent-ink transition-opacity hover:opacity-90">{tr("super.charges.link")}</button>
+              </form>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>
