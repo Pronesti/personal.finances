@@ -9,7 +9,7 @@ export function TrendSparkline({ data }: { data: { label: string; value: number 
     <div className="h-9 w-28">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-          <Line type="monotone" dataKey="value" stroke={t.series.primary} strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
+          <Line type="monotone" dataKey="value" stroke={t.series.primary} strokeWidth={2} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
