@@ -1,0 +1,1301 @@
+{
+  "products": [
+    {
+      "name": "Aceite de girasol Natura (900 cc)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "beverages",
+      "unit": "un"
+    },
+    {
+      "name": "Agua mineral Villavicencio (2 L)",
+      "category": "beverages",
+      "unit": "un"
+    },
+    {
+      "name": "Agua sin gas Glaciar bajo sodio (2 L)",
+      "category": "beverages",
+      "unit": "un"
+    },
+    {
+      "name": "Ajo gigante (unidad)",
+      "category": "produce",
+      "unit": "un"
+    },
+    {
+      "name": "Antitranspirante Nivea Men",
+      "category": "personal_care",
+      "unit": "un"
+    },
+    {
+      "name": "Aromatizante textil Aromass",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Arroz doble Carolina Gallo (1 kg)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Asado Estancia (por kg)",
+      "category": "meat_fish",
+      "unit": "kg"
+    },
+    {
+      "name": "Banana Cavendish (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Bolsas de residuos Asurin 50x65 (x50)",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Bolsas para heces Asurin (x20)",
+      "category": "pets",
+      "unit": "un"
+    },
+    {
+      "name": "Cebolla a granel (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Cebolla deshidratada Dos Anclas (75 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Chorizo parrillero Doina (320 g)",
+      "category": "meat_fish",
+      "unit": "un"
+    },
+    {
+      "name": "Coca-Cola sin azúcar (1,75 L)",
+      "category": "beverages",
+      "unit": "un"
+    },
+    {
+      "name": "Crema de leche Milkaut (200 cc)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Cyclamen (planta)",
+      "category": "other",
+      "unit": "un"
+    },
+    {
+      "name": "Detergente lavavajillas Ultra",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Detergente Magistral",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Esponja Virutex",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Fideos penne rigate (500 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Fideos tirabuzón Matarazzo (500 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Filet de pescado a la romana (por kg)",
+      "category": "meat_fish",
+      "unit": "kg"
+    },
+    {
+      "name": "Flan casero vainilla Flanchello (180 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Galletitas Oreo",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Gelatina light Royal cereza (25 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Harina 0000 Pureza (1 kg)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Huevos blancos x10 Avicoper",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Huevos blancos x12",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Jabón de tocador Palmolive",
+      "category": "personal_care",
+      "unit": "un"
+    },
+    {
+      "name": "Jabón líquido Skip",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Jamón cocido feteado Cagnoli (200 g)",
+      "category": "deli",
+      "unit": "un"
+    },
+    {
+      "name": "Jamón cocido feteado Lario (150 g)",
+      "category": "deli",
+      "unit": "un"
+    },
+    {
+      "name": "La Perla (sin detalle en ticket)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Leche con proteína Tres Niñas (1 L)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Limón (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Limpiador Cif",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Manta polar Tex (125×150 cm)",
+      "category": "other",
+      "unit": "un"
+    },
+    {
+      "name": "Manteca Milkaut (200 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Manteca Tonadita (200 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Mayonesa light Heinz (350 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Morcilla al vacío Coto (por kg)",
+      "category": "deli",
+      "unit": "kg"
+    },
+    {
+      "name": "Morcilla con verdeo Cabaña Arg. (440 g)",
+      "category": "deli",
+      "unit": "un"
+    },
+    {
+      "name": "Pan Artesano",
+      "category": "bakery",
+      "unit": "un"
+    },
+    {
+      "name": "Pan integral Fargo (400 g)",
+      "category": "bakery",
+      "unit": "un"
+    },
+    {
+      "name": "Pan para pancho x6 (240 g)",
+      "category": "bakery",
+      "unit": "un"
+    },
+    {
+      "name": "Paño para piso Capullo",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Pañuelos Campanita (x75)",
+      "category": "personal_care",
+      "unit": "un"
+    },
+    {
+      "name": "Papa blanca (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Papa lavada (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Papa negra (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Papas a la crema Coto (por kg)",
+      "category": "prepared",
+      "unit": "kg"
+    },
+    {
+      "name": "Papas al horno Coto (por kg)",
+      "category": "prepared",
+      "unit": "kg"
+    },
+    {
+      "name": "Papel higiénico Elite",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Pata muslo de pollo Coto (pack x2)",
+      "category": "meat_fish",
+      "unit": "un"
+    },
+    {
+      "name": "Pera D'Anjou (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Pera Packhams (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    },
+    {
+      "name": "Piedras sanitarias Pisi",
+      "category": "pets",
+      "unit": "un"
+    },
+    {
+      "name": "Polvo para postre Royal light vainilla",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Postre Danette DDL y crema (100 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Queso crema Casancrem (290 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Queso cremoso La Paulina (por kg)",
+      "category": "dairy",
+      "unit": "kg"
+    },
+    {
+      "name": "Queso danbo feteado La Paulina (180 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Queso rallado La Paulina (150 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Queso tybo feteado La Paulina (180 g)",
+      "category": "dairy",
+      "unit": "un"
+    },
+    {
+      "name": "Rollo de cocina Felpita",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Sal fina Celusal (250 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Sal gruesa Dos Anclas (500 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Salame Milán feteado Calchaquí (130 g)",
+      "category": "deli",
+      "unit": "un"
+    },
+    {
+      "name": "Salchichas Unión Ganadera",
+      "category": "deli",
+      "unit": "un"
+    },
+    {
+      "name": "Suavizante Downy",
+      "category": "cleaning",
+      "unit": "un"
+    },
+    {
+      "name": "Tapa de asado especial (por kg)",
+      "category": "meat_fish",
+      "unit": "kg"
+    },
+    {
+      "name": "Tomate perita en lata Canale (400 g)",
+      "category": "pantry",
+      "unit": "un"
+    },
+    {
+      "name": "Tortilla de papas Coto (por kg)",
+      "category": "prepared",
+      "unit": "kg"
+    },
+    {
+      "name": "Verduras grilladas Coto (por kg)",
+      "category": "prepared",
+      "unit": "kg"
+    },
+    {
+      "name": "Zapallo anco (por kg)",
+      "category": "produce",
+      "unit": "kg"
+    }
+  ],
+  "codes": [
+    {
+      "chain": "coto",
+      "sku": "0000000446",
+      "ean": "02500446010727",
+      "product": "Banana Cavendish (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000502",
+      "ean": "02500602002825",
+      "product": "Cebolla a granel (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000544",
+      "ean": "02500544003805",
+      "product": "Pera Packhams (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000602",
+      "ean": "02500602003365",
+      "product": "Cebolla a granel (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000688",
+      "ean": "02500688018468",
+      "product": "Zapallo anco (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000695",
+      "ean": "02500695006663",
+      "product": "Papa blanca (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000000726",
+      "ean": "02500726002121",
+      "product": "Filet de pescado a la romana (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000011102",
+      "ean": "02511102007524",
+      "product": "Queso cremoso La Paulina (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000011378",
+      "ean": "07792931000039",
+      "product": "Agua sin gas Glaciar bajo sodio (2 L)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000013343",
+      "ean": "07790625001171",
+      "product": "Jamón cocido feteado Lario (150 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000014059",
+      "ean": "07790398100132",
+      "product": "Queso rallado La Paulina (150 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000014718",
+      "ean": "07798140550143",
+      "product": "Chorizo parrillero Doina (320 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000016267",
+      "ean": "07798183683242",
+      "product": "Morcilla con verdeo Cabaña Arg. (440 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000022358",
+      "ean": "07791070000764",
+      "product": "Pañuelos Campanita (x75)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000022865",
+      "ean": "07793618000083",
+      "product": "Huevos blancos x12"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000038072",
+      "ean": "02538072001727",
+      "product": "Verduras grilladas Coto (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000040804",
+      "ean": "02540804000014",
+      "product": "Ajo gigante (unidad)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000041312",
+      "ean": "02541312003740",
+      "product": "Morcilla al vacío Coto (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000046629",
+      "ean": "02546629002745",
+      "product": "Tortilla de papas Coto (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000047802",
+      "ean": "02547802004082",
+      "product": "Papas al horno Coto (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000047861",
+      "ean": "02547861012851",
+      "product": "Tapa de asado especial (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000047979",
+      "ean": "02547979009651",
+      "product": "Asado Estancia (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000048452",
+      "ean": "02804845200001",
+      "product": "Pata muslo de pollo Coto (pack x2)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000048453",
+      "ean": "02804845300008",
+      "product": "Pata muslo de pollo Coto (pack x2)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000051732",
+      "ean": "00000077956262",
+      "product": "Sal fina Celusal (250 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000053102",
+      "ean": "02553102007609",
+      "product": "Papa lavada (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000059439",
+      "ean": "02559439003888",
+      "product": "Pera D'Anjou (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000060947",
+      "ean": "02560947009125",
+      "product": "Papa negra (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000061007",
+      "ean": "02561007006764",
+      "product": "Limón (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000089308",
+      "ean": "07794820903308",
+      "product": "Manteca Milkaut (200 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000093856",
+      "ean": "02593856003441",
+      "product": "Papas a la crema Coto (por kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000118269",
+      "ean": "07796064003042",
+      "product": "Paño para piso Capullo"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000124508",
+      "ean": "07798132920848",
+      "product": "Tomate perita en lata Canale (400 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000163580",
+      "ean": "07790272001005",
+      "product": "Aceite de girasol Natura (900 cc)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000197831",
+      "ean": "07792335001151",
+      "product": "Huevos blancos x10 Avicoper"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000219361",
+      "ean": "07790117002525",
+      "product": "Bolsas de residuos Asurin 50x65 (x50)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000224356",
+      "ean": "07794820902914",
+      "product": "Crema de leche Milkaut (200 cc)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000224534",
+      "ean": "04005900036759",
+      "product": "Antitranspirante Nivea Men"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000224956",
+      "ean": "07794820902974",
+      "product": "Crema de leche Milkaut (200 cc)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000228676",
+      "ean": "07798060850026",
+      "product": "Manteca Tonadita (200 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000245683",
+      "ean": "07622201705077",
+      "product": "Polvo para postre Royal light vainilla"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000253696",
+      "ean": "07792180004871",
+      "product": "Harina 0000 Pureza (1 kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000255634",
+      "ean": "07790315001047",
+      "product": "Agua Levité Cero pomelo (2,25 L)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000286105",
+      "ean": "07790117001832",
+      "product": "Bolsas para heces Asurin (x20)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000464598",
+      "ean": "07792900614021",
+      "product": "Sal gruesa Dos Anclas (500 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000478989",
+      "ean": "07790895012259",
+      "product": "Coca-Cola sin azúcar (1,75 L)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000486797",
+      "ean": "07794990880232",
+      "product": "Queso tybo feteado La Paulina (180 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000486798",
+      "ean": "07794990880225",
+      "product": "Queso danbo feteado La Paulina (180 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000489424",
+      "ean": "07798146138864",
+      "product": "Mayonesa light Heinz (350 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000514672",
+      "ean": "07791828900377",
+      "product": "Rollo de cocina Felpita"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000531013",
+      "ean": "07798114470057",
+      "product": "Flan casero vainilla Flanchello (180 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000536035",
+      "ean": "07798273212499",
+      "product": "Aromatizante textil Aromass"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000542992",
+      "ean": "07792900990576",
+      "product": "Cebolla deshidratada Dos Anclas (75 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000549890",
+      "ean": "07622201819736",
+      "product": "Gelatina light Royal cereza (25 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000557920",
+      "ean": "07793890259025",
+      "product": "Pan para pancho x6 (240 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000563919",
+      "ean": "07798013103377",
+      "product": "Jamón cocido feteado Cagnoli (200 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000568491",
+      "ean": "07790070431578",
+      "product": "Arroz doble Carolina Gallo (1 kg)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000571985",
+      "ean": "07790070335944",
+      "product": "Fideos penne rigate (500 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000571986",
+      "ean": "07790070335937",
+      "product": "Fideos tirabuzón Matarazzo (500 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000572016",
+      "ean": "07791337061361",
+      "product": "Queso crema Casancrem (290 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000574090",
+      "ean": "07791337008106",
+      "product": "Postre Danette DDL y crema (100 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000574450",
+      "ean": "07799155000197",
+      "product": "Agua mineral Villavicencio (2 L)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000574537",
+      "ean": "07790250054962",
+      "product": "Papel higiénico Elite"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000574543",
+      "ean": "07791290795587",
+      "product": "Limpiador Cif"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000574549",
+      "ean": "07791290795600",
+      "product": "Limpiador Cif"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000584027",
+      "ean": "07790990003138",
+      "product": "Detergente Magistral"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000584802",
+      "ean": "07790903001343",
+      "product": "La Perla (sin detalle en ticket)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000590520",
+      "ean": "07790990003282",
+      "product": "Detergente lavavajillas Ultra"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000593923",
+      "ean": "02800005939231",
+      "product": "Manta polar Tex (125×150 cm)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000594800",
+      "ean": "07793890260885",
+      "product": "Pan Artesano"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000602268",
+      "ean": "07793890261486",
+      "product": "Pan integral Fargo (400 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000608115",
+      "ean": "07509546070988",
+      "product": "Jabón de tocador Palmolive"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000610106",
+      "ean": "07791290796409",
+      "product": "Jabón líquido Skip"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000610109",
+      "ean": "07791290796430",
+      "product": "Jabón líquido Skip"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000614299",
+      "ean": "07798078733526",
+      "product": "Piedras sanitarias Pisi"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000616558",
+      "ean": "07796953311500",
+      "product": "Salame Milán feteado Calchaquí (130 g)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000616592",
+      "ean": "07798304841865",
+      "product": "Galletitas Oreo"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000618214",
+      "ean": "07806810025713",
+      "product": "Esponja Virutex"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000623341",
+      "ean": "07798338291803",
+      "product": "Leche con proteína Tres Niñas (1 L)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000624362",
+      "ean": "07798187930045",
+      "product": "Cyclamen (planta)"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000632569",
+      "ean": "07798260740646",
+      "product": "Salchichas Unión Ganadera"
+    },
+    {
+      "chain": "coto",
+      "sku": "0000632625",
+      "ean": "07500435259583",
+      "product": "Suavizante Downy"
+    }
+  ],
+  "rules": [
+    {
+      "match": "FID. TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "product": "Fideos tirabuzón Matarazzo (500 g)"
+    },
+    {
+      "match": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 L]",
+      "product": "Agua Levité Cero pomelo (2,25 L)"
+    },
+    {
+      "match": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LI",
+      "product": "Agua Levité Cero pomelo (2,25 L)"
+    },
+    {
+      "match": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "product": "Agua Levité Cero pomelo (2,25 L)"
+    },
+    {
+      "match": "ANTITRANSPIRANTE NIVEA MENINVISIBLE POWER B&W RO",
+      "product": "Antitranspirante Nivea Men"
+    },
+    {
+      "match": "AROMATIZANTE TEXTIL MAGNOLIAVAINILLA AROMASS SPR",
+      "product": "Aromatizante textil Aromass"
+    },
+    {
+      "match": "BOLSA P/HECES MASCOTA ASURIN3 UNID. 33X22 20 BOL",
+      "product": "Bolsas para heces Asurin (x20)"
+    },
+    {
+      "match": "BOLSA P/HECES MASCOTA ASURING UNID. 33X22 20 BOL",
+      "product": "Bolsas para heces Asurin (x20)"
+    },
+    {
+      "match": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "product": "Fideos tirabuzón Matarazzo (500 g)"
+    },
+    {
+      "match": "FID.TIRABUZON N234 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "product": "Fideos tirabuzón Matarazzo (500 g)"
+    },
+    {
+      "match": "FID.TIRABUZON N734 J VEG.VIT.MATARAZLO PAQ 500 G",
+      "product": "Fideos tirabuzón Matarazzo (500 g)"
+    },
+    {
+      "match": "CEBOLLA DESHID.EN ESCAMASDOS ANCLAS SOB 75 GRM",
+      "product": "Cebolla deshidratada Dos Anclas (75 g)"
+    },
+    {
+      "match": "FLAN CASERO SAB.VAINILLAFLANCHELLO POT 180 GRM",
+      "product": "Flan casero vainilla Flanchello (180 g)"
+    },
+    {
+      "match": "ARROZ DOBLE CAROLINA SELECCIONGALLO CJA 1 KGM",
+      "product": "Arroz doble Carolina Gallo (1 kg)"
+    },
+    {
+      "match": "ARROZ DOBLE CAROLLNA SELECCIONGALIO CJA 1 KGM",
+      "product": "Arroz doble Carolina Gallo (1 kg)"
+    },
+    {
+      "match": "POLVO P/POSTRE ROYALLIGHT VAINILLA SOB 43 GRM",
+      "product": "Polvo para postre Royal light vainilla"
+    },
+    {
+      "match": "AGUA MINERAL S/GASVILLAVICENCIO BOT 2000 CMQ",
+      "product": "Agua mineral Villavicencio (2 L)"
+    },
+    {
+      "match": "BOLSAS DE RESIDUOS ASURIN 50 X 65 PAQ 50 UNI",
+      "product": "Bolsas de residuos Asurin 50x65 (x50)"
+    },
+    {
+      "match": "HUEVO BLANCO EXTRA GRANDEAVICOPER CJA 10 UNI",
+      "product": "Huevos blancos x10 Avicoper"
+    },
+    {
+      "match": "MORCILLA BB VERDEO E/VCABA?A ARG PAQ 440GRM",
+      "product": "Morcilla con verdeo Cabaña Arg. (440 g)"
+    },
+    {
+      "match": "POSTRE SAB DDL Y CREMADADANETTE POT 100 GRM",
+      "product": "Postre Danette DDL y crema (100 g)"
+    },
+    {
+      "match": "GELATINA LIGHT SAB.CEREZAROYAL SOB 25 GRM",
+      "product": "Gelatina light Royal cereza (25 g)"
+    },
+    {
+      "match": "QUESO DANBO FETEADOLA PAULINA PAQ 180 GRM",
+      "product": "Queso danbo feteado La Paulina (180 g)"
+    },
+    {
+      "match": "SALAME MILAN FETEADACALCHAQUI BLI 130 GRM",
+      "product": "Salame Milán feteado Calchaquí (130 g)"
+    },
+    {
+      "match": "SALAME MILAN FETEADACALCHAQUT BLI 130 GRM",
+      "product": "Salame Milán feteado Calchaquí (130 g)"
+    },
+    {
+      "match": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LIR",
+      "product": "Agua sin gas Glaciar bajo sodio (2 L)"
+    },
+    {
+      "match": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR",
+      "product": "Agua sin gas Glaciar bajo sodio (2 L)"
+    },
+    {
+      "match": "GASEOSA COCA COLA S/AZUCARESBOT 1.75 LIR",
+      "product": "Coca-Cola sin azúcar (1,75 L)"
+    },
+    {
+      "match": "GASEOSA COCA COLA S/AZUCARESBOT 1.75 LTR",
+      "product": "Coca-Cola sin azúcar (1,75 L)"
+    },
+    {
+      "match": "PAN P/PANCHO X6 UNI.ARTESANO BSA 240 GRM",
+      "product": "Pan para pancho x6 (240 g)"
+    },
+    {
+      "match": "QUESO CREMA CLASICOCASANCREM POT 290 GRM",
+      "product": "Queso crema Casancrem (290 g)"
+    },
+    {
+      "match": "QUESO CREMA CLASICOCASÁNCREM POT 290 GRM",
+      "product": "Queso crema Casancrem (290 g)"
+    },
+    {
+      "match": "QUESO TYBO FETEADOLA PAULINA PAO 180 GRM",
+      "product": "Queso tybo feteado La Paulina (180 g)"
+    },
+    {
+      "match": "QUESO TYBO FETEADOLA PAULINA PAQ 180 GRM",
+      "product": "Queso tybo feteado La Paulina (180 g)"
+    },
+    {
+      "match": "JAMON COCIDO FETEADOCAGNOLI PAQ 200 GRM",
+      "product": "Jamón cocido feteado Cagnoli (200 g)"
+    },
+    {
+      "match": "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC",
+      "product": "Crema de leche Milkaut (200 cc)"
+    },
+    {
+      "match": "CRENA DE LECHE MILKAUT DOBLEPOT 200 CC",
+      "product": "Crema de leche Milkaut (200 cc)"
+    },
+    {
+      "match": "QUESO CREMOSO DOBLE CREMALA PAULINA KG",
+      "product": "Queso cremoso La Paulina (por kg)"
+    },
+    {
+      "match": "HARINA DE TRICO 0000 PUREZAPAQ 1 KGM",
+      "product": "Harina 0000 Pureza (1 kg)"
+    },
+    {
+      "match": "HARINA DE TRIGO 0000 PUREZAPAQ 1 KGM",
+      "product": "Harina 0000 Pureza (1 kg)"
+    },
+    {
+      "match": "ACETTE GIRASOL , NATURA PET 900 CMQ",
+      "product": "Aceite de girasol Natura (900 cc)"
+    },
+    {
+      "match": "QUESO RALLADOLA PAULINA PAQ 150 GRM",
+      "product": "Queso rallado La Paulina (150 g)"
+    },
+    {
+      "match": "ACEITE GIRASOL .NATURA PET 900 CMQ",
+      "product": "Aceite de girasol Natura (900 cc)"
+    },
+    {
+      "match": "JAMON COCIDO FETEADOLARIO X 150GRS",
+      "product": "Jamón cocido feteado Lario (150 g)"
+    },
+    {
+      "match": "PA?O PARA PISO CAPULLOGRIS X 1 UNI",
+      "product": "Paño para piso Capullo"
+    },
+    {
+      "match": "PA20 PARA PISO CAPULLOGRIS X 1 UNI",
+      "product": "Paño para piso Capullo"
+    },
+    {
+      "match": "PESCADO FILET A LA ROMANACOTO X KG",
+      "product": "Filet de pescado a la romana (por kg)"
+    },
+    {
+      "match": "MORCILLA ENV VACIO COTO XKG 1 KGM",
+      "product": "Morcilla al vacío Coto (por kg)"
+    },
+    {
+      "match": "SAL GRUESA DOS ANCLASSAL 500 GRM",
+      "product": "Sal gruesa Dos Anclas (500 g)"
+    },
+    {
+      "match": "CHORIZO PARRILLEROX 320GR DOINA",
+      "product": "Chorizo parrillero Doina (320 g)"
+    },
+    {
+      "match": "MAYONESA LIGHTHEINZ DOY 350 GRM",
+      "product": "Mayonesa light Heinz (350 g)"
+    },
+    {
+      "match": "PATA MUSLO C/P 3 COTO PAQ 2 UNI",
+      "product": "Pata muslo de pollo Coto (pack x2)"
+    },
+    {
+      "match": "PATA MUSLO C/P 4 COTO PAQ 2 UNI",
+      "product": "Pata muslo de pollo Coto (pack x2)"
+    },
+    {
+      "match": "TOMATE PERITA CANALELAT 400 GRM",
+      "product": "Tomate perita en lata Canale (400 g)"
+    },
+    {
+      "match": "MANTA POLAR TEXGRIS 125X150CM",
+      "product": "Manta polar Tex (125×150 cm)"
+    },
+    {
+      "match": "PAN INTEGRALFARGO PAQ 400 GRM",
+      "product": "Pan integral Fargo (400 g)"
+    },
+    {
+      "match": "PA?UELOS CAMPANITACJA 75 UNI",
+      "product": "Pañuelos Campanita (x75)"
+    },
+    {
+      "match": "PAZUELOS CAMPANITACJA 75 UNI",
+      "product": "Pañuelos Campanita (x75)"
+    },
+    {
+      "match": "FZAPALLO ANCO SELECCIONX KG",
+      "product": "Zapallo anco (por kg)"
+    },
+    {
+      "match": "MANTECA TONADITAPAN 200 GRM",
+      "product": "Manteca Tonadita (200 g)"
+    },
+    {
+      "match": "SAL FINA CELUSALSAL 250 GRM",
+      "product": "Sal fina Celusal (250 g)"
+    },
+    {
+      "match": "TAPA DE ASADO ESPECIAL X KG",
+      "product": "Tapa de asado especial (por kg)"
+    },
+    {
+      "match": "VERDURAS GRILLADAS COTOX KG",
+      "product": "Verduras grilladas Coto (por kg)"
+    },
+    {
+      "match": "LAPALLO ANCO SELECCIONX KG",
+      "product": "Zapallo anco (por kg)"
+    },
+    {
+      "match": "MANTECA MILKAUTPAN 200 GRM",
+      "product": "Manteca Milkaut (200 g)"
+    },
+    {
+      "match": "TORTILLA DE PAPAS COTOX KG",
+      "product": "Tortilla de papas Coto (por kg)"
+    },
+    {
+      "match": "ZAPALLO ANCO SELECCIONX KG",
+      "product": "Zapallo anco (por kg)"
+    },
+    {
+      "match": "PAPAS A LA CREMACOTO X KG",
+      "product": "Papas a la crema Coto (por kg)"
+    },
+    {
+      "match": "PAPA NEGRA SELECCIONX KG",
+      "product": "Papa negra (por kg)"
+    },
+    {
+      "match": "PAPAS AL HORNOCOTO X KG",
+      "product": "Papas al horno Coto (por kg)"
+    },
+    {
+      "match": "AJO GIGANTE. UNI 1 UNI",
+      "product": "Ajo gigante (unidad)"
+    },
+    {
+      "match": "HUEVO BLANCOCJA 12 UMI",
+      "product": "Huevos blancos x12"
+    },
+    {
+      "match": "HUEVO BLANCOCJA 12 UNI",
+      "product": "Huevos blancos x12"
+    },
+    {
+      "match": "BANANA CAVENDISHX KG",
+      "product": "Banana Cavendish (por kg)"
+    },
+    {
+      "match": "CEBOLLA A GRANELX KG",
+      "product": "Cebolla a granel (por kg)"
+    },
+    {
+      "match": "DETER.LAVAV.ULTRA LI",
+      "product": "Detergente lavavajillas Ultra"
+    },
+    {
+      "match": "FID.PENNE RIGATE N?4",
+      "product": "Fideos penne rigate (500 g)"
+    },
+    {
+      "match": "LECHE C/PROTEINA TRE",
+      "product": "Leche con proteína Tres Niñas (1 L)"
+    },
+    {
+      "match": "ROLLO D/COCINA MAXIR",
+      "product": "Rollo de cocina Felpita"
+    },
+    {
+      "match": "SALCHICHAS COR.EST.G",
+      "product": "Salchichas Unión Ganadera"
+    },
+    {
+      "match": "ASADO ESTANCIA X KG",
+      "product": "Asado Estancia (por kg)"
+    },
+    {
+      "match": "PERA D'ANJOU XKG",
+      "product": "Pera D'Anjou (por kg)"
+    },
+    {
+      "match": "PERA PACKAMSX KG",
+      "product": "Pera Packhams (por kg)"
+    },
+    {
+      "match": "PERA PACKANGX KO",
+      "product": "Pera Packhams (por kg)"
+    },
+    {
+      "match": "PAPA BLANCAX KG",
+      "product": "Papa blanca (por kg)"
+    },
+    {
+      "match": "PAPA LAVADA XKG",
+      "product": "Papa lavada (por kg)"
+    },
+    {
+      "match": "UNION GANADERA",
+      "product": "Salchichas Unión Ganadera"
+    },
+    {
+      "match": "JAB.LIQ.SKIP",
+      "product": "Jabón líquido Skip"
+    },
+    {
+      "match": "PAN ARTESANO",
+      "product": "Pan Artesano"
+    },
+    {
+      "match": "TRES NI?AS",
+      "product": "Leche con proteína Tres Niñas (1 L)"
+    },
+    {
+      "match": "TRES NIZAS",
+      "product": "Leche con proteína Tres Niñas (1 L)"
+    },
+    {
+      "match": "LIMONX KG",
+      "product": "Limón (por kg)"
+    },
+    {
+      "match": "MAGISTRAL",
+      "product": "Detergente Magistral"
+    },
+    {
+      "match": "MATARAZZO",
+      "product": "Fideos penne rigate (500 g)"
+    },
+    {
+      "match": "PALMOLIVE",
+      "product": "Jabón de tocador Palmolive"
+    },
+    {
+      "match": "CYCLAMEN",
+      "product": "Cyclamen (planta)"
+    },
+    {
+      "match": "LA PERLA",
+      "product": "La Perla (sin detalle en ticket)"
+    },
+    {
+      "match": "FELPITA",
+      "product": "Rollo de cocina Felpita"
+    },
+    {
+      "match": "VIRUTEX",
+      "product": "Esponja Virutex"
+    },
+    {
+      "match": "DOWNY",
+      "product": "Suavizante Downy"
+    },
+    {
+      "match": "ELITE",
+      "product": "Papel higiénico Elite"
+    },
+    {
+      "match": "OREO",
+      "product": "Galletitas Oreo"
+    },
+    {
+      "match": "PISI",
+      "product": "Piedras sanitarias Pisi"
+    },
+    {
+      "match": "CIF",
+      "product": "Limpiador Cif"
+    }
+  ]
+}

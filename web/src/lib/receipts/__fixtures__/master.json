@@ -1,0 +1,4058 @@
+{
+  "generated": "2026-09-04 (fixture: article codes 0000632569 and 0000571985 each merged into one product, derived sections rebuilt)",
+  "store": "Coto Suc. 90 — Segurola 1743, Monte Castro",
+  "n_weeks": 5,
+  "weeks": [
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "n_items": 23,
+      "gross": 160616.49,
+      "discounts": -45245.69,
+      "total": 115370.8,
+      "total_printed": 115370.8,
+      "savings_pct": 28.17,
+      "disc_mp": -11112.45,
+      "disc_coto": -33320.62,
+      "disc_mixta": -812.62
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "n_items": 21,
+      "gross": 109669.57,
+      "discounts": -25381.07,
+      "total": 84288.5,
+      "total_printed": 84288.5,
+      "savings_pct": 23.14,
+      "disc_mp": -8594.34,
+      "disc_coto": -16786.73,
+      "disc_mixta": 0.0
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "n_items": 21,
+      "gross": 165960.47,
+      "discounts": -38898.84,
+      "total": 127061.63,
+      "total_printed": 127061.63,
+      "savings_pct": 23.44,
+      "disc_mp": -14093.44,
+      "disc_coto": -24805.4,
+      "disc_mixta": 0.0
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "n_items": 26,
+      "gross": 176969.55,
+      "discounts": -55081.01,
+      "total": 121888.54,
+      "total_printed": 121888.54,
+      "savings_pct": 31.12,
+      "disc_mp": -22183.59,
+      "disc_coto": -32897.42,
+      "disc_mixta": 0.0
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "n_items": 21,
+      "gross": 146931.91,
+      "discounts": -37203.57,
+      "total": 109728.34,
+      "total_printed": 109728.34,
+      "savings_pct": 25.32,
+      "disc_mp": -11237.97,
+      "disc_coto": -24609.7,
+      "disc_mixta": -1355.9
+    }
+  ],
+  "items": [
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "=CYCLAMEN",
+      "canonical": "Cyclamen (planta)",
+      "category": "Otros",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 6990.0,
+      "gross": 6990.0,
+      "discount": 0.0,
+      "net": 6990.0,
+      "unit_price_net": 6990.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PAN P/PANCHO X6 UNI.ARTESANO BSA 240 GRM",
+      "canonical": "Pan para pancho x6 (240 g)",
+      "category": "Panadería",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4647.0,
+      "gross": 4647.0,
+      "discount": -1161.75,
+      "net": 3485.25,
+      "unit_price_net": 3485.25,
+      "discount_pct": 25.0,
+      "promo": "3 *25% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PAN ARTESANO",
+      "canonical": "Pan Artesano",
+      "category": "Panadería",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 8908.0,
+      "gross": 8908.0,
+      "discount": -2227.0,
+      "net": 6681.0,
+      "unit_price_net": 6681.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "FLAN CASERO SAB.VAINILLAFLANCHELLO POT 180 GRM",
+      "canonical": "Flan casero vainilla Flanchello (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 2535.0,
+      "gross": 5070.0,
+      "discount": -1267.5,
+      "net": 3802.5,
+      "unit_price_net": 1901.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC",
+      "canonical": "Crema de leche Milkaut (200 cc)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 3670.0,
+      "gross": 7340.0,
+      "discount": -1835.0,
+      "net": 5505.0,
+      "unit_price_net": 2752.5,
+      "discount_pct": 25.0,
+      "promo": "1 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "UNION GANADERA",
+      "canonical": "Salchichas Unión Ganadera",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3999.0,
+      "gross": 3999.0,
+      "discount": -999.75,
+      "net": 2999.25,
+      "unit_price_net": 2999.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "JAMON COCIDO FETEADOCAGNOLI PAQ 200 GRM",
+      "canonical": "Jamón cocido feteado Cagnoli (200 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 7699.0,
+      "gross": 7699.0,
+      "discount": -3079.6,
+      "net": 4619.4,
+      "unit_price_net": 4619.4,
+      "discount_pct": 40.0,
+      "promo": "1 *40% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "MAYONESA LIGHTHEINZ DOY 350 GRM",
+      "canonical": "Mayonesa light Heinz (350 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3499.0,
+      "gross": 3499.0,
+      "discount": -874.75,
+      "net": 2624.25,
+      "unit_price_net": 2624.25,
+      "discount_pct": 25.0,
+      "promo": "1 *25% CLASES [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "OREO",
+      "canonical": "Galletitas Oreo",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5589.0,
+      "gross": 5589.0,
+      "discount": -1397.25,
+      "net": 4191.75,
+      "unit_price_net": 4191.75,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "QUESO TYBO FETEADOLA PAULINA PAQ 180 GRM",
+      "canonical": "Queso tybo feteado La Paulina (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5145.0,
+      "gross": 5145.0,
+      "discount": -1286.25,
+      "net": 3858.75,
+      "unit_price_net": 3858.75,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "SALAME MILAN FETEADACALCHAQUI BLI 130 GRM",
+      "canonical": "Salame Milán feteado Calchaquí (130 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5515.0,
+      "gross": 5515.0,
+      "discount": -1930.25,
+      "net": 3584.75,
+      "unit_price_net": 3584.75,
+      "discount_pct": 35.0,
+      "promo": "1 *CALCHAQUI 35% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR",
+      "canonical": "Agua sin gas Glaciar bajo sodio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 12,
+      "unit_price_gross": 3495.0,
+      "gross": 41940.0,
+      "discount": -14679.0,
+      "net": 27261.0,
+      "unit_price_net": 2271.75,
+      "discount_pct": 35.0,
+      "promo": "12 *35% GLACIAR [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PESCADO FILET A LA ROMANACOTO X KG",
+      "canonical": "Filet de pescado a la romana (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.246,
+      "unit_price_gross": 21319.0,
+      "gross": 5244.47,
+      "discount": -1311.12,
+      "net": 3933.35,
+      "unit_price_net": 15989.23,
+      "discount_pct": 25.0,
+      "promo": "1 *25% ELABORADOS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PAPAS A LA CREMACOTO X KG",
+      "canonical": "Papas a la crema Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "qty": 0.344,
+      "unit_price_gross": 9449.0,
+      "gross": 3250.46,
+      "discount": -812.62,
+      "net": 2437.84,
+      "unit_price_net": 7086.74,
+      "discount_pct": 25.0,
+      "promo": "1 *25% ELABORADOS [A] -812,61 + MERCADO PAGO 25% - V [M] -0,01",
+      "promo_type": "Mixta"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "JAB.LIQ.SKIP",
+      "canonical": "Jabón líquido Skip",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 11286.99,
+      "gross": 11286.99,
+      "discount": -4588.16,
+      "net": 6698.83,
+      "unit_price_net": 6698.83,
+      "discount_pct": 40.65,
+      "promo": "1 *SKIP 40% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "=BANANA CAVENDISHX KG",
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.954,
+      "unit_price_gross": 2299.0,
+      "gross": 2193.25,
+      "discount": 0.0,
+      "net": 2193.25,
+      "unit_price_net": 2299.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "canonical": "Fideos tirabuzón Matarazzo (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 2400.0,
+      "gross": 4800.0,
+      "discount": -1200.0,
+      "net": 3600.0,
+      "unit_price_net": 1800.0,
+      "discount_pct": 25.0,
+      "promo": "3 *25% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "=ZAPALLO ANCO SELECCIONX KG",
+      "canonical": "Zapallo anco (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.264,
+      "unit_price_gross": 2199.0,
+      "gross": 2779.54,
+      "discount": 0.0,
+      "net": 2779.54,
+      "unit_price_net": 2199.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "=AJO GIGANTE. UNI 1 UNI",
+      "canonical": "Ajo gigante (unidad)",
+      "category": "Frutas y Verduras",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 999.0,
+      "gross": 999.0,
+      "discount": 0.0,
+      "net": 999.0,
+      "unit_price_net": 999.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PAPA BLANCAX KG",
+      "canonical": "Papa blanca (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.666,
+      "unit_price_gross": 2299.0,
+      "gross": 1531.13,
+      "discount": -382.78,
+      "net": 1148.35,
+      "unit_price_net": 1724.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "CEBOLLA A GRANELX KG",
+      "canonical": "Cebolla a granel (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.324,
+      "unit_price_gross": 1999.0,
+      "gross": 647.68,
+      "discount": -161.92,
+      "net": 485.76,
+      "unit_price_net": 1499.26,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "PALMOLIVE",
+      "canonical": "Jabón de tocador Palmolive",
+      "category": "Perfumería",
+      "unit": "un",
+      "qty": 3,
+      "unit_price_gross": 2660.99,
+      "gross": 7982.97,
+      "discount": -2660.99,
+      "net": 5321.98,
+      "unit_price_net": 1773.99,
+      "discount_pct": 33.33,
+      "promo": "1 *3X2 JABON TOCADOR [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "desc_printed": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 3390.0,
+      "gross": 13560.0,
+      "discount": -3390.0,
+      "net": 10170.0,
+      "unit_price_net": 2542.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PA?O PARA PISO CAPULLOGRIS X 1 UNI",
+      "canonical": "Paño para piso Capullo",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 1779.99,
+      "gross": 1779.99,
+      "discount": -445.0,
+      "net": 1334.99,
+      "unit_price_net": 1334.99,
+      "discount_pct": 25.0,
+      "promo": "1 *25% CLASES [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 3390.0,
+      "gross": 13560.0,
+      "discount": -3390.0,
+      "net": 10170.0,
+      "unit_price_net": 2542.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "GASEOSA COCA COLA S/AZUCARESBOT 1.75 LTR",
+      "canonical": "Coca-Cola sin azúcar (1,75 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4900.0,
+      "gross": 4900.0,
+      "discount": 0.0,
+      "net": 4900.0,
+      "unit_price_net": 4900.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "FID.PENNE RIGATE N?4",
+      "canonical": "Fideos penne rigate (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2400.0,
+      "gross": 2400.0,
+      "discount": -600.0,
+      "net": 1800.0,
+      "unit_price_net": 1800.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PERA PACKAMSX KG",
+      "canonical": "Pera Packhams (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.388,
+      "unit_price_gross": 2299.0,
+      "gross": 892.01,
+      "discount": 0.0,
+      "net": 892.01,
+      "unit_price_net": 2298.99,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "ZAPALLO ANCO SELECCIONX KG",
+      "canonical": "Zapallo anco (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.47,
+      "unit_price_gross": 2199.0,
+      "gross": 3232.53,
+      "discount": 0.0,
+      "net": 3232.53,
+      "unit_price_net": 2199.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PAPA NEGRA SELECCIONX KG",
+      "canonical": "Papa negra (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.918,
+      "unit_price_gross": 2299.0,
+      "gross": 2110.48,
+      "discount": -527.62,
+      "net": 1582.86,
+      "unit_price_net": 1724.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "BANANA CAVENDISHX KG",
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.762,
+      "unit_price_gross": 3499.0,
+      "gross": 2666.24,
+      "discount": -666.56,
+      "net": 1999.68,
+      "unit_price_net": 2624.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "CEBOLLA A GRANELX KG",
+      "canonical": "Cebolla a granel (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.382,
+      "unit_price_gross": 2499.0,
+      "gross": 954.62,
+      "discount": -238.66,
+      "net": 715.96,
+      "unit_price_net": 1874.24,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "SAL GRUESA DOS ANCLASSAL 500 GRM",
+      "canonical": "Sal gruesa Dos Anclas (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3187.0,
+      "gross": 3187.0,
+      "discount": -796.75,
+      "net": 2390.25,
+      "unit_price_net": 2390.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "DETER.LAVAV.ULTRA LI",
+      "canonical": "Detergente lavavajillas Ultra",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 9319.99,
+      "gross": 9319.99,
+      "discount": -3262.0,
+      "net": 6057.99,
+      "unit_price_net": 6057.99,
+      "discount_pct": 35.0,
+      "promo": "1 *35% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "ROLLO D/COCINA MAXIR",
+      "canonical": "Rollo de cocina Felpita",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3070.99,
+      "gross": 3070.99,
+      "discount": -971.97,
+      "net": 2099.02,
+      "unit_price_net": 2099.02,
+      "discount_pct": 31.65,
+      "promo": "1 *FELPITA 30% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "LECHE C/PROTEINA TRE",
+      "canonical": "Leche con proteína Tres Niñas (1 L)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 2865.0,
+      "gross": 5730.0,
+      "discount": -1432.5,
+      "net": 4297.5,
+      "unit_price_net": 2148.75,
+      "discount_pct": 25.0,
+      "promo": "3 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "SALCHICHAS COR.EST.G",
+      "canonical": "Salchichas Unión Ganadera",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3999.0,
+      "gross": 3999.0,
+      "discount": -999.75,
+      "net": 2999.25,
+      "unit_price_net": 2999.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "POSTRE SAB DDL Y CREMADADANETTE POT 100 GRM",
+      "canonical": "Postre Danette DDL y crema (100 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 2715.0,
+      "gross": 10860.0,
+      "discount": -2715.0,
+      "net": 8145.0,
+      "unit_price_net": 2036.25,
+      "discount_pct": 25.0,
+      "promo": "3 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PESCADO FILET A LA ROMANACOTO X KG",
+      "canonical": "Filet de pescado a la romana (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.31,
+      "unit_price_gross": 21319.0,
+      "gross": 6608.89,
+      "discount": -1982.67,
+      "net": 4626.22,
+      "unit_price_net": 14923.29,
+      "discount_pct": 30.0,
+      "promo": "1 *PESCADO 30% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "TORTILLA DE PAPAS COTOX KG",
+      "canonical": "Tortilla de papas Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "qty": 0.274,
+      "unit_price_gross": 9769.0,
+      "gross": 2676.71,
+      "discount": -803.01,
+      "net": 1873.7,
+      "unit_price_net": 6838.32,
+      "discount_pct": 30.0,
+      "promo": "1 *30% ELABORADOS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "ASADO ESTANCIA X KG",
+      "canonical": "Asado Estancia (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.915,
+      "unit_price_gross": 12499.0,
+      "gross": 11436.59,
+      "discount": 0.0,
+      "net": 11436.59,
+      "unit_price_net": 12499.01,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "MORCILLA BB VERDEO E/VCABA?A ARG PAQ 440GRM",
+      "canonical": "Morcilla con verdeo Cabaña Arg. (440 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5500.0,
+      "gross": 5500.0,
+      "discount": -1375.0,
+      "net": 4125.0,
+      "unit_price_net": 4125.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PATA MUSLO C/P 3 COTO PAQ 2 UNI",
+      "canonical": "Pata muslo de pollo Coto (pack x2)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 6804.29,
+      "gross": 6804.29,
+      "discount": -2381.5,
+      "net": 4422.79,
+      "unit_price_net": 4422.79,
+      "discount_pct": 35.0,
+      "promo": "2 *35% TROZADOS POLLO [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "desc_printed": "PATA MUSLO C/P 4 COTO PAQ 2 UNI",
+      "canonical": "Pata muslo de pollo Coto (pack x2)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 7980.24,
+      "gross": 7980.24,
+      "discount": -2793.08,
+      "net": 5187.16,
+      "unit_price_net": 5187.16,
+      "discount_pct": 35.0,
+      "promo": "2 *35% TROZADOS POLLO [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 3390.0,
+      "gross": 13560.0,
+      "discount": -3390.0,
+      "net": 10170.0,
+      "unit_price_net": 2542.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR",
+      "canonical": "Agua sin gas Glaciar bajo sodio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 12,
+      "unit_price_gross": 3495.0,
+      "gross": 41940.0,
+      "discount": -14679.0,
+      "net": 27261.0,
+      "unit_price_net": 2271.75,
+      "discount_pct": 35.0,
+      "promo": "12 *35% GLACIAR [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=TAPA DE ASADO ESPECIAL X KG",
+      "canonical": "Tapa de asado especial (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 1.285,
+      "unit_price_gross": 13299.0,
+      "gross": 17089.22,
+      "discount": 0.0,
+      "net": 17089.22,
+      "unit_price_net": 13299.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=HUEVO BLANCO EXTRA GRANDEAVICOPER CJA 10 UNI",
+      "canonical": "Huevos blancos x10 Avicoper",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3390.0,
+      "gross": 3390.0,
+      "discount": 0.0,
+      "net": 3390.0,
+      "unit_price_net": 3390.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "MANTECA MILKAUTPAN 200 GRM",
+      "canonical": "Manteca Milkaut (200 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 5099.0,
+      "gross": 10198.0,
+      "discount": -2549.5,
+      "net": 7648.5,
+      "unit_price_net": 3824.25,
+      "discount_pct": 25.0,
+      "promo": "1 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "PAPAS AL HORNOCOTO X KG",
+      "canonical": "Papas al horno Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "qty": 0.408,
+      "unit_price_gross": 8249.0,
+      "gross": 3365.59,
+      "discount": -841.4,
+      "net": 2524.19,
+      "unit_price_net": 6186.74,
+      "discount_pct": 25.0,
+      "promo": "1 *25% ELABORADOS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "PESCADO FILET A LA ROMANACOTO X KG",
+      "canonical": "Filet de pescado a la romana (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.254,
+      "unit_price_gross": 21319.0,
+      "gross": 5415.03,
+      "discount": -1353.76,
+      "net": 4061.27,
+      "unit_price_net": 15989.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=BANANA CAVENDISHX KG",
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.072,
+      "unit_price_gross": 2999.0,
+      "gross": 3214.93,
+      "discount": 0.0,
+      "net": 3214.93,
+      "unit_price_net": 2999.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=ZAPALLO ANCO SELECCIONX KG",
+      "canonical": "Zapallo anco (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.846,
+      "unit_price_gross": 1999.0,
+      "gross": 3690.15,
+      "discount": 0.0,
+      "net": 3690.15,
+      "unit_price_net": 1999.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=PAPA LAVADA  XKG",
+      "canonical": "Papa lavada (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.76,
+      "unit_price_gross": 2599.0,
+      "gross": 1975.24,
+      "discount": 0.0,
+      "net": 1975.24,
+      "unit_price_net": 2599.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "=PERA PACKAMSX KG",
+      "canonical": "Pera Packhams (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.38,
+      "unit_price_gross": 2299.0,
+      "gross": 873.62,
+      "discount": 0.0,
+      "net": 873.62,
+      "unit_price_net": 2299.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC",
+      "canonical": "Crema de leche Milkaut (200 cc)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 3670.0,
+      "gross": 7340.0,
+      "discount": -2569.0,
+      "net": 4771.0,
+      "unit_price_net": 2385.5,
+      "discount_pct": 35.0,
+      "promo": "1 *70% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "LA PERLA",
+      "canonical": "La Perla (sin detalle en ticket)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2566.0,
+      "gross": 2566.0,
+      "discount": -641.5,
+      "net": 1924.5,
+      "unit_price_net": 1924.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "ARROZ DOBLE CAROLINA SELECCIONGALLO CJA 1 KGM",
+      "canonical": "Arroz doble Carolina Gallo (1 kg)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4170.0,
+      "gross": 4170.0,
+      "discount": -1042.5,
+      "net": 3127.5,
+      "unit_price_net": 3127.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "MATARAZZO",
+      "canonical": "Fideos penne rigate (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2400.0,
+      "gross": 2400.0,
+      "discount": -600.0,
+      "net": 1800.0,
+      "unit_price_net": 1800.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "canonical": "Fideos tirabuzón Matarazzo (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2400.0,
+      "gross": 2400.0,
+      "discount": -600.0,
+      "net": 1800.0,
+      "unit_price_net": 1800.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "CEBOLLA A GRANELX KG",
+      "canonical": "Cebolla a granel (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.282,
+      "unit_price_gross": 2499.0,
+      "gross": 704.72,
+      "discount": -176.18,
+      "net": 528.54,
+      "unit_price_net": 1874.26,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "BOLSAS DE RESIDUOS ASURIN 50 X 65 PAQ 50 UNI",
+      "canonical": "Bolsas de residuos Asurin 50x65 (x50)",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 17373.99,
+      "gross": 17373.99,
+      "discount": -4343.5,
+      "net": 13030.49,
+      "unit_price_net": 13030.49,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "MAGISTRAL",
+      "canonical": "Detergente Magistral",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5049.99,
+      "gross": 5049.99,
+      "discount": -1262.5,
+      "net": 3787.49,
+      "unit_price_net": 3787.49,
+      "discount_pct": 25.0,
+      "promo": "1 *25% MAGISTRAL [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "AROMATIZANTE TEXTIL MAGNOLIAVAINILLA AROMASS SPR",
+      "canonical": "Aromatizante textil Aromass",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 7783.99,
+      "gross": 7783.99,
+      "discount": -1946.0,
+      "net": 5837.99,
+      "unit_price_net": 5837.99,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "desc_printed": "TRES NI?AS",
+      "canonical": "Leche con proteína Tres Niñas (1 L)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 2865.0,
+      "gross": 11460.0,
+      "discount": -2904.0,
+      "net": 8556.0,
+      "unit_price_net": 2139.0,
+      "discount_pct": 25.34,
+      "promo": "1 *TRES NI?AS 4X3 [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 3390.0,
+      "gross": 13560.0,
+      "discount": -3390.0,
+      "net": 10170.0,
+      "unit_price_net": 2542.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "DOWNY",
+      "canonical": "Suavizante Downy",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 16276.99,
+      "gross": 16276.99,
+      "discount": -5696.95,
+      "net": 10580.04,
+      "unit_price_net": 10580.04,
+      "discount_pct": 35.0,
+      "promo": "1 *35% LIMPIEZA SELEC [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "PISI",
+      "canonical": "Piedras sanitarias Pisi",
+      "category": "Mascotas",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 21950.0,
+      "gross": 21950.0,
+      "discount": -5487.5,
+      "net": 16462.5,
+      "unit_price_net": 16462.5,
+      "discount_pct": 25.0,
+      "promo": "1 *25% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "JAB.LIQ.SKIP",
+      "canonical": "Jabón líquido Skip",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 13278.99,
+      "gross": 13278.99,
+      "discount": -5380.65,
+      "net": 7898.34,
+      "unit_price_net": 7898.34,
+      "discount_pct": 40.52,
+      "promo": "1 *SKIP 40% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "MANTA POLAR TEXGRIS 125X150CM",
+      "canonical": "Manta polar Tex (125×150 cm)",
+      "category": "Otros",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 19999.0,
+      "gross": 19999.0,
+      "discount": -9999.5,
+      "net": 9999.5,
+      "unit_price_net": 9999.5,
+      "discount_pct": 50.0,
+      "promo": "50% RTC [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "TOMATE PERITA CANALELAT 400 GRM",
+      "canonical": "Tomate perita en lata Canale (400 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 1723.77,
+      "gross": 3447.54,
+      "discount": -1206.64,
+      "net": 2240.9,
+      "unit_price_net": 1120.45,
+      "discount_pct": 35.0,
+      "promo": "2 *35% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "FELPITA",
+      "canonical": "Rollo de cocina Felpita",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3070.99,
+      "gross": 3070.99,
+      "discount": -971.97,
+      "net": 2099.02,
+      "unit_price_net": 2099.02,
+      "discount_pct": 31.65,
+      "promo": "1 *FELPITA 30% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "CIF",
+      "canonical": "Limpiador Cif",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2506.99,
+      "gross": 2506.99,
+      "discount": -626.75,
+      "net": 1880.24,
+      "unit_price_net": 1880.24,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "FID.TIRABUZON N?34 3 VEG.VIT.MATARAZZO PAQ 500 G",
+      "canonical": "Fideos tirabuzón Matarazzo (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2400.0,
+      "gross": 2400.0,
+      "discount": -600.0,
+      "net": 1800.0,
+      "unit_price_net": 1800.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "CIF",
+      "canonical": "Limpiador Cif",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2506.99,
+      "gross": 2506.99,
+      "discount": -626.75,
+      "net": 1880.24,
+      "unit_price_net": 1880.24,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "VIRUTEX",
+      "canonical": "Esponja Virutex",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4999.99,
+      "gross": 4999.99,
+      "discount": -1250.0,
+      "net": 3749.99,
+      "unit_price_net": 3749.99,
+      "discount_pct": 25.0,
+      "promo": "2 *25% CLASES [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "=LIMONX KG",
+      "canonical": "Limón (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.676,
+      "unit_price_gross": 899.0,
+      "gross": 607.72,
+      "discount": 0.0,
+      "net": 607.72,
+      "unit_price_net": 898.99,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "BANANA CAVENDISHX KG",
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.862,
+      "unit_price_gross": 3999.0,
+      "gross": 3447.14,
+      "discount": -861.79,
+      "net": 2585.35,
+      "unit_price_net": 2999.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "PAPA NEGRA SELECCIONX KG",
+      "canonical": "Papa negra (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.244,
+      "unit_price_gross": 2299.0,
+      "gross": 2859.96,
+      "discount": -714.99,
+      "net": 2144.97,
+      "unit_price_net": 1724.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "PAN INTEGRALFARGO PAQ 400 GRM",
+      "canonical": "Pan integral Fargo (400 g)",
+      "category": "Panadería",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 6022.0,
+      "gross": 6022.0,
+      "discount": -2408.8,
+      "net": 3613.2,
+      "unit_price_net": 3613.2,
+      "discount_pct": 40.0,
+      "promo": "1 *40% PANADERIA [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "=HARINA DE TRIGO 0000 PUREZAPAQ 1 KGM",
+      "canonical": "Harina 0000 Pureza (1 kg)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 1590.0,
+      "gross": 1590.0,
+      "discount": 0.0,
+      "net": 1590.0,
+      "unit_price_net": 1590.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "CEBOLLA DESHID.EN ESCAMASDOS ANCLAS SOB 75 GRM",
+      "canonical": "Cebolla deshidratada Dos Anclas (75 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3142.0,
+      "gross": 3142.0,
+      "discount": -785.5,
+      "net": 2356.5,
+      "unit_price_net": 2356.5,
+      "discount_pct": 25.0,
+      "promo": "2 *25% CLASES [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "POLVO P/POSTRE ROYALLIGHT VAINILLA SOB 43 GRM",
+      "canonical": "Polvo para postre Royal light vainilla",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 1670.0,
+      "gross": 1670.0,
+      "discount": -421.01,
+      "net": 1248.99,
+      "unit_price_net": 1248.99,
+      "discount_pct": 25.21,
+      "promo": "1 *ROYAL 25% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "GELATINA LIGHT SAB.CEREZAROYAL SOB 25 GRM",
+      "canonical": "Gelatina light Royal cereza (25 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 1520.0,
+      "gross": 3040.0,
+      "discount": -762.13,
+      "net": 2277.87,
+      "unit_price_net": 1138.94,
+      "discount_pct": 25.07,
+      "promo": "2 *ROYAL 25% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "QUESO DANBO FETEADOLA PAULINA PAQ 180 GRM",
+      "canonical": "Queso danbo feteado La Paulina (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5145.0,
+      "gross": 5145.0,
+      "discount": -1286.25,
+      "net": 3858.75,
+      "unit_price_net": 3858.75,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "QUESO RALLADOLA PAULINA PAQ 150 GRM",
+      "canonical": "Queso rallado La Paulina (150 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 6159.0,
+      "gross": 6159.0,
+      "discount": -1539.75,
+      "net": 4619.25,
+      "unit_price_net": 4619.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "JAMON COCIDO FETEADOLARIO X 150GRS",
+      "canonical": "Jamón cocido feteado Lario (150 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4565.0,
+      "gross": 4565.0,
+      "discount": -1826.0,
+      "net": 2739.0,
+      "unit_price_net": 2739.0,
+      "discount_pct": 40.0,
+      "promo": "1 *40% FIAMBRERIA AUTO [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "SALAME MILAN FETEADACALCHAQUI BLI 130 GRM",
+      "canonical": "Salame Milán feteado Calchaquí (130 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5515.0,
+      "gross": 5515.0,
+      "discount": -1935.77,
+      "net": 3579.23,
+      "unit_price_net": 3579.23,
+      "discount_pct": 35.1,
+      "promo": "1 *CALCHAQUI 35% [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "MANTECA TONADITAPAN 200 GRM",
+      "canonical": "Manteca Tonadita (200 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 4099.0,
+      "gross": 8198.0,
+      "discount": -2049.5,
+      "net": 6148.5,
+      "unit_price_net": 3074.25,
+      "discount_pct": 25.0,
+      "promo": "3 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "QUESO CREMOSO DOBLE CREMALA PAULINA KG",
+      "canonical": "Queso cremoso La Paulina (por kg)",
+      "category": "Lácteos y Postres",
+      "unit": "kg",
+      "qty": 0.752,
+      "unit_price_gross": 13499.0,
+      "gross": 10151.25,
+      "discount": -2537.81,
+      "net": 7613.44,
+      "unit_price_net": 10124.26,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "desc_printed": "POSTRE SAB DDL Y CREMADADANETTE POT 100 GRM",
+      "canonical": "Postre Danette DDL y crema (100 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 2715.0,
+      "gross": 10860.0,
+      "discount": -2715.0,
+      "net": 8145.0,
+      "unit_price_net": 2036.25,
+      "discount_pct": 25.0,
+      "promo": "3 *50% 2DA MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "VERDURAS GRILLADAS COTOX KG",
+      "canonical": "Verduras grilladas Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "qty": 0.172,
+      "unit_price_gross": 25899.0,
+      "gross": 4454.63,
+      "discount": -1336.39,
+      "net": 3118.24,
+      "unit_price_net": 18129.3,
+      "discount_pct": 30.0,
+      "promo": "1 *30% ELABORADOS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "PESCADO FILET A LA ROMANACOTO X KG",
+      "canonical": "Filet de pescado a la romana (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.212,
+      "unit_price_gross": 21319.0,
+      "gross": 4519.63,
+      "discount": -1355.9,
+      "net": 3163.73,
+      "unit_price_net": 14923.25,
+      "discount_pct": 30.0,
+      "promo": "1 *PESCADO 30% [A] -1355,89 + MERCADO PAGO 25% - V [M] -0,01",
+      "promo_type": "Mixta"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "CHORIZO PARRILLEROX 320GR DOINA",
+      "canonical": "Chorizo parrillero Doina (320 g)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 6400.0,
+      "gross": 6400.0,
+      "discount": -1600.0,
+      "net": 4800.0,
+      "unit_price_net": 4800.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "MORCILLA ENV VACIO COTO XKG 1 KGM",
+      "canonical": "Morcilla al vacío Coto (por kg)",
+      "category": "Fiambres y Embutidos",
+      "unit": "kg",
+      "qty": 0.374,
+      "unit_price_gross": 9800.0,
+      "gross": 3665.2,
+      "discount": -916.3,
+      "net": 2748.9,
+      "unit_price_net": 7350.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "UNION GANADERA",
+      "canonical": "Salchichas Unión Ganadera",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3999.0,
+      "gross": 3999.0,
+      "discount": -999.75,
+      "net": 2999.25,
+      "unit_price_net": 2999.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=ASADO ESTANCIA X KG",
+      "canonical": "Asado Estancia (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "qty": 0.965,
+      "unit_price_gross": 12999.0,
+      "gross": 12544.04,
+      "discount": 0.0,
+      "net": 12544.04,
+      "unit_price_net": 12999.01,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=HUEVO BLANCOCJA 12 UNI",
+      "canonical": "Huevos blancos x12",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3490.0,
+      "gross": 3490.0,
+      "discount": 0.0,
+      "net": 3490.0,
+      "unit_price_net": 3490.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "QUESO CREMA CLASICOCASANCREM POT 290 GRM",
+      "canonical": "Queso crema Casancrem (290 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 5765.0,
+      "gross": 5765.0,
+      "discount": -2018.33,
+      "net": 3746.67,
+      "unit_price_net": 3746.67,
+      "discount_pct": 35.01,
+      "promo": "1 *35 CASANCREM [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "AGUA SIN GAS GLACIARBAJO SODIO BOT 2 LTR",
+      "canonical": "Agua sin gas Glaciar bajo sodio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 12,
+      "unit_price_gross": 3495.0,
+      "gross": 41940.0,
+      "discount": -14679.0,
+      "net": 27261.0,
+      "unit_price_net": 2271.75,
+      "discount_pct": 35.0,
+      "promo": "12 *35% BEBIDAS SELEC [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "AGUA SIN GAS V.D.S LEVITE CEROPOMELO BOT 2.25 LT",
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 4,
+      "unit_price_gross": 3390.0,
+      "gross": 13560.0,
+      "discount": -3390.0,
+      "net": 10170.0,
+      "unit_price_net": 2542.5,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "AGUA MINERAL S/GASVILLAVICENCIO BOT 2000 CMQ",
+      "canonical": "Agua mineral Villavicencio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "qty": 2,
+      "unit_price_gross": 3050.0,
+      "gross": 6100.0,
+      "discount": -2135.0,
+      "net": 3965.0,
+      "unit_price_net": 1982.5,
+      "discount_pct": 35.0,
+      "promo": "2 *35% AGUAS SELEC [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "ELITE",
+      "canonical": "Papel higiénico Elite",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 2587.99,
+      "gross": 2587.99,
+      "discount": -647.0,
+      "net": 1940.99,
+      "unit_price_net": 1940.99,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=BANANA CAVENDISHX KG",
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 1.072,
+      "unit_price_gross": 2299.0,
+      "gross": 2464.53,
+      "discount": 0.0,
+      "net": 2464.53,
+      "unit_price_net": 2299.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=CEBOLLA A GRANELX KG",
+      "canonical": "Cebolla a granel (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.336,
+      "unit_price_gross": 1999.0,
+      "gross": 671.66,
+      "discount": 0.0,
+      "net": 671.66,
+      "unit_price_net": 1998.99,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "ANTITRANSPIRANTE NIVEA MENINVISIBLE POWER B&W RO",
+      "canonical": "Antitranspirante Nivea Men",
+      "category": "Perfumería",
+      "unit": "un",
+      "qty": 3,
+      "unit_price_gross": 3108.99,
+      "gross": 9326.97,
+      "discount": -3108.99,
+      "net": 6217.98,
+      "unit_price_net": 2072.66,
+      "discount_pct": 33.33,
+      "promo": "1 *3X2 CLASES [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "PAPA NEGRA SELECCIONX KG",
+      "canonical": "Papa negra (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.912,
+      "unit_price_gross": 2299.0,
+      "gross": 2096.69,
+      "discount": -524.17,
+      "net": 1572.52,
+      "unit_price_net": 1724.25,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=PERA D'ANJOU XKG",
+      "canonical": "Pera D'Anjou (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "qty": 0.388,
+      "unit_price_gross": 2499.0,
+      "gross": 969.61,
+      "discount": 0.0,
+      "net": 969.61,
+      "unit_price_net": 2498.99,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "PA?UELOS CAMPANITACJA 75 UNI",
+      "canonical": "Pañuelos Campanita (x75)",
+      "category": "Perfumería",
+      "unit": "un",
+      "qty": 3,
+      "unit_price_gross": 1775.99,
+      "gross": 5327.97,
+      "discount": -1331.99,
+      "net": 3995.98,
+      "unit_price_net": 1331.99,
+      "discount_pct": 25.0,
+      "promo": "3 *25% MARCAS [A]",
+      "promo_type": "Oferta Coto"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "SAL FINA CELUSALSAL 250 GRM",
+      "canonical": "Sal fina Celusal (250 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 3172.0,
+      "gross": 3172.0,
+      "discount": -793.0,
+      "net": 2379.0,
+      "unit_price_net": 2379.0,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "BOLSA P/HECES MASCOTA ASURING UNID. 33X22 20 BOL",
+      "canonical": "Bolsas para heces Asurin (x20)",
+      "category": "Mascotas",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 9470.99,
+      "gross": 9470.99,
+      "discount": -2367.75,
+      "net": 7103.24,
+      "unit_price_net": 7103.24,
+      "discount_pct": 25.0,
+      "promo": "MERCADO PAGO 25% - V [M]",
+      "promo_type": "Mercado Pago"
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "desc_printed": "=ACEITE GIRASOL .NATURA PET 900 CMQ",
+      "canonical": "Aceite de girasol Natura (900 cc)",
+      "category": "Almacén",
+      "unit": "un",
+      "qty": 1,
+      "unit_price_gross": 4406.0,
+      "gross": 4406.0,
+      "discount": 0.0,
+      "net": 4406.0,
+      "unit_price_net": 4406.0,
+      "discount_pct": 0.0,
+      "promo": null,
+      "promo_type": null
+    }
+  ],
+  "index_series": [
+    {
+      "week": 1,
+      "date": "2026-08-07",
+      "idx_lista": 100.0,
+      "idx_efectivo": 100.0,
+      "factor_lista_pct": null,
+      "factor_efectivo_pct": null,
+      "n_products": 0
+    },
+    {
+      "week": 2,
+      "date": "2026-08-14",
+      "idx_lista": 103.7,
+      "idx_efectivo": 100.26,
+      "factor_lista_pct": 3.7,
+      "factor_efectivo_pct": 0.26,
+      "n_products": 6
+    },
+    {
+      "week": 3,
+      "date": "2026-08-21",
+      "idx_lista": 102.7,
+      "idx_efectivo": 99.56,
+      "factor_lista_pct": -0.96,
+      "factor_efectivo_pct": -0.7,
+      "n_products": 11
+    },
+    {
+      "week": 4,
+      "date": "2026-08-28",
+      "idx_lista": 108.32,
+      "idx_efectivo": 102.75,
+      "factor_lista_pct": 5.47,
+      "factor_efectivo_pct": 3.21,
+      "n_products": 8
+    },
+    {
+      "week": 5,
+      "date": "2026-09-04",
+      "idx_lista": 106.36,
+      "idx_efectivo": 101.99,
+      "factor_lista_pct": -1.81,
+      "factor_efectivo_pct": -0.74,
+      "n_products": 8
+    }
+  ],
+  "products": [
+    {
+      "canonical": "Cyclamen (planta)",
+      "category": "Otros",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 6990.0,
+          "discount": 0.0,
+          "net": 6990.0,
+          "unit_gross": 6990.0,
+          "unit_net": 6990.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 6990.0
+    },
+    {
+      "canonical": "Pan para pancho x6 (240 g)",
+      "category": "Panadería",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 4647.0,
+          "discount": -1161.75,
+          "net": 3485.25,
+          "unit_gross": 4647.0,
+          "unit_net": 3485.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 3485.25
+    },
+    {
+      "canonical": "Pan Artesano",
+      "category": "Panadería",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 8908.0,
+          "discount": -2227.0,
+          "net": 6681.0,
+          "unit_gross": 8908.0,
+          "unit_net": 6681.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 6681.0
+    },
+    {
+      "canonical": "Flan casero vainilla Flanchello (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 2,
+          "gross": 5070.0,
+          "discount": -1267.5,
+          "net": 3802.5,
+          "unit_gross": 2535.0,
+          "unit_net": 1901.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 3802.5
+    },
+    {
+      "canonical": "Crema de leche Milkaut (200 cc)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 2,
+          "gross": 7340.0,
+          "discount": -1835.0,
+          "net": 5505.0,
+          "unit_gross": 3670.0,
+          "unit_net": 2752.5
+        },
+        "3": {
+          "qty": 2,
+          "gross": 7340.0,
+          "discount": -2569.0,
+          "net": 4771.0,
+          "unit_gross": 3670.0,
+          "unit_net": 2385.5
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        1,
+        3
+      ],
+      "total_spent": 10276.0,
+      "cmp_from": 1,
+      "cmp_to": 3,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": -13.33
+    },
+    {
+      "canonical": "Salchichas Unión Ganadera",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 3999.0,
+          "discount": -999.75,
+          "net": 2999.25,
+          "unit_gross": 3999.0,
+          "unit_net": 2999.25
+        },
+        "2": {
+          "qty": 1,
+          "gross": 3999.0,
+          "discount": -999.75,
+          "net": 2999.25,
+          "unit_gross": 3999.0,
+          "unit_net": 2999.25
+        },
+        "5": {
+          "qty": 1,
+          "gross": 3999.0,
+          "discount": -999.75,
+          "net": 2999.25,
+          "unit_gross": 3999.0,
+          "unit_net": 2999.25
+        }
+      },
+      "times_bought": 3,
+      "weeks_present": [
+        1,
+        2,
+        5
+      ],
+      "total_spent": 8997.75,
+      "cmp_from": 2,
+      "cmp_to": 5,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Jamón cocido feteado Cagnoli (200 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 7699.0,
+          "discount": -3079.6,
+          "net": 4619.4,
+          "unit_gross": 7699.0,
+          "unit_net": 4619.4
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 4619.4
+    },
+    {
+      "canonical": "Mayonesa light Heinz (350 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 3499.0,
+          "discount": -874.75,
+          "net": 2624.25,
+          "unit_gross": 3499.0,
+          "unit_net": 2624.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 2624.25
+    },
+    {
+      "canonical": "Galletitas Oreo",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 5589.0,
+          "discount": -1397.25,
+          "net": 4191.75,
+          "unit_gross": 5589.0,
+          "unit_net": 4191.75
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 4191.75
+    },
+    {
+      "canonical": "Queso tybo feteado La Paulina (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 5145.0,
+          "discount": -1286.25,
+          "net": 3858.75,
+          "unit_gross": 5145.0,
+          "unit_net": 3858.75
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 3858.75
+    },
+    {
+      "canonical": "Salame Milán feteado Calchaquí (130 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 5515.0,
+          "discount": -1930.25,
+          "net": 3584.75,
+          "unit_gross": 5515.0,
+          "unit_net": 3584.75
+        },
+        "4": {
+          "qty": 1,
+          "gross": 5515.0,
+          "discount": -1935.77,
+          "net": 3579.23,
+          "unit_gross": 5515.0,
+          "unit_net": 3579.23
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        1,
+        4
+      ],
+      "total_spent": 7163.98,
+      "cmp_from": 1,
+      "cmp_to": 4,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": -0.15
+    },
+    {
+      "canonical": "Agua sin gas Glaciar bajo sodio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 12,
+          "gross": 41940.0,
+          "discount": -14679.0,
+          "net": 27261.0,
+          "unit_gross": 3495.0,
+          "unit_net": 2271.75
+        },
+        "3": {
+          "qty": 12,
+          "gross": 41940.0,
+          "discount": -14679.0,
+          "net": 27261.0,
+          "unit_gross": 3495.0,
+          "unit_net": 2271.75
+        },
+        "5": {
+          "qty": 12,
+          "gross": 41940.0,
+          "discount": -14679.0,
+          "net": 27261.0,
+          "unit_gross": 3495.0,
+          "unit_net": 2271.75
+        }
+      },
+      "times_bought": 3,
+      "weeks_present": [
+        1,
+        3,
+        5
+      ],
+      "total_spent": 81783.0,
+      "cmp_from": 3,
+      "cmp_to": 5,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Filet de pescado a la romana (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 0.246,
+          "gross": 5244.47,
+          "discount": -1311.12,
+          "net": 3933.35,
+          "unit_gross": 21318.98,
+          "unit_net": 15989.23
+        },
+        "2": {
+          "qty": 0.31,
+          "gross": 6608.89,
+          "discount": -1982.67,
+          "net": 4626.22,
+          "unit_gross": 21319.0,
+          "unit_net": 14923.29
+        },
+        "3": {
+          "qty": 0.254,
+          "gross": 5415.03,
+          "discount": -1353.76,
+          "net": 4061.27,
+          "unit_gross": 21319.02,
+          "unit_net": 15989.25
+        },
+        "5": {
+          "qty": 0.212,
+          "gross": 4519.63,
+          "discount": -1355.9,
+          "net": 3163.73,
+          "unit_gross": 21319.01,
+          "unit_net": 14923.25
+        }
+      },
+      "times_bought": 4,
+      "weeks_present": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "total_spent": 15784.57,
+      "cmp_from": 3,
+      "cmp_to": 5,
+      "price_change_gross_pct": -0.0,
+      "price_change_net_pct": -6.67
+    },
+    {
+      "canonical": "Papas a la crema Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 0.344,
+          "gross": 3250.46,
+          "discount": -812.62,
+          "net": 2437.84,
+          "unit_gross": 9449.01,
+          "unit_net": 7086.74
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 2437.84
+    },
+    {
+      "canonical": "Jabón líquido Skip",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 11286.99,
+          "discount": -4588.16,
+          "net": 6698.83,
+          "unit_gross": 11286.99,
+          "unit_net": 6698.83
+        },
+        "4": {
+          "qty": 1,
+          "gross": 13278.99,
+          "discount": -5380.65,
+          "net": 7898.34,
+          "unit_gross": 13278.99,
+          "unit_net": 7898.34
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        1,
+        4
+      ],
+      "total_spent": 14597.17,
+      "cmp_from": 1,
+      "cmp_to": 4,
+      "price_change_gross_pct": 17.65,
+      "price_change_net_pct": 17.91
+    },
+    {
+      "canonical": "Banana Cavendish (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 0.954,
+          "gross": 2193.25,
+          "discount": 0.0,
+          "net": 2193.25,
+          "unit_gross": 2299.0,
+          "unit_net": 2299.0
+        },
+        "2": {
+          "qty": 0.762,
+          "gross": 2666.24,
+          "discount": -666.56,
+          "net": 1999.68,
+          "unit_gross": 3499.0,
+          "unit_net": 2624.25
+        },
+        "3": {
+          "qty": 1.072,
+          "gross": 3214.93,
+          "discount": 0.0,
+          "net": 3214.93,
+          "unit_gross": 2999.0,
+          "unit_net": 2999.0
+        },
+        "4": {
+          "qty": 0.862,
+          "gross": 3447.14,
+          "discount": -861.79,
+          "net": 2585.35,
+          "unit_gross": 3999.0,
+          "unit_net": 2999.25
+        },
+        "5": {
+          "qty": 1.072,
+          "gross": 2464.53,
+          "discount": 0.0,
+          "net": 2464.53,
+          "unit_gross": 2299.0,
+          "unit_net": 2299.0
+        }
+      },
+      "times_bought": 5,
+      "weeks_present": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "total_spent": 12457.74,
+      "cmp_from": 4,
+      "cmp_to": 5,
+      "price_change_gross_pct": -42.51,
+      "price_change_net_pct": -23.35
+    },
+    {
+      "canonical": "Fideos tirabuzón Matarazzo (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 2,
+          "gross": 4800.0,
+          "discount": -1200.0,
+          "net": 3600.0,
+          "unit_gross": 2400.0,
+          "unit_net": 1800.0
+        },
+        "3": {
+          "qty": 1,
+          "gross": 2400.0,
+          "discount": -600.0,
+          "net": 1800.0,
+          "unit_gross": 2400.0,
+          "unit_net": 1800.0
+        },
+        "4": {
+          "qty": 1,
+          "gross": 2400.0,
+          "discount": -600.0,
+          "net": 1800.0,
+          "unit_gross": 2400.0,
+          "unit_net": 1800.0
+        }
+      },
+      "times_bought": 3,
+      "weeks_present": [
+        1,
+        3,
+        4
+      ],
+      "total_spent": 7200.0,
+      "cmp_from": 3,
+      "cmp_to": 4,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Zapallo anco (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 1.264,
+          "gross": 2779.54,
+          "discount": 0.0,
+          "net": 2779.54,
+          "unit_gross": 2199.0,
+          "unit_net": 2199.0
+        },
+        "2": {
+          "qty": 1.47,
+          "gross": 3232.53,
+          "discount": 0.0,
+          "net": 3232.53,
+          "unit_gross": 2199.0,
+          "unit_net": 2199.0
+        },
+        "3": {
+          "qty": 1.846,
+          "gross": 3690.15,
+          "discount": 0.0,
+          "net": 3690.15,
+          "unit_gross": 1999.0,
+          "unit_net": 1999.0
+        }
+      },
+      "times_bought": 3,
+      "weeks_present": [
+        1,
+        2,
+        3
+      ],
+      "total_spent": 9702.22,
+      "cmp_from": 2,
+      "cmp_to": 3,
+      "price_change_gross_pct": -9.1,
+      "price_change_net_pct": -9.1
+    },
+    {
+      "canonical": "Ajo gigante (unidad)",
+      "category": "Frutas y Verduras",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 1,
+          "gross": 999.0,
+          "discount": 0.0,
+          "net": 999.0,
+          "unit_gross": 999.0,
+          "unit_net": 999.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 999.0
+    },
+    {
+      "canonical": "Papa blanca (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 0.666,
+          "gross": 1531.13,
+          "discount": -382.78,
+          "net": 1148.35,
+          "unit_gross": 2298.99,
+          "unit_net": 1724.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 1148.35
+    },
+    {
+      "canonical": "Cebolla a granel (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "1": {
+          "qty": 0.324,
+          "gross": 647.68,
+          "discount": -161.92,
+          "net": 485.76,
+          "unit_gross": 1999.01,
+          "unit_net": 1499.26
+        },
+        "2": {
+          "qty": 0.382,
+          "gross": 954.62,
+          "discount": -238.66,
+          "net": 715.96,
+          "unit_gross": 2499.01,
+          "unit_net": 1874.24
+        },
+        "3": {
+          "qty": 0.282,
+          "gross": 704.72,
+          "discount": -176.18,
+          "net": 528.54,
+          "unit_gross": 2499.01,
+          "unit_net": 1874.26
+        },
+        "5": {
+          "qty": 0.336,
+          "gross": 671.66,
+          "discount": 0.0,
+          "net": 671.66,
+          "unit_gross": 1998.99,
+          "unit_net": 1998.99
+        }
+      },
+      "times_bought": 4,
+      "weeks_present": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "total_spent": 2401.92,
+      "cmp_from": 3,
+      "cmp_to": 5,
+      "price_change_gross_pct": -20.01,
+      "price_change_net_pct": 6.65
+    },
+    {
+      "canonical": "Jabón de tocador Palmolive",
+      "category": "Perfumería",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 3,
+          "gross": 7982.97,
+          "discount": -2660.99,
+          "net": 5321.98,
+          "unit_gross": 2660.99,
+          "unit_net": 1773.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        1
+      ],
+      "total_spent": 5321.98
+    },
+    {
+      "canonical": "Agua Levité Cero pomelo (2,25 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "weeks": {
+        "1": {
+          "qty": 4,
+          "gross": 13560.0,
+          "discount": -3390.0,
+          "net": 10170.0,
+          "unit_gross": 3390.0,
+          "unit_net": 2542.5
+        },
+        "2": {
+          "qty": 4,
+          "gross": 13560.0,
+          "discount": -3390.0,
+          "net": 10170.0,
+          "unit_gross": 3390.0,
+          "unit_net": 2542.5
+        },
+        "3": {
+          "qty": 4,
+          "gross": 13560.0,
+          "discount": -3390.0,
+          "net": 10170.0,
+          "unit_gross": 3390.0,
+          "unit_net": 2542.5
+        },
+        "4": {
+          "qty": 4,
+          "gross": 13560.0,
+          "discount": -3390.0,
+          "net": 10170.0,
+          "unit_gross": 3390.0,
+          "unit_net": 2542.5
+        },
+        "5": {
+          "qty": 4,
+          "gross": 13560.0,
+          "discount": -3390.0,
+          "net": 10170.0,
+          "unit_gross": 3390.0,
+          "unit_net": 2542.5
+        }
+      },
+      "times_bought": 5,
+      "weeks_present": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "total_spent": 50850.0,
+      "cmp_from": 4,
+      "cmp_to": 5,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Paño para piso Capullo",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 1779.99,
+          "discount": -445.0,
+          "net": 1334.99,
+          "unit_gross": 1779.99,
+          "unit_net": 1334.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 1334.99
+    },
+    {
+      "canonical": "Coca-Cola sin azúcar (1,75 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 4900.0,
+          "discount": 0.0,
+          "net": 4900.0,
+          "unit_gross": 4900.0,
+          "unit_net": 4900.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 4900.0
+    },
+    {
+      "canonical": "Fideos penne rigate (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 2400.0,
+          "discount": -600.0,
+          "net": 1800.0,
+          "unit_gross": 2400.0,
+          "unit_net": 1800.0
+        },
+        "3": {
+          "qty": 1,
+          "gross": 2400.0,
+          "discount": -600.0,
+          "net": 1800.0,
+          "unit_gross": 2400.0,
+          "unit_net": 1800.0
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        3
+      ],
+      "total_spent": 3600.0,
+      "cmp_from": 2,
+      "cmp_to": 3,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Pera Packhams (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "2": {
+          "qty": 0.388,
+          "gross": 892.01,
+          "discount": 0.0,
+          "net": 892.01,
+          "unit_gross": 2298.99,
+          "unit_net": 2298.99
+        },
+        "3": {
+          "qty": 0.38,
+          "gross": 873.62,
+          "discount": 0.0,
+          "net": 873.62,
+          "unit_gross": 2299.0,
+          "unit_net": 2299.0
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        3
+      ],
+      "total_spent": 1765.63,
+      "cmp_from": 2,
+      "cmp_to": 3,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Papa negra (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "2": {
+          "qty": 0.918,
+          "gross": 2110.48,
+          "discount": -527.62,
+          "net": 1582.86,
+          "unit_gross": 2299.0,
+          "unit_net": 1724.25
+        },
+        "4": {
+          "qty": 1.244,
+          "gross": 2859.96,
+          "discount": -714.99,
+          "net": 2144.97,
+          "unit_gross": 2299.0,
+          "unit_net": 1724.25
+        },
+        "5": {
+          "qty": 0.912,
+          "gross": 2096.69,
+          "discount": -524.17,
+          "net": 1572.52,
+          "unit_gross": 2299.0,
+          "unit_net": 1724.25
+        }
+      },
+      "times_bought": 3,
+      "weeks_present": [
+        2,
+        4,
+        5
+      ],
+      "total_spent": 5300.35,
+      "cmp_from": 4,
+      "cmp_to": 5,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Sal gruesa Dos Anclas (500 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 3187.0,
+          "discount": -796.75,
+          "net": 2390.25,
+          "unit_gross": 3187.0,
+          "unit_net": 2390.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 2390.25
+    },
+    {
+      "canonical": "Detergente lavavajillas Ultra",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 9319.99,
+          "discount": -3262.0,
+          "net": 6057.99,
+          "unit_gross": 9319.99,
+          "unit_net": 6057.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 6057.99
+    },
+    {
+      "canonical": "Rollo de cocina Felpita",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 3070.99,
+          "discount": -971.97,
+          "net": 2099.02,
+          "unit_gross": 3070.99,
+          "unit_net": 2099.02
+        },
+        "4": {
+          "qty": 1,
+          "gross": 3070.99,
+          "discount": -971.97,
+          "net": 2099.02,
+          "unit_gross": 3070.99,
+          "unit_net": 2099.02
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        4
+      ],
+      "total_spent": 4198.04,
+      "cmp_from": 2,
+      "cmp_to": 4,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Leche con proteína Tres Niñas (1 L)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 2,
+          "gross": 5730.0,
+          "discount": -1432.5,
+          "net": 4297.5,
+          "unit_gross": 2865.0,
+          "unit_net": 2148.75
+        },
+        "3": {
+          "qty": 4,
+          "gross": 11460.0,
+          "discount": -2904.0,
+          "net": 8556.0,
+          "unit_gross": 2865.0,
+          "unit_net": 2139.0
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        3
+      ],
+      "total_spent": 12853.5,
+      "cmp_from": 2,
+      "cmp_to": 3,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": -0.45
+    },
+    {
+      "canonical": "Postre Danette DDL y crema (100 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 4,
+          "gross": 10860.0,
+          "discount": -2715.0,
+          "net": 8145.0,
+          "unit_gross": 2715.0,
+          "unit_net": 2036.25
+        },
+        "4": {
+          "qty": 4,
+          "gross": 10860.0,
+          "discount": -2715.0,
+          "net": 8145.0,
+          "unit_gross": 2715.0,
+          "unit_net": 2036.25
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        4
+      ],
+      "total_spent": 16290.0,
+      "cmp_from": 2,
+      "cmp_to": 4,
+      "price_change_gross_pct": 0.0,
+      "price_change_net_pct": 0.0
+    },
+    {
+      "canonical": "Tortilla de papas Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "weeks": {
+        "2": {
+          "qty": 0.274,
+          "gross": 2676.71,
+          "discount": -803.01,
+          "net": 1873.7,
+          "unit_gross": 9769.01,
+          "unit_net": 6838.32
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 1873.7
+    },
+    {
+      "canonical": "Asado Estancia (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "weeks": {
+        "2": {
+          "qty": 0.915,
+          "gross": 11436.59,
+          "discount": 0.0,
+          "net": 11436.59,
+          "unit_gross": 12499.01,
+          "unit_net": 12499.01
+        },
+        "5": {
+          "qty": 0.965,
+          "gross": 12544.04,
+          "discount": 0.0,
+          "net": 12544.04,
+          "unit_gross": 12999.01,
+          "unit_net": 12999.01
+        }
+      },
+      "times_bought": 2,
+      "weeks_present": [
+        2,
+        5
+      ],
+      "total_spent": 23980.63,
+      "cmp_from": 2,
+      "cmp_to": 5,
+      "price_change_gross_pct": 4.0,
+      "price_change_net_pct": 4.0
+    },
+    {
+      "canonical": "Morcilla con verdeo Cabaña Arg. (440 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 1,
+          "gross": 5500.0,
+          "discount": -1375.0,
+          "net": 4125.0,
+          "unit_gross": 5500.0,
+          "unit_net": 4125.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 4125.0
+    },
+    {
+      "canonical": "Pata muslo de pollo Coto (pack x2)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "un",
+      "weeks": {
+        "2": {
+          "qty": 2,
+          "gross": 14784.53,
+          "discount": -5174.58,
+          "net": 9609.95,
+          "unit_gross": 7392.27,
+          "unit_net": 4804.98
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        2
+      ],
+      "total_spent": 9609.95
+    },
+    {
+      "canonical": "Tapa de asado especial (por kg)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "kg",
+      "weeks": {
+        "3": {
+          "qty": 1.285,
+          "gross": 17089.22,
+          "discount": 0.0,
+          "net": 17089.22,
+          "unit_gross": 13299.0,
+          "unit_net": 13299.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 17089.22
+    },
+    {
+      "canonical": "Huevos blancos x10 Avicoper",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 3390.0,
+          "discount": 0.0,
+          "net": 3390.0,
+          "unit_gross": 3390.0,
+          "unit_net": 3390.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 3390.0
+    },
+    {
+      "canonical": "Manteca Milkaut (200 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 2,
+          "gross": 10198.0,
+          "discount": -2549.5,
+          "net": 7648.5,
+          "unit_gross": 5099.0,
+          "unit_net": 3824.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 7648.5
+    },
+    {
+      "canonical": "Papas al horno Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "weeks": {
+        "3": {
+          "qty": 0.408,
+          "gross": 3365.59,
+          "discount": -841.4,
+          "net": 2524.19,
+          "unit_gross": 8249.0,
+          "unit_net": 6186.74
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 2524.19
+    },
+    {
+      "canonical": "Papa lavada (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "3": {
+          "qty": 0.76,
+          "gross": 1975.24,
+          "discount": 0.0,
+          "net": 1975.24,
+          "unit_gross": 2599.0,
+          "unit_net": 2599.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 1975.24
+    },
+    {
+      "canonical": "La Perla (sin detalle en ticket)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 2566.0,
+          "discount": -641.5,
+          "net": 1924.5,
+          "unit_gross": 2566.0,
+          "unit_net": 1924.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 1924.5
+    },
+    {
+      "canonical": "Arroz doble Carolina Gallo (1 kg)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 4170.0,
+          "discount": -1042.5,
+          "net": 3127.5,
+          "unit_gross": 4170.0,
+          "unit_net": 3127.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 3127.5
+    },
+    {
+      "canonical": "Bolsas de residuos Asurin 50x65 (x50)",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 17373.99,
+          "discount": -4343.5,
+          "net": 13030.49,
+          "unit_gross": 17373.99,
+          "unit_net": 13030.49
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 13030.49
+    },
+    {
+      "canonical": "Detergente Magistral",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 5049.99,
+          "discount": -1262.5,
+          "net": 3787.49,
+          "unit_gross": 5049.99,
+          "unit_net": 3787.49
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 3787.49
+    },
+    {
+      "canonical": "Aromatizante textil Aromass",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "3": {
+          "qty": 1,
+          "gross": 7783.99,
+          "discount": -1946.0,
+          "net": 5837.99,
+          "unit_gross": 7783.99,
+          "unit_net": 5837.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        3
+      ],
+      "total_spent": 5837.99
+    },
+    {
+      "canonical": "Suavizante Downy",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 16276.99,
+          "discount": -5696.95,
+          "net": 10580.04,
+          "unit_gross": 16276.99,
+          "unit_net": 10580.04
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 10580.04
+    },
+    {
+      "canonical": "Piedras sanitarias Pisi",
+      "category": "Mascotas",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 21950.0,
+          "discount": -5487.5,
+          "net": 16462.5,
+          "unit_gross": 21950.0,
+          "unit_net": 16462.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 16462.5
+    },
+    {
+      "canonical": "Manta polar Tex (125×150 cm)",
+      "category": "Otros",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 19999.0,
+          "discount": -9999.5,
+          "net": 9999.5,
+          "unit_gross": 19999.0,
+          "unit_net": 9999.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 9999.5
+    },
+    {
+      "canonical": "Tomate perita en lata Canale (400 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 2,
+          "gross": 3447.54,
+          "discount": -1206.64,
+          "net": 2240.9,
+          "unit_gross": 1723.77,
+          "unit_net": 1120.45
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 2240.9
+    },
+    {
+      "canonical": "Limpiador Cif",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 2,
+          "gross": 5013.98,
+          "discount": -1253.5,
+          "net": 3760.48,
+          "unit_gross": 2506.99,
+          "unit_net": 1880.24
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 3760.48
+    },
+    {
+      "canonical": "Esponja Virutex",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 4999.99,
+          "discount": -1250.0,
+          "net": 3749.99,
+          "unit_gross": 4999.99,
+          "unit_net": 3749.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 3749.99
+    },
+    {
+      "canonical": "Limón (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "4": {
+          "qty": 0.676,
+          "gross": 607.72,
+          "discount": 0.0,
+          "net": 607.72,
+          "unit_gross": 898.99,
+          "unit_net": 898.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 607.72
+    },
+    {
+      "canonical": "Pan integral Fargo (400 g)",
+      "category": "Panadería",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 6022.0,
+          "discount": -2408.8,
+          "net": 3613.2,
+          "unit_gross": 6022.0,
+          "unit_net": 3613.2
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 3613.2
+    },
+    {
+      "canonical": "Harina 0000 Pureza (1 kg)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 1590.0,
+          "discount": 0.0,
+          "net": 1590.0,
+          "unit_gross": 1590.0,
+          "unit_net": 1590.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 1590.0
+    },
+    {
+      "canonical": "Cebolla deshidratada Dos Anclas (75 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 3142.0,
+          "discount": -785.5,
+          "net": 2356.5,
+          "unit_gross": 3142.0,
+          "unit_net": 2356.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 2356.5
+    },
+    {
+      "canonical": "Polvo para postre Royal light vainilla",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 1670.0,
+          "discount": -421.01,
+          "net": 1248.99,
+          "unit_gross": 1670.0,
+          "unit_net": 1248.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 1248.99
+    },
+    {
+      "canonical": "Gelatina light Royal cereza (25 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 2,
+          "gross": 3040.0,
+          "discount": -762.13,
+          "net": 2277.87,
+          "unit_gross": 1520.0,
+          "unit_net": 1138.93
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 2277.87
+    },
+    {
+      "canonical": "Queso danbo feteado La Paulina (180 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 5145.0,
+          "discount": -1286.25,
+          "net": 3858.75,
+          "unit_gross": 5145.0,
+          "unit_net": 3858.75
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 3858.75
+    },
+    {
+      "canonical": "Queso rallado La Paulina (150 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 6159.0,
+          "discount": -1539.75,
+          "net": 4619.25,
+          "unit_gross": 6159.0,
+          "unit_net": 4619.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 4619.25
+    },
+    {
+      "canonical": "Jamón cocido feteado Lario (150 g)",
+      "category": "Fiambres y Embutidos",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 1,
+          "gross": 4565.0,
+          "discount": -1826.0,
+          "net": 2739.0,
+          "unit_gross": 4565.0,
+          "unit_net": 2739.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 2739.0
+    },
+    {
+      "canonical": "Manteca Tonadita (200 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "4": {
+          "qty": 2,
+          "gross": 8198.0,
+          "discount": -2049.5,
+          "net": 6148.5,
+          "unit_gross": 4099.0,
+          "unit_net": 3074.25
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 6148.5
+    },
+    {
+      "canonical": "Queso cremoso La Paulina (por kg)",
+      "category": "Lácteos y Postres",
+      "unit": "kg",
+      "weeks": {
+        "4": {
+          "qty": 0.752,
+          "gross": 10151.25,
+          "discount": -2537.81,
+          "net": 7613.44,
+          "unit_gross": 13499.0,
+          "unit_net": 10124.26
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        4
+      ],
+      "total_spent": 7613.44
+    },
+    {
+      "canonical": "Verduras grilladas Coto (por kg)",
+      "category": "Comidas Elaboradas",
+      "unit": "kg",
+      "weeks": {
+        "5": {
+          "qty": 0.172,
+          "gross": 4454.63,
+          "discount": -1336.39,
+          "net": 3118.24,
+          "unit_gross": 25899.01,
+          "unit_net": 18129.3
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 3118.24
+    },
+    {
+      "canonical": "Chorizo parrillero Doina (320 g)",
+      "category": "Carnes, Pollo y Pescado",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 6400.0,
+          "discount": -1600.0,
+          "net": 4800.0,
+          "unit_gross": 6400.0,
+          "unit_net": 4800.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 4800.0
+    },
+    {
+      "canonical": "Morcilla al vacío Coto (por kg)",
+      "category": "Fiambres y Embutidos",
+      "unit": "kg",
+      "weeks": {
+        "5": {
+          "qty": 0.374,
+          "gross": 3665.2,
+          "discount": -916.3,
+          "net": 2748.9,
+          "unit_gross": 9800.0,
+          "unit_net": 7350.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 2748.9
+    },
+    {
+      "canonical": "Huevos blancos x12",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 3490.0,
+          "discount": 0.0,
+          "net": 3490.0,
+          "unit_gross": 3490.0,
+          "unit_net": 3490.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 3490.0
+    },
+    {
+      "canonical": "Queso crema Casancrem (290 g)",
+      "category": "Lácteos y Postres",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 5765.0,
+          "discount": -2018.33,
+          "net": 3746.67,
+          "unit_gross": 5765.0,
+          "unit_net": 3746.67
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 3746.67
+    },
+    {
+      "canonical": "Agua mineral Villavicencio (2 L)",
+      "category": "Bebidas",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 2,
+          "gross": 6100.0,
+          "discount": -2135.0,
+          "net": 3965.0,
+          "unit_gross": 3050.0,
+          "unit_net": 1982.5
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 3965.0
+    },
+    {
+      "canonical": "Papel higiénico Elite",
+      "category": "Limpieza y Hogar",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 2587.99,
+          "discount": -647.0,
+          "net": 1940.99,
+          "unit_gross": 2587.99,
+          "unit_net": 1940.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 1940.99
+    },
+    {
+      "canonical": "Antitranspirante Nivea Men",
+      "category": "Perfumería",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 3,
+          "gross": 9326.97,
+          "discount": -3108.99,
+          "net": 6217.98,
+          "unit_gross": 3108.99,
+          "unit_net": 2072.66
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 6217.98
+    },
+    {
+      "canonical": "Pera D'Anjou (por kg)",
+      "category": "Frutas y Verduras",
+      "unit": "kg",
+      "weeks": {
+        "5": {
+          "qty": 0.388,
+          "gross": 969.61,
+          "discount": 0.0,
+          "net": 969.61,
+          "unit_gross": 2498.99,
+          "unit_net": 2498.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 969.61
+    },
+    {
+      "canonical": "Pañuelos Campanita (x75)",
+      "category": "Perfumería",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 3,
+          "gross": 5327.97,
+          "discount": -1331.99,
+          "net": 3995.98,
+          "unit_gross": 1775.99,
+          "unit_net": 1331.99
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 3995.98
+    },
+    {
+      "canonical": "Sal fina Celusal (250 g)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 3172.0,
+          "discount": -793.0,
+          "net": 2379.0,
+          "unit_gross": 3172.0,
+          "unit_net": 2379.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 2379.0
+    },
+    {
+      "canonical": "Bolsas para heces Asurin (x20)",
+      "category": "Mascotas",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 9470.99,
+          "discount": -2367.75,
+          "net": 7103.24,
+          "unit_gross": 9470.99,
+          "unit_net": 7103.24
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 7103.24
+    },
+    {
+      "canonical": "Aceite de girasol Natura (900 cc)",
+      "category": "Almacén",
+      "unit": "un",
+      "weeks": {
+        "5": {
+          "qty": 1,
+          "gross": 4406.0,
+          "discount": 0.0,
+          "net": 4406.0,
+          "unit_gross": 4406.0,
+          "unit_net": 4406.0
+        }
+      },
+      "times_bought": 1,
+      "weeks_present": [
+        5
+      ],
+      "total_spent": 4406.0
+    }
+  ],
+  "categories": [
+    {
+      "category": "Bebidas",
+      "w1_net": 37431.0,
+      "w2_net": 15070.0,
+      "w3_net": 37431.0,
+      "w4_net": 10170.0,
+      "w5_net": 41396.0,
+      "total_net": 141498.0,
+      "total_discount": -63122.0
+    },
+    {
+      "category": "Lácteos y Postres",
+      "w1_net": 13166.25,
+      "w2_net": 12442.5,
+      "w3_net": 20975.5,
+      "w4_net": 30384.94,
+      "w5_net": 3746.67,
+      "total_net": 80715.86,
+      "total_discount": -28705.39
+    },
+    {
+      "category": "Carnes, Pollo y Pescado",
+      "w1_net": 3933.35,
+      "w2_net": 25672.76,
+      "w3_net": 21150.49,
+      "w4_net": 0.0,
+      "w5_net": 20507.77,
+      "total_net": 71264.37,
+      "total_discount": -12778.03
+    },
+    {
+      "category": "Limpieza y Hogar",
+      "w1_net": 6698.83,
+      "w2_net": 9492.0,
+      "w3_net": 22655.97,
+      "w4_net": 28087.87,
+      "w5_net": 1940.99,
+      "total_net": 68875.66,
+      "total_discount": -32019.2
+    },
+    {
+      "category": "Almacén",
+      "w1_net": 10416.0,
+      "w2_net": 4190.25,
+      "w3_net": 12042.0,
+      "w4_net": 11514.26,
+      "w5_net": 10275.0,
+      "total_net": 48437.51,
+      "total_discount": -12321.03
+    },
+    {
+      "category": "Frutas y Verduras",
+      "w1_net": 7605.9,
+      "w2_net": 8423.04,
+      "w3_net": 10282.48,
+      "w4_net": 5338.04,
+      "w5_net": 5678.32,
+      "total_net": 37327.78,
+      "total_discount": -4254.67
+    },
+    {
+      "category": "Fiambres y Embutidos",
+      "w1_net": 11203.4,
+      "w2_net": 7124.25,
+      "w3_net": 0.0,
+      "w4_net": 6318.23,
+      "w5_net": 5748.15,
+      "total_net": 30394.03,
+      "total_discount": -14062.17
+    },
+    {
+      "category": "Mascotas",
+      "w1_net": 0.0,
+      "w2_net": 0.0,
+      "w3_net": 0.0,
+      "w4_net": 16462.5,
+      "w5_net": 7103.24,
+      "total_net": 23565.74,
+      "total_discount": -7855.25
+    },
+    {
+      "category": "Otros",
+      "w1_net": 6990.0,
+      "w2_net": 0.0,
+      "w3_net": 0.0,
+      "w4_net": 9999.5,
+      "w5_net": 0.0,
+      "total_net": 16989.5,
+      "total_discount": -9999.5
+    },
+    {
+      "category": "Perfumería",
+      "w1_net": 5321.98,
+      "w2_net": 0.0,
+      "w3_net": 0.0,
+      "w4_net": 0.0,
+      "w5_net": 10213.96,
+      "total_net": 15535.94,
+      "total_discount": -7101.97
+    },
+    {
+      "category": "Panadería",
+      "w1_net": 10166.25,
+      "w2_net": 0.0,
+      "w3_net": 0.0,
+      "w4_net": 3613.2,
+      "w5_net": 0.0,
+      "total_net": 13779.45,
+      "total_discount": -5797.55
+    },
+    {
+      "category": "Comidas Elaboradas",
+      "w1_net": 2437.84,
+      "w2_net": 1873.7,
+      "w3_net": 2524.19,
+      "w4_net": 0.0,
+      "w5_net": 3118.24,
+      "total_net": 9953.97,
+      "total_discount": -3793.42
+    }
+  ]
+}

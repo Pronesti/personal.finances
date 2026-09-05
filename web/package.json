@@ -10,7 +10,8 @@
     "test:receipts": "RECEIPT_ACCEPTANCE=1 vitest run src/lib/receipts/acceptance.test.ts",
     "ingest": "tsx scripts/ingest.ts",
     "fetch-ipc": "tsx scripts/fetch-ipc.ts",
-    "fetch-mep": "tsx scripts/fetch-mep.ts"
+    "fetch-mep": "tsx scripts/fetch-mep.ts",
+    "build-products-seed": "tsx scripts/build-products-seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

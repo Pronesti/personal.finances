@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { DATA_DIR } from "@/lib/paths";
 import { seedCategoryData } from "@/lib/rules";
 import { seedAliases } from "@/lib/aliases";
+import { seedProducts } from "@/lib/receipts/seed";
 
 // `seedDir` is where the tracked JSON files that these tables replaced still live. Null means do
 // not seed at all, which is the default because seeding is an openDb-level concern: a caller
@@ -200,6 +201,7 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
   if (seedDir !== null) {
     seedCategoryData(db, path.join(seedDir, "merchant-categories.json"));
     seedAliases(db, path.join(seedDir, "merchant-aliases.json"));
+    seedProducts(db, path.join(seedDir, "products-seed.json"));
   }
 }
 
