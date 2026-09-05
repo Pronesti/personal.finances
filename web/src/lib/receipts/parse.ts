@@ -30,7 +30,9 @@ export type ParsedReceipt = { header: ParsedHeader; items: ParsedItem[]; footer:
 
 // Line shapes, in the order the state machine tests them. Vision writes the multiplication sign
 // as x, ×, or the Cyrillic х; the tag brackets come back as [A], LA], (M) and worse.
-const QTY_RE = /^(\d+,\d{3})\s*[xX×хХ]\s*(-?\d[\d.]*,\d{2})$/;
+// The unit price's decimal comma gets the same period misread as any other amount ("2499.00"),
+// hence [,.] there; the quantity's own comma never has (three decimals, no thousands).
+const QTY_RE = /^(\d+,\d{3})\s*[xX×хХ]\s*(-?\d[\d.]*[,.]\d{2})$/;
 // A stray period or comma sometimes lands between the two digit runs (noise bled in from
 // nearby amount text).
 export const CODE_RE = /^(\d{10})[.,]?\s+(\d{12,14})$/;
@@ -294,7 +296,7 @@ export function mergePages(rows: Row[], notes: string[] = []): Row[] {
       if (!r) return null;
       const m = QTY_RE.exec(norm(r.label));
       if (!m) return null;
-      const q = parseQtyMilli(m[1]), u = parseAmountCents(m[2]);
+      const q = parseQtyMilli(m[1]), u = parseLenientCents(m[2]);
       return q === null || u === null ? null : q * u;
     };
     const totalOf = (r: Row) => (r.amount === null ? null : parseAmountCents(r.amount));
@@ -319,14 +321,25 @@ export function mergePages(rows: Row[], notes: string[] = []): Row[] {
       const qtyCleanA = qtyRowA !== null && QTY_RE.test(norm(qtyRowA.label));
       const qtyCleanB = qtyRowB !== null && QTY_RE.test(norm(qtyRowB.label));
 
-      // Quantity line: kept from page k too, except when that copy fails to parse as one at all
-      // (a stray character breaks it) and page k+1's reads clean.
-      let headA = merged.slice(cursorA, codeIdxA);
-      if (qtyIdxA >= 0 && qtyIdxB >= 0 && !qtyCleanA && qtyCleanB) {
-        headA = headA.map((r, off) => (cursorA + off === qtyIdxA ? qtyRowB! : r));
-      }
-
       const rowCodeA = merged[codeIdxA], rowCodeB = next[codeIdxB];
+
+      // Quantity line: kept from page k too, except when that copy fails to parse as one at all
+      // (a stray character breaks it) and page k+1's reads clean — or when both parse but
+      // disagree (one digit misread in one copy: "0,396" against "0,336") and only page k+1's
+      // qty × unit price reproduces a line total read on either copy's code row. The arithmetic
+      // only ever chooses between the two readings already held, never invents a third.
+      let headA = merged.slice(cursorA, codeIdxA);
+      let qtyFromB = qtyIdxA >= 0 && qtyIdxB >= 0 && !qtyCleanA && qtyCleanB;
+      if (qtyIdxA >= 0 && qtyIdxB >= 0 && qtyCleanA && qtyCleanB) {
+        const expectA = parseQty(qtyRowA), expectB = parseQty(qtyRowB);
+        if (expectA !== null && expectB !== null && expectA !== expectB) {
+          const totals = [totalOf(rowCodeA), totalOf(rowCodeB)].filter((t): t is number => t !== null);
+          const fits = (e: number) => totals.some(t => Math.abs(t - Math.round(e / 1000)) <= 1);
+          if (!fits(expectA) && fits(expectB)) qtyFromB = true;
+        }
+      }
+      if (qtyFromB) headA = headA.map((r, off) => (cursorA + off === qtyIdxA ? qtyRowB! : r));
+      const qtyRowKept = qtyFromB ? qtyRowB : qtyRowA;
       // Discount and code-row-cleanliness share one "which copy" decision, since the discount
       // row's own shape can depend on whether its item's code row carried an amount (see the
       // pendingDiscount/pendingDiscountAmount machinery) — mixing a code row from one copy with
@@ -377,7 +390,7 @@ export function mergePages(rows: Row[], notes: string[] = []): Row[] {
       // carries one it confirms — swapping in just that number, never the row structure, so the
       // kept trailer (still the chosen copy's) stays consistent with its own code row having (or
       // lacking) an amount.
-      const expect = parseQty(qtyCleanB ? qtyRowB : qtyRowA) ?? parseQty(qtyRowA) ?? parseQty(qtyRowB);
+      const expect = parseQty(qtyRowKept) ?? parseQty(qtyRowA) ?? parseQty(qtyRowB);
       let codeRow = chosenCodeRow;
       const chosenTotal = totalOf(chosenCodeRow), otherTotal = totalOf(otherCodeRow);
       if (expect !== null && chosenTotal !== null && otherTotal !== null) {
@@ -449,6 +462,8 @@ function centsToAmountString(cents: number): string {
 function ungluePeriodAmounts(rows: Row[]): Row[] {
   return rows.map(row => {
     if (row.amount !== null) return row;
+    // A quantity line's unit price is not a line amount, whichever way its decimal was read.
+    if (QTY_RE.test(norm(row.label))) return row;
     const trimmed = row.label.trim();
     if (!/\s/.test(trimmed) && /\.\d{2}$/.test(trimmed)) {
       const cents = parseLenientCents(trimmed);
@@ -506,6 +521,53 @@ function dedupeSelfRepeatedCode(rows: Row[]): Row[] {
 // CODE_ANCHOR_RE above, this is used to build the sku/ean that actually gets stored, so it must
 // not tolerate the round-letter-for-zero substitution that anchor is allowed to.
 const CODE_INLINE_RE = /(\d{10})[.,]?\s+(\d{12,14})/;
+
+// A quantity line whose thousandths carry exactly one non-digit (Vision swapped one digit for a
+// look-alike letter: "0,3Е8" with a Cyrillic Е for the 8). The unit price still reads clean. The
+// missing digit is settled by arithmetic against the item's line total once the item is complete
+// (see reconcileArithmetic) — never guessed.
+const QTY_GARBLED_RE = /^(\d+),([\d\D]{3})\s*[xX×хХ]\s*(-?\d[\d.]*[,.]\d{2})$/u;
+function garbledQtyPattern(label: string): { pattern: string; unitPriceCents: number } | null {
+  const m = QTY_GARBLED_RE.exec(label);
+  if (!m) return null;
+  const milli = m[2];
+  const bad = [...milli].filter(c => !/\d/.test(c));
+  if (bad.length !== 1 || /\s/.test(milli)) return null;
+  const u = parseLenientCents(m[3]);
+  if (u === null) return null;
+  return { pattern: m[1] + "," + [...milli].map(c => (/\d/.test(c) ? c : "?")).join(""), unitPriceCents: u };
+}
+
+// A GTIN (EAN-13 / GTIN-14) ends in a mod-10 check digit, so one character Vision garbled inside
+// the digit run ("07/90070335944" — a slash for the 7 the print smudged) has exactly one digit
+// that makes the check work out: the weight of every position is 1 or 3, both invertible mod 10.
+// Only a single garbled character is ever repaired; two unknowns would leave ten solutions.
+const EAN_GARBLED_RE = /^(\d{10})[.,]?\s+(\S{12,14})(?=\s|$)/;
+export function repairGtin(raw: string): string | null {
+  const bad = [...raw].map((c, i) => (/\d/.test(c) ? -1 : i)).filter(i => i >= 0);
+  if (bad.length !== 1 || raw.length < 12 || raw.length > 14) return null;
+  const at = bad[0];
+  let sum = 0, weightAt = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const fromRight = raw.length - 1 - i; // check digit is at fromRight 0 (weight 1), then 3,1,3...
+    const weight = fromRight % 2 === 0 ? 1 : 3;
+    if (i === at) weightAt = weight; else sum += Number(raw[i]) * weight;
+  }
+  for (let d = 0; d <= 9; d++) if ((sum + d * weightAt) % 10 === 0) return raw.slice(0, at) + d + raw.slice(at + 1);
+  return null;
+}
+function repairCodeEan(rows: Row[], notes: string[]): Row[] {
+  return rows.map(row => {
+    const label = norm(row.label);
+    if (CODE_RE.test(label)) return row;
+    const m = EAN_GARBLED_RE.exec(label);
+    if (!m || /^\d+$/.test(m[2])) return row;
+    const fixed = repairGtin(m[2]);
+    if (fixed === null) return row;
+    notes.push(`ean "${m[2]}" read with one garbled character; check digit settles it as ${fixed}`);
+    return { ...row, label: `${m[1]} ${fixed}${label.slice(m[0].length)}` };
+  });
+}
 
 // Defect D: box-grouping glues a code row to the discount tag (and its amount, already split
 // into row.amount by boxesToRows) that follows it on the next printed line: "<code> <ean> [A]"
@@ -598,7 +660,7 @@ function unglueCodeDescription(rows: Row[]): Row[] {
 // description, exactly as the clean shape elsewhere in this file and in spec §5 — since the main
 // loop clears `candidate` on every quantity line (it is only ever meant to precede a
 // description), so emitting the description first would silently drop it.
-const QTY_TAIL_RE = /^(.*\S)\s+(\d+,\d{3}\s*[xX×хХ]\s*-?\d[\d.]*,\d{2})$/;
+const QTY_TAIL_RE = /^(.*\S)\s+(\d+,\d{3}\s*[xX×хХ]\s*-?\d[\d.]*[,.]\d{2})$/;
 function unglueQtyLine(rows: Row[]): Row[] {
   return rows.flatMap(row => {
     const label = norm(row.label);
@@ -620,6 +682,69 @@ function barePositiveAmountOf(r: Row): number | null {
   if (norm(r.label)) return null;
   const amount = r.amount === null ? null : parseAmountCents(r.amount);
   return amount !== null && amount > 0 ? amount : null;
+}
+
+const digitsOf = (n: number) => String(n);
+/** The quantities (in thousandths) one digit away from `pattern` ("0,3?8" → 0,308…0,398; "0,396" →
+ * every single-digit substitution) whose product with the unit price lands on the line total. */
+function qtyCandidates(pattern: string, unitPriceCents: number, totalCents: number): number[] {
+  const fits = (q: number) => Math.abs(Math.round((q * unitPriceCents) / 1000) - totalCents) <= 1;
+  const variants: string[] = [];
+  if (pattern.includes("?")) {
+    for (let d = 0; d <= 9; d++) variants.push(pattern.replace("?", String(d)));
+  } else {
+    for (let i = 0; i < pattern.length; i++) {
+      if (pattern[i] === ",") continue;
+      for (let d = 0; d <= 9; d++) if (String(d) !== pattern[i]) variants.push(pattern.slice(0, i) + d + pattern.slice(i + 1));
+    }
+  }
+  return [...new Set(variants.map(v => parseQtyMilli(v)).filter((q): q is number => q !== null && q > 0 && fits(q)))];
+}
+
+/**
+ * Every printed line total is qty × unit price (to the cent, with at most a one-cent rounding on a
+ * weighed item), and on this printer the three numbers sit on two adjacent lines — so when they
+ * disagree, one of them was misread. Only two repairs are ever made, both bounded to a single
+ * digit and both settled by the other two numbers rather than guessed: (1) the line total is one
+ * character away from qty × unit price ("1340,00" for 7340,00) — take the product; (2) the
+ * quantity, one digit substituted (or the one Vision garbled outright, see QTY_GARBLED_RE), is the
+ * *only* such quantity that reproduces the line total — take it. A quantity that several
+ * substitutions could explain, or a total more than one character off, is left alone for the
+ * exact-cent gate to reject and the user to correct. Each repair leaves a note.
+ */
+function reconcileArithmetic(items: ParsedItem[], garbledQty: Map<ParsedItem, string>, notes: string[]): void {
+  for (const it of items) {
+    if (it.unitPriceCents === null || it.lineTotalCents === null) continue;
+    const pattern = garbledQty.get(it);
+    if (pattern) {
+      const qs = qtyCandidates(pattern, it.unitPriceCents, it.lineTotalCents);
+      if (qs.length === 1) {
+        it.qtyMilli = qs[0];
+        it.unit = qs[0] % 1000 !== 0 || KG_RE.test(it.descPrinted) ? "kg" : "un";
+        notes.push(`item ${it.position} (${it.descPrinted}): quantity read as "${pattern}"; the line total settles it as ${(qs[0] / 1000).toFixed(3).replace(".", ",")}`);
+      } else {
+        it.unitPriceCents = null;
+        notes.push(`unreadable quantity line "${pattern}" on item ${it.position} (${it.descPrinted})`);
+      }
+      continue;
+    }
+    const expected = Math.round((it.qtyMilli * it.unitPriceCents) / 1000);
+    if (Math.abs(expected - it.lineTotalCents) <= 1) continue;
+    const got = digitsOf(it.lineTotalCents), want = digitsOf(expected);
+    const differing = got.length === want.length ? [...got].filter((c, i) => c !== want[i]).length : -1;
+    if (differing === 1) {
+      notes.push(`item ${it.position} (${it.descPrinted}): line total read as ${centsToAmountString(it.lineTotalCents)}; qty × unit price says ${centsToAmountString(expected)}`);
+      it.lineTotalCents = expected;
+      continue;
+    }
+    const qtyText = `${Math.floor(it.qtyMilli / 1000)},${String(it.qtyMilli % 1000).padStart(3, "0")}`;
+    const qs = qtyCandidates(qtyText, it.unitPriceCents, it.lineTotalCents);
+    if (qs.length === 1) {
+      notes.push(`item ${it.position} (${it.descPrinted}): quantity read as ${qtyText}; the line total settles it as ${(qs[0] / 1000).toFixed(3).replace(".", ",")}`);
+      it.qtyMilli = qs[0];
+      it.unit = qs[0] % 1000 !== 0 || KG_RE.test(it.descPrinted) ? "kg" : "un";
+    }
+  }
 }
 
 /**
@@ -645,12 +770,13 @@ export function parseRows(input: Row[]): ParsedReceipt {
   // it must run before mergePages can see a clean quantity line for its own duplicate-page
   // reconciliation.
   const preSplit = unglueCodeDescription(unglueCodeTag(unglueQtyLine(
-    dedupeSelfRepeatedCode(unglueQtyAmount(ungluePeriodAmounts(input))))));
+    dedupeSelfRepeatedCode(unglueQtyAmount(ungluePeriodAmounts(repairCodeEan(input, notes)))))));
   const rows = mergePages(preSplit, notes);
   const header = emptyHeader();
   const footer: ParsedFooter = { subtotalCents: null, discountsCents: null, totalCents: null, savingsCents: null, offers: [] };
   const items: ParsedItem[] = [];
-  let pending: { qtyMilli: number; unitPriceCents: number } | null = null;
+  let pending: { qtyMilli: number; unitPriceCents: number; qtyPattern?: string } | null = null;
+  const garbledQty = new Map<ParsedItem, string>(); // item → "0,3?8": settled by arithmetic below
   let candidate: Row | null = null;     // the last unclassified label row: the next description
   let current: ParsedItem | null = null; // the item still accepting a line total and discounts
   // A discount label read before the item's own line total: its amount box landed on the line
@@ -717,9 +843,15 @@ export function parseRows(input: Row[]): ParsedReceipt {
     const qty = QTY_RE.exec(label);
     if (qty) {
       const q = parseQtyMilli(qty[1]);
-      const u = parseAmountCents(qty[2]);
+      const u = parseLenientCents(qty[2]);
       if (q === null || u === null) notes.push(`unreadable quantity line "${label}"`);
       else pending = { qtyMilli: q, unitPriceCents: u };
+      current = null; candidate = null; pendingDiscount = null; pendingDiscountAmount = null;
+      continue;
+    }
+    const garbled = garbledQtyPattern(label);
+    if (garbled) {
+      pending = { qtyMilli: 1000, unitPriceCents: garbled.unitPriceCents, qtyPattern: garbled.pattern };
       current = null; candidate = null; pendingDiscount = null; pendingDiscountAmount = null;
       continue;
     }
@@ -747,6 +879,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
         discounts: [],
       };
       items.push(current);
+      if (pending?.qtyPattern) garbledQty.set(current, pending.qtyPattern);
       pending = null; candidate = null; pendingDiscount = null;
       pendingDiscountAmount = amount !== null && amount < 0 ? amount : null;
       continue;
@@ -818,6 +951,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
     }
   }
 
+  reconcileArithmetic(items, garbledQty, notes);
   for (const it of items) {
     if (it.lineTotalCents === null) notes.push(`item ${it.position} (${it.descPrinted}) has no line total`);
   }

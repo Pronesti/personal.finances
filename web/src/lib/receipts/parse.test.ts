@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseRows, mergePages } from "@/lib/receipts/parse";
+import { parseRows, mergePages, repairGtin } from "@/lib/receipts/parse";
 import { parseRowsText } from "@/lib/receipts/rows";
 import { SMALL_RECEIPT } from "@/lib/receipts/__fixtures__/rows";
 
@@ -226,6 +226,61 @@ describe("parseRows: items", () => {
   });
 });
 
+describe("parseRows: arithmetic repairs", () => {
+  const one = (body: string) => parseRows(parseRowsText("## page 1\n" + body));
+  it("takes qty × unit price over a line total one character off from it", () => {
+    // Real scan (2026-08-21): 2 × 3670,00 printed 7340,00, read as 1340,00 on both pages.
+    const p = one("2,000 x 3670,00\nCREMA DE LECHE\n0000224356 07794820902914\t1340,00\n");
+    expect(p.items[0].lineTotalCents).toBe(734000);
+    expect(p.notes.join("\n")).toMatch(/line total read as 1340,00; qty × unit price says 7340,00/);
+  });
+  it("leaves a line total more than one character away from the product alone", () => {
+    const p = one("2,000 x 3670,00\nCREMA DE LECHE\n0000224356 07794820902914\t1000,00\n");
+    expect(p.items[0].lineTotalCents).toBe(100000);
+  });
+  it("settles a quantity Vision garbled one digit of by the line total", () => {
+    // Real scan (2026-09-04): "0,3Е8" with a Cyrillic Е; 0,388 × 2499,00 = 969,61.
+    const p = one("0,3Е8 × 2499,00\n=PERA D'ANJOU XKG\n0000059439 02559439003888\t969,61\n");
+    expect(p.items[0]).toMatchObject({ qtyMilli: 388, unitPriceCents: 249900, lineTotalCents: 96961, unit: "kg" });
+    expect(p.notes.join("\n")).toMatch(/quantity read as "0,3\?8"; the line total settles it as 0,388/);
+  });
+  it("corrects a cleanly-read quantity that the line total refutes, when exactly one digit explains it", () => {
+    const p = one("0,396 x 1999,00\n=CEBOLLA A GRANELX KG\n0000000602 02500602003365\t671,66\n");
+    expect(p.items[0].qtyMilli).toBe(336);
+  });
+  it("does not touch a quantity when several substitutions would fit, or none does", () => {
+    // Unit price so low that neighbouring quantities land within a cent: ambiguous, so untouched.
+    const cheap = one("0,500 x 0,01\nX\n0000000001 000000000001\t0,00\n");
+    expect(cheap.items[0].qtyMilli).toBe(500);
+    const none = one("0,396 x 1999,00\nX\n0000000602 02500602003365\t999,99\n");
+    expect(none.items[0].qtyMilli).toBe(396);
+  });
+  it("gives up a garbled quantity nothing settles: one unit, no unit price, and a note", () => {
+    const p = one("0,3Е8 × 2499,00\nX\n0000059439 02559439003888\t100,00\n");
+    expect(p.items[0]).toMatchObject({ qtyMilli: 1000, unitPriceCents: null });
+    expect(p.notes.join("\n")).toMatch(/unreadable quantity line "0,3\?8"/);
+  });
+  it("reads a quantity line whose unit price decimal came back as a period", () => {
+    const p = one("0,282 x 2499.00\nCEBOLLA A GRANELX KG\n0000000502 02500602002825\t704,72\n");
+    expect(p.items[0]).toMatchObject({ qtyMilli: 282, unitPriceCents: 249900, lineTotalCents: 70472 });
+  });
+});
+
+describe("repairGtin", () => {
+  it("recovers the one garbled character of a GTIN from its check digit", () => {
+    expect(repairGtin("07/90070335944")).toBe("07790070335944");
+    expect(repairGtin("0779007033594?")).toBe("07790070335944"); // the check digit itself
+    expect(repairGtin("779007033594")).toBeNull(); // nothing to repair
+    expect(repairGtin("07/9007033594?")).toBeNull(); // two unknowns: ten solutions
+  });
+  it("repairs the ean on a code row so the item is still born at it", () => {
+    const p = parseRows(parseRowsText("## page 1\nMATARAZZO\t2400,00\n0000571985 07/90070335944\t-600,00\nMERCADO PAGO 25% - V [M]\n"));
+    expect(p.items).toHaveLength(1);
+    expect(p.items[0]).toMatchObject({ sku: "0000571985", ean: "07790070335944", lineTotalCents: 240000 });
+    expect(p.items[0].discounts).toEqual([{ label: "MERCADO PAGO 25% - V", tag: "M", amountCents: -60000 }]);
+  });
+});
+
 describe("parseRows: footer", () => {
   it("reads the three totals and the savings line", () => {
     const { footer } = parsed();
@@ -416,6 +471,25 @@ describe("mergePages", () => {
       "## page 2\n1,470 x 2199,00\nB\n0000000001 000000000001\t1,00\nC\n0000000002 000000000002\t2,00\n"));
     expect(merged.map(r => r.label)).toContain("1,470 x 2199,00");
     expect(merged.map(r => r.label)).not.toContain("1,4/0 x 2199,00");
+  });
+  it("picks the duplicated quantity line whose qty × unit price reproduces the line total when both " +
+    "copies parse but disagree", () => {
+    // Real scan (2026-09-04): page 1 read "0,396", page 2 "0,336"; 0,336 × 1999,00 = 671,66.
+    const merged = mergePages(rows(
+      "## page 1\n0,396 x 1999,00\n=CEBOLLA A GRANELX KG\n0000000602 02500602003365\t671,66\n" +
+      "## page 2\n0,336 x 1999,00\n=CEBOLLA A GRANELX KG\n0000000602 02500602003365\t671,66\nC\n0000000002 000000000002\t2,00\n"));
+    expect(merged.map(r => r.label)).toContain("0,336 x 1999,00");
+    expect(merged.map(r => r.label)).not.toContain("0,396 x 1999,00");
+    // The mirror image keeps page 1's copy: nothing to gain from swapping.
+    const kept = mergePages(rows(
+      "## page 1\n0,336 x 1999,00\n=CEBOLLA A GRANELX KG\n0000000602 02500602003365\t671,66\n" +
+      "## page 2\n0,396 x 1999,00\n=CEBOLLA A GRANELX KG\n0000000602 02500602003365\t671,66\nC\n0000000002 000000000002\t2,00\n"));
+    expect(kept.map(r => r.label)).toContain("0,336 x 1999,00");
+    // Neither copy fits (the total itself is misread): page 1's copy stays, as before.
+    const neither = mergePages(rows(
+      "## page 1\n0,396 x 1999,00\nX\n0000000602 02500602003365\t999,99\n" +
+      "## page 2\n0,336 x 1999,00\nX\n0000000602 02500602003365\t999,99\nC\n0000000002 000000000002\t2,00\n"));
+    expect(neither.map(r => r.label)).toContain("0,396 x 1999,00");
   });
   it("drops the boundary item's page k+1 discount even when its bracket tag was lost too", () => {
     const merged = mergePages(rows(

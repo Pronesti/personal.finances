@@ -44,8 +44,12 @@ function descMatches(expected: string, actual: string): boolean {
   const e = normDesc(expected), a = normDesc(actual);
   const pattern = new RegExp("^" + e.replace(/[.*+^${}()|[\]\\]/g, "\\$&").replace(/\?/g, ".") + "$");
   if (pattern.test(a)) return true;
+  // 0.8 admits three misread characters in a 16-character description ("PERA PACKANGX KO" for
+  // "PERA PACKAMSX KG", the worst real reading on file — both scans of that line garble it, each
+  // differently), while still rejecting a different product's line (two 16-character names of
+  // the same family, "QUESO DANBO ..." against "QUESO CREMA ...", score about 0.7).
   const similarity = 1 - levenshtein(e, a) / Math.max(e.length, a.length, 1);
-  return similarity >= 0.9;
+  return similarity >= 0.8;
 }
 
 describe.skipIf(!enabled)("receipt acceptance", () => {
