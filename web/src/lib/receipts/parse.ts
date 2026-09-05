@@ -54,6 +54,44 @@ function norm(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+// The offers-section marker ("DETALLE DE OFERTAS APLICADAS") is read as badly as any other line
+// on these scans, but unlike every other marker its OCR variants can't be listed — a third scan
+// garbles it a third way. Recognised instead by normalised-similarity against the canonical text:
+// uppercase, keep letters only (drops spaces, punctuation and the stray digits OCR sometimes
+// injects), then a Levenshtein-based ratio. Threshold 0.7 was chosen against the two real garbled
+// readings on file (ratio 0.76 and 0.885 — see parse.test.ts) and the one real near-miss text that
+// must NOT match, "INGRESADOS EN EL DETALLE DE LA OPERACION" (ratio 0.235): the true readings sit
+// well above 0.7, the false positive well below, and a false positive here is expensive (it stops
+// item parsing and starts collecting offer pairs instead), so the threshold sits closer to the
+// true positives' floor than to the false positive's ceiling.
+const OFFERS_MARKER_CANON = normalizeForSimilarity("DETALLE DE OFERTAS APLICADAS");
+const OFFERS_MARKER_THRESHOLD = 0.7;
+function normalizeForSimilarity(s: string): string {
+  return s.toUpperCase().replace(/[^A-Z]/g, "");
+}
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp = new Array(n + 1);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prevDiag = dp[0];
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = dp[j];
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prevDiag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prevDiag = temp;
+    }
+  }
+  return dp[n];
+}
+function isOffersMarker(label: string): boolean {
+  const candidate = normalizeForSimilarity(label);
+  if (!candidate) return false;
+  const distance = levenshtein(candidate, OFFERS_MARKER_CANON);
+  const ratio = 1 - distance / Math.max(candidate.length, OFFERS_MARKER_CANON.length);
+  return ratio >= OFFERS_MARKER_THRESHOLD;
+}
+
 function emptyHeader(): ParsedHeader {
   return {
     date: null, time: null, branchName: null, branchCode: null, fiscalNumber: null, register: null,
@@ -110,7 +148,7 @@ function pairOffers(rows: Row[]): { labels: string[]; amounts: number[]; pairs: 
   let inOffers = false;
   for (const row of rows) {
     const label = norm(row.label);
-    if (/DETALLE DE OFERTAS/i.test(label)) { inOffers = true; labels.length = 0; amounts.length = 0; continue; }
+    if (isOffersMarker(label)) { inOffers = true; labels.length = 0; amounts.length = 0; continue; }
     if (!inOffers) continue;
     if (/^TOT\.?\s*AHORRO/i.test(label)) { inOffers = false; continue; }
     if (label) labels.push(label);
@@ -423,7 +461,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
     if (row.amount !== null && amount === null) notes.push(`unreadable amount "${row.amount}" next to "${label}"`);
     scanHeader(label, header);
 
-    if (/DETALLE DE OFERTAS/i.test(label)) {
+    if (isOffersMarker(label)) {
       inOffers = true; current = null; candidate = null;
       continue;
     }

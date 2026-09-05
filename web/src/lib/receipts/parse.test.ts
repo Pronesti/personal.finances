@@ -251,6 +251,44 @@ describe("parseRows: footer", () => {
       { label: "MERCADO PAGO 25% - V", amountCents: 578301 },
     ]);
   });
+
+  describe("offers-section marker: OCR-tolerant recognition", () => {
+    // The marker is matched by normalised similarity, not by a list of known garbled spellings —
+    // a third scan garbles it a third way. These are the two real garbled readings recorded off
+    // actual receipts (see AGENTS' fix notes / __fixtures__/rows).
+    it("opens the offers block on the real garbled reading from 2026-08-07", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "DEUALLE DE 0 ERIASHAPLICADASM\n1 *3X2 JABON TOCADOR\t2660,99\nTOT.AHORRO\t2660,99\n");
+      expect(parseRows(rows).footer.offers).toEqual([{ label: "1 *3X2 JABON TOCADOR", amountCents: 266099 }]);
+    });
+
+    it("opens the offers block on the real garbled reading from 2026-08-14", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "DELALLE DE OFERIASI APLICADAS\n1 *35% MARCAS\t3262,00\nTOT.AHORRO\t3262,00\n");
+      expect(parseRows(rows).footer.offers).toEqual([{ label: "1 *35% MARCAS", amountCents: 326200 }]);
+    });
+
+    it("still opens the offers block on a clean reading (no regression)", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "DETALLE DE OFERTAS APLICADAS\n1 *35% MARCAS\t3262,00\nTOT.AHORRO\t3262,00\n");
+      expect(parseRows(rows).footer.offers).toEqual([{ label: "1 *35% MARCAS", amountCents: 326200 }]);
+    });
+
+    it("does not open the offers block on the footer's similar-looking 'DETALLE DE LA OPERACION' line", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "INGRESADOS EN EL DETALLE DE LA OPERACION\nSUBTOT. SIN DESCUENTOS\t1,00\n" +
+        "DESCUENTOS POR PROMOCIONES\t0,00\nTOTAL\t1,00\n");
+      const parsedReceipt = parseRows(rows);
+      expect(parsedReceipt.footer.offers).toEqual([]);
+      // The false-positive would have swallowed the SUBTOT/DESCUENTOS/TOTAL rows into the offers
+      // block instead of reading them as the footer; confirm they were read normally.
+      expect(parsedReceipt.footer).toMatchObject({ subtotalCents: 100, discountsCents: 0, totalCents: 100 });
+    });
+  });
 });
 
 describe("mergePages", () => {
