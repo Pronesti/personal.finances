@@ -612,6 +612,28 @@ describe("dailySpend", () => {
     expect(day.amount).toBeCloseTo(6000, 6);
   });
 
+  it("carries a charge count, a per-category split and the charges themselves", () => {
+    const db = openDb(":memory:");
+    seed(db);
+    const ins = db.prepare(
+      `INSERT INTO transactions (statement_id, section, date, description, merchant, category, subcategory, ars, usd, installment_number, installment_count)
+       SELECT id, 'purchases', '2026-06-20', ?, ?, ?, NULL, ?, NULL, NULL, NULL
+       FROM statements WHERE file = 'v_2026_06.json'`
+    );
+    ins.run("COTO", "COTO", "food", 300);
+    ins.run("UBER", "UBER", "transport", 200);
+    ins.run("DIA", "DIA", "food", 100);
+    const day = dailySpend(db, o("cash", "nominal")).find(d => d.date === "2026-06-20")!;
+    expect(day.count).toBe(3);
+    expect(day.amount).toBeCloseTo(600, 6);
+    expect(day.categories).toEqual([
+      { category: "food", amount: 400, count: 2 },
+      { category: "transport", amount: 200, count: 1 },
+    ]);
+    expect(day.charges.map(c => c.merchant)).toEqual(["COTO", "UBER", "DIA"]);
+    expect(day.charges[0].brand).toBeTruthy();
+  });
+
   it("emits one entry per dated day and skips undated rows", () => {
     const db = openDb(":memory:");
     seed(db);

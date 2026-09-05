@@ -512,18 +512,59 @@ export function sankeyFlows(
 
 // Chart 3. Always accrual: a calendar answers "what did I buy that day", and installment rows are
 // re-listed by every statement at their original purchase date (rev note 4 collapses them).
-export function dailySpend(db: Database.Database, opts: ValueOpts) {
+export type DayCharge = {
+  brand: string; month: string; description: string; merchant: string;
+  category: string; subcategory: string | null; amount: number | null; usd: number | null;
+  installmentCount: number | null; receiptId: number | null;
+};
+export type DayCategory = { category: string; amount: number; count: number };
+export type DaySpend = {
+  date: string; amount: number; count: number;
+  categories: DayCategory[]; charges: DayCharge[];
+};
+
+export function dailySpend(db: Database.Database, opts: ValueOpts): DaySpend[] {
   const accrual: ValueOpts = { ...opts, spend: "accrual" };
   const rows = baseRows(db);
   const ctx = amountCtx(db, rows, accrual);
-  const acc = new Map<string, number>();
+  const brands = new Map(
+    (db.prepare("SELECT id, brand FROM statements").all() as { id: number; brand: string }[])
+      .map(s => [s.id, s.brand])
+  );
+  const linked = new Map(
+    (db.prepare("SELECT fingerprint, receipt_id FROM receipt_charge_links").all() as
+      { fingerprint: string; receipt_id: number }[]).map(l => [l.fingerprint, l.receipt_id])
+  );
+  const acc = new Map<string, DaySpend & { cats: Map<string, DayCategory> }>();
   for (const r of rows) {
     if (r.date == null) continue;
     const amt = effectiveAmount(r, accrual, ctx);
-    if (amt == null) continue;
-    acc.set(r.date, (acc.get(r.date) ?? 0) + amt);
+    // A USD-only row outside usd mode has no amount but is still a purchase that day.
+    if (amt == null && (r.usd == null || r.ars != null)) continue;
+    let day = acc.get(r.date);
+    if (!day) {
+      day = { date: r.date, amount: 0, count: 0, categories: [], charges: [], cats: new Map() };
+      acc.set(r.date, day);
+    }
+    day.amount += amt ?? 0;
+    day.count += 1;
+    const cat = day.cats.get(r.category) ?? { category: r.category, amount: 0, count: 0 };
+    cat.amount += amt ?? 0;
+    cat.count += 1;
+    day.cats.set(r.category, cat);
+    day.charges.push({
+      brand: brands.get(r.statement_id) ?? "", month: r.month, description: r.description,
+      merchant: r.merchant, category: r.category, subcategory: r.subcategory, amount: amt, usd: r.usd,
+      installmentCount: r.installment_count,
+      receiptId: r.fingerprint ? linked.get(r.fingerprint) ?? null : null,
+    });
   }
-  return [...acc.entries()].map(([date, amount]) => ({ date, amount }))
+  return [...acc.values()]
+    .map(({ cats, ...day }) => ({
+      ...day,
+      categories: [...cats.values()].sort((a, b) => b.amount - a.amount),
+      charges: day.charges.sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0)),
+    }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
