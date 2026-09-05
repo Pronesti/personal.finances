@@ -79,4 +79,30 @@ describe("db", () => {
     expect(() => ins("2090-2", "sha-1")).toThrow();
     expect(() => db.prepare(`INSERT INTO receipt_items (receipt_id, position, desc_printed, qty_milli, unit, line_total_cents) VALUES (1, 1, 'x', 1000, 'lb', 1)`).run()).toThrow();
   });
+
+  it("keys products by article code and cascades codes, rules and matches with the product", () => {
+    const db = openDb(":memory:");
+    const p = db.prepare(`INSERT INTO products (name, category, unit, created_at) VALUES ('Banana Cavendish (por kg)', 'produce', 'kg', 'now')`).run();
+    const pid = Number(p.lastInsertRowid);
+    db.prepare(`INSERT INTO product_codes (chain, sku, ean, product_id) VALUES ('coto', '0000000446', '02500446010727', ?)`).run(pid);
+    db.prepare(`INSERT INTO product_rules (position, chain, match, product_id) VALUES (0, 'coto', 'BANANA CAVENDISH', ?)`).run(pid);
+    const r = db.prepare(
+      `INSERT INTO receipts (chain, date, fiscal_number, file_sha256, file_path, subtotal_cents, discounts_cents, total_cents,
+         header_json, verification_json, transcript_source, ocr_scale, created_at)
+       VALUES ('coto', '2026-09-04', '2090-1', 'sha', '/x', 1, 0, 1, '{}', '{}', 'ocr', 3, 'now')`).run();
+    const item = db.prepare(
+      `INSERT INTO receipt_items (receipt_id, position, desc_printed, sku, qty_milli, unit, line_total_cents)
+       VALUES (?, 1, '=BANANA CAVENDISHX KG', '0000000446', 1072, 'kg', 246453)`).run(r.lastInsertRowid);
+    db.prepare(`INSERT INTO product_matches (item_id, product_id, method) VALUES (?, ?, 'code')`).run(item.lastInsertRowid, pid);
+    // a second code for the same product is fine; the same code twice for the chain is not
+    db.prepare(`INSERT INTO product_codes (chain, sku, product_id) VALUES ('coto', '0000000447', ?)`).run(pid);
+    expect(() => db.prepare(`INSERT INTO product_codes (chain, sku, product_id) VALUES ('coto', '0000000446', ?)`).run(pid)).toThrow();
+    expect(() => db.prepare(`INSERT INTO product_matches (item_id, product_id, method) VALUES (?, ?, 'guess')`).run(item.lastInsertRowid, pid)).toThrow();
+    db.prepare("DELETE FROM products").run();
+    expect(db.prepare("SELECT COUNT(*) n FROM product_codes").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT COUNT(*) n FROM product_rules").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT COUNT(*) n FROM product_matches").get()).toEqual({ n: 0 });
+    // the receipt item itself is untouched: products are a layer over receipts, not part of them
+    expect(db.prepare("SELECT COUNT(*) n FROM receipt_items").get()).toEqual({ n: 1 });
+  });
 });

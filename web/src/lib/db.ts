@@ -153,6 +153,39 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
       text TEXT NOT NULL,
       PRIMARY KEY (receipt_id, kind)
     );
+    -- Canonical products (spec §13). The article code printed on every receipt line IS the
+    -- product identity: product_codes is the primary map, product_rules the fallback for a code
+    -- never seen, product_matches the per-item answer written at ingest. Products are a layer
+    -- over receipts: deleting one loses its codes, rules and matches, never a receipt line.
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      category TEXT NOT NULL,
+      unit TEXT NOT NULL CHECK (unit IN ('un','kg')),
+      needs_review INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS product_codes (
+      chain TEXT NOT NULL,
+      sku TEXT NOT NULL,
+      ean TEXT,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      PRIMARY KEY (chain, sku)
+    );
+    -- Ordered: first match wins, so a specific description must sit before a generic one.
+    CREATE TABLE IF NOT EXISTS product_rules (
+      position INTEGER NOT NULL PRIMARY KEY,
+      chain TEXT NOT NULL,
+      match TEXT NOT NULL,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      UNIQUE (chain, match)
+    );
+    CREATE TABLE IF NOT EXISTS product_matches (
+      item_id INTEGER PRIMARY KEY REFERENCES receipt_items(id) ON DELETE CASCADE,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      method TEXT NOT NULL CHECK (method IN ('code','rule','auto'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_product_matches_product ON product_matches(product_id);
   `);
   // CREATE IF NOT EXISTS never widens an existing table, so a database created before the
   // bank-terms columns existed gets them here. Values stay NULL until the next ingest.
