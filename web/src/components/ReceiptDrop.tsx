@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "./I18nProvider";
 import { ReceiptReport } from "./ReceiptReport";
 import { fmtArsCents } from "@/lib/receipts/money";
@@ -23,6 +23,26 @@ export function ReceiptDrop() {
   const [over, setOver] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [rowsText, setRowsText] = useState("");
+
+  // While a receipt is being read, warn before a tab close/reload and before any in-app link
+  // navigation. The App Router has no navigation events, so in-app links are caught at the
+  // document level in the capture phase, before Next's Link handler runs.
+  useEffect(() => {
+    if (!busy) return;
+    const message = t("receipts.drop.leave");
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = message; };
+    const onClick = (e: MouseEvent) => {
+      const anchor = (e.target as Element | null)?.closest("a[href]");
+      if (!anchor || anchor.getAttribute("target") === "_blank") return;
+      if (!window.confirm(message)) { e.preventDefault(); e.stopPropagation(); }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [busy, t]);
 
   async function settle(request: Promise<Response>) {
     setBusy(true);
@@ -60,16 +80,28 @@ export function ReceiptDrop() {
   return (
     <div className="mb-6">
       <label
-        onDragOver={e => { e.preventDefault(); setOver(true); }}
+        aria-busy={busy}
+        aria-disabled={busy}
+        onDragOver={e => { e.preventDefault(); if (!busy) setOver(true); }}
         onDragLeave={() => setOver(false)}
-        onDrop={e => { e.preventDefault(); setOver(false); send(e.dataTransfer.files[0]); }}
-        className={`flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed text-sm transition-colors focus-within:border-accent focus-within:text-accent ${
-          over ? "border-accent bg-accent-soft text-accent" : "border-line-strong bg-surface text-ink-muted hover:border-accent hover:text-ink"
+        onDrop={e => { e.preventDefault(); setOver(false); if (!busy) send(e.dataTransfer.files[0]); }}
+        className={`flex h-32 items-center justify-center gap-3 rounded-xl border-2 border-dashed text-sm transition-colors ${
+          busy
+            ? "cursor-not-allowed border-line bg-surface text-ink-muted opacity-70"
+            : over
+              ? "cursor-pointer border-accent bg-accent-soft text-accent"
+              : "cursor-pointer border-line-strong bg-surface text-ink-muted hover:border-accent hover:text-ink focus-within:border-accent focus-within:text-accent"
         }`}
       >
         <input type="file" accept="application/pdf" className="sr-only" disabled={busy}
           onChange={e => { send(e.target.files?.[0]); e.target.value = ""; }} />
-        {busy ? t("receipts.drop.busy") : t("receipts.drop.idle")}
+        {busy && (
+          <svg className="h-5 w-5 animate-spin text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+        )}
+        <span role={busy ? "status" : undefined}>{busy ? t("receipts.drop.busy") : t("receipts.drop.idle")}</span>
       </label>
 
       {outcome?.kind === "error" && (
