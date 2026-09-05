@@ -9,6 +9,7 @@ import { ocrPages, type Box } from "./ocr";
 import { boxesToRows, parseRowsText, serializeRows, type Row } from "./rows";
 import { parseRows, type ParsedReceipt } from "./parse";
 import { verify, type VerificationReport } from "./verify";
+import { matchReceipt } from "./match";
 
 // The largest receipt scanned so far is 17.7 MB (three tall page images).
 export const MAX_RECEIPT_BYTES = 40 * 1024 * 1024;
@@ -180,6 +181,9 @@ export function storeReceipt(db: Database.Database, input: StoreInput): ReceiptS
     fs.rmSync(filePath, { force: true });
     throw e;
   }
+  // Products are a layer over the stored receipt: matched now so every page sees the new
+  // receipt at once, in its own transaction so a matcher bug can never lose a verified receipt.
+  matchReceipt(db, id);
   // verify() guarantees these are non-null when report.ok, and storeReceipt is only reached then.
   return { id, date: h.date!, totalCents: parsed.footer.totalCents!, items: parsed.items.length, report };
 }
