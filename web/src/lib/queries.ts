@@ -24,6 +24,7 @@ type BaseRow = {
   month: string; date: string | null; description: string; merchant: string;
   category: string; subcategory: string | null; ars: number | null; usd: number | null;
   installment_number: number | null; installment_count: number | null;
+  fingerprint: string | null;
 };
 
 function baseRows(db: Database.Database): BaseRow[] {
@@ -31,7 +32,8 @@ function baseRows(db: Database.Database): BaseRow[] {
   // to cancel its USD charge. USD rows ride along for drill/recurring (rev note 3).
   return db.prepare(`
     SELECT t.statement_id, s.cycle_month AS month, t.date, t.description, t.merchant,
-           t.category, t.subcategory, t.ars, t.usd, t.installment_number, t.installment_count
+           t.category, t.subcategory, t.ars, t.usd, t.installment_number, t.installment_count,
+           t.fingerprint
     FROM transactions t JOIN statements s ON s.id = t.statement_id
     WHERE t.section = 'purchases'
       AND ((t.ars IS NOT NULL AND t.ars != 0) OR (t.ars IS NULL AND t.usd IS NOT NULL AND t.usd != 0))
@@ -131,6 +133,7 @@ export function spendByCategory(
 export type DrillRow = {
   month: string; date: string | null; description: string; merchant: string;
   category: string; subcategory: string | null; amount: number | null; usd: number | null;
+  fingerprint: string | null; receiptId: number | null;
 };
 
 export function categoryDrill(
@@ -146,6 +149,10 @@ export function categoryDrill(
     !filter.category ? "category" : !filter.subcategory ? "subcategory" : "merchant";
   const all = baseRows(db);
   const ctx = amountCtx(db, all, opts);
+  const linked = new Map(
+    (db.prepare("SELECT fingerprint, receipt_id FROM receipt_charge_links").all() as
+      { fingerprint: string; receipt_id: number }[]).map(l => [l.fingerprint, l.receipt_id])
+  );
   const rows: DrillRow[] = [];
   const groups = new Map<string, number>();
   for (const r of all) {
@@ -156,7 +163,8 @@ export function categoryDrill(
     const amt = effectiveAmount(r, opts, ctx);
     if (amt == null && r.usd == null) continue; // dropped by mode (non-first installment in accrual)
     rows.push({ month: r.month, date: r.date, description: r.description, merchant: r.merchant,
-      category: r.category, subcategory: r.subcategory, amount: amt, usd: r.usd });
+      category: r.category, subcategory: r.subcategory, amount: amt, usd: r.usd,
+      fingerprint: r.fingerprint, receiptId: r.fingerprint ? linked.get(r.fingerprint) ?? null : null });
     if (amt != null) {
       const key = level === "category" ? r.category : level === "subcategory" ? (r.subcategory ?? "(none)") : r.merchant;
       groups.set(key, (groups.get(key) ?? 0) + amt);

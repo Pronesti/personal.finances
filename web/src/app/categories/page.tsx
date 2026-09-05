@@ -105,6 +105,11 @@ export default async function Categories({ searchParams }: { searchParams: Promi
                       <td>
                         <span className="block">{r.merchant}</span>
                         <span className="block text-xs text-ink-subtle">{r.description}</span>
+                        {r.receiptId !== null && (
+                          <Link href={`/receipts/${r.receiptId}`} className="block text-xs text-accent hover:underline">
+                            {tr("categories.table.receipt")}
+                          </Link>
+                        )}
                       </td>
                       <td className="text-right">{r.amount != null ? fmtMoney(r.amount, modes.value) : "—"}</td>
                       <td className="text-right">{r.usd ?? "—"}</td>

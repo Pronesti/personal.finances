@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
+import { ingestFile } from "@/lib/ingest";
 import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers, chromeData } from "@/lib/queries";
+import { fixture, rules, aliases } from "@/lib/__fixtures__/statement";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
 
@@ -850,5 +852,21 @@ describe("categoryMovers", () => {
 
   it("returns null when the granularity leaves fewer than two periods", () => {
     expect(categoryMovers(openAndSeed(), o("cash", "nominal"), "year")).toBeNull();
+  });
+});
+
+describe("categoryDrill: receipt links", () => {
+  it("carries the fingerprint of every row and the receipt id where one is linked", () => {
+    const db = openDb(":memory:");
+    ingestFile(db, fixture, rules, aliases);
+    const fp = (db.prepare("SELECT fingerprint FROM transactions WHERE description LIKE 'OSDE%' AND ars = 120000").get() as { fingerprint: string }).fingerprint;
+    db.prepare(`INSERT INTO receipts (chain, date, fiscal_number, file_sha256, file_path, subtotal_cents, discounts_cents, total_cents,
+        header_json, verification_json, transcript_source, ocr_scale, created_at)
+      VALUES ('coto', '2026-07-10', 'x', 'x', '/x', 12000000, 0, 12000000, '{}', '{}', 'ocr', 3, 'now')`).run();
+    db.prepare("INSERT INTO receipt_charge_links (receipt_id, fingerprint, method, created_at) VALUES (1, ?, 'manual', 'now')").run(fp);
+    const { rows } = categoryDrill(db, o("cash", "nominal"), { category: "health" });
+    const linked = rows.find(r => r.fingerprint === fp)!;
+    expect(linked.receiptId).toBe(1);
+    expect(rows.filter(r => r.fingerprint !== fp).every(r => r.receiptId === null && r.fingerprint)).toBe(true);
   });
 });
