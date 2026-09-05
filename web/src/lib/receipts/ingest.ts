@@ -10,6 +10,7 @@ import { boxesToRows, parseRowsText, serializeRows, type Row } from "./rows";
 import { parseRows, type ParsedReceipt } from "./parse";
 import { verify, type VerificationReport } from "./verify";
 import { matchReceipt } from "./match";
+import { autoLink } from "./charges";
 
 // The largest receipt scanned so far is 17.7 MB (three tall page images).
 export const MAX_RECEIPT_BYTES = 40 * 1024 * 1024;
@@ -186,6 +187,8 @@ export function storeReceipt(db: Database.Database, input: StoreInput): ReceiptS
   // If matching throws, the receipt is already committed and its file-hash dedupe blocks a
   // re-upload; recovery is the re-match control on /super/review, not re-ingesting this file.
   matchReceipt(db, id);
+  // The charge that paid this receipt may already be in the database.
+  autoLink(db);
   // verify() guarantees these are non-null when report.ok, and storeReceipt is only reached then.
   return { id, date: h.date!, totalCents: parsed.footer.totalCents!, items: parsed.items.length, report };
 }

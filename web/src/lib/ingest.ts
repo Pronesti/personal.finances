@@ -3,6 +3,7 @@ import { categorize, normalizeMerchant, type Category, type Rule } from "@/lib/c
 import { applyAlias, type Alias } from "@/lib/aliases";
 import { checkStatement, type StatementJson, type Alert } from "@/lib/integrity";
 import { fingerprintAll } from "@/lib/fingerprint";
+import { autoLink } from "@/lib/receipts/charges";
 
 export function cycleMonth(closingDate: string, prevClosingDate: string | null): string {
   const end = new Date(closingDate + "T00:00:00Z").getTime();
@@ -97,6 +98,8 @@ export function ingestFile(
     for (const a of alerts) insAl.run(sid, a.kind, a.message, a.expected, a.actual);
   });
   run();
+  // A new statement may carry the charge for a receipt uploaded earlier.
+  autoLink(db);
   return {
     file: statement.file, brand: statement.brand, cycle_month: statement.cycle_month,
     transactions: transactions.length, replaced, alerts,

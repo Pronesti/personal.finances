@@ -189,6 +189,15 @@ export function migrate(db: Database.Database, seedDir: string | null = null): v
       method TEXT NOT NULL CHECK (method IN ('code','rule','auto'))
     );
     CREATE INDEX IF NOT EXISTS idx_product_matches_product ON product_matches(product_id);
+    -- One receipt ↔ one charge. The charge side is a fingerprint, not transactions.id: rows are
+    -- rebuilt on every re-ingest and their ids change, the fingerprint does not (see
+    -- fingerprint.ts). No foreign key for the same reason alert_reviews has none.
+    CREATE TABLE IF NOT EXISTS receipt_charge_links (
+      receipt_id INTEGER NOT NULL UNIQUE REFERENCES receipts(id) ON DELETE CASCADE,
+      fingerprint TEXT NOT NULL UNIQUE,
+      method TEXT NOT NULL CHECK (method IN ('auto','manual')),
+      created_at TEXT NOT NULL
+    );
   `);
   // CREATE IF NOT EXISTS never widens an existing table, so a database created before the
   // bank-terms columns existed gets them here. Values stay NULL until the next ingest.
