@@ -683,7 +683,7 @@ const en = {
   "super.charges.noReceipt": "no receipt",
   "super.charges.installmentOf": "{n} of {of} · {each} each",
   "super.charges.empty": "No supermarket charges and no receipts yet.",
-  "super.charges.footer": "This page puts the two records side by side: the receipts you uploaded and the supermarket charges on your card statements. A receipt is matched when exactly one charge has its amount (or its amount split in installments) within three days of its date; when two charges fit, the page asks you to choose; when none does, the charge has not reached a statement yet. The charges without a receipt are shopping trips this dataset does not see: upload their receipts to close the gap. Linking never changes a charge or a receipt; it only records which paid for which.",
+  "super.charges.footer": "This page puts the two records side by side: the receipts you uploaded and the supermarket charges on your card statements. A receipt is matched when exactly one charge has its amount (or its amount split in installments) within three days of its date; when two charges fit, the page asks you to choose; when none does, the charge has not reached a statement yet. The charges without a receipt are shopping trips this dataset does not see: upload their receipts to close the gap. Linking never changes a charge or a receipt; it only records which paid for which. An unlinked receipt is matched again on the next upload if its charge is still the only candidate.",
 
   "super.empty": "No receipts yet. Upload one on the Receipts page.",
   "super.stat.last": "Last receipt",
@@ -1388,7 +1388,7 @@ const es: Dictionary = {
   "super.charges.noReceipt": "sin ticket",
   "super.charges.installmentOf": "{n} de {of} · {each} cada una",
   "super.charges.empty": "Todavía no hay cargos del súper ni tickets.",
-  "super.charges.footer": "Esta página pone los dos registros lado a lado: los tickets que cargaste y los cargos de supermercado en los resúmenes de tus tarjetas. Un ticket queda vinculado cuando exactamente un cargo tiene su importe (o su importe dividido en cuotas) a menos de tres días de su fecha; cuando dos cargos encajan, la página te pide elegir; cuando ninguno encaja, el cargo todavía no llegó a un resumen. Los cargos sin ticket son compras que este conjunto de datos no ve: cargá sus tickets para cerrar la brecha. Vincular nunca cambia un cargo ni un ticket; solo registra cuál pagó cuál.",
+  "super.charges.footer": "Esta página pone los dos registros lado a lado: los tickets que cargaste y los cargos de supermercado en los resúmenes de tus tarjetas. Un ticket queda vinculado cuando exactamente un cargo tiene su importe (o su importe dividido en cuotas) a menos de tres días de su fecha; cuando dos cargos encajan, la página te pide elegir; cuando ninguno encaja, el cargo todavía no llegó a un resumen. Los cargos sin ticket son compras que este conjunto de datos no ve: cargá sus tickets para cerrar la brecha. Vincular nunca cambia un cargo ni un ticket; solo registra cuál pagó cuál. Un ticket desvinculado se vuelve a vincular en la próxima carga si su cargo sigue siendo el único candidato.",
 
   "super.empty": "Todavía no hay tickets. Cargá uno en la página de Tickets.",
   "super.stat.last": "Último ticket",

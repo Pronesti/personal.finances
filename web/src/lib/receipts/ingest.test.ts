@@ -4,6 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import { openDb } from "@/lib/db";
 import { Failure } from "@/lib/failure";
+import { ingestFile } from "@/lib/ingest";
+import type { StatementJson } from "@/lib/integrity";
+import type { Rule } from "@/lib/categorize";
 import {
   ingestReceipt, ingestCorrected, ReceiptRejected, receiptDir, sha256, MAX_RECEIPT_BYTES, type ReceiptDeps,
 } from "@/lib/receipts/ingest";
@@ -37,6 +40,40 @@ function deps(perScale: string[]): ReceiptDeps & { scales: number[] } {
 
 const pdf = Buffer.from("%PDF-1.4 a receipt");
 const BROKEN = SMALL_RECEIPT.replace("6400,00", "6490,00"); // one misread digit: subtotal off by 90,00
+
+// A minimal one-item receipt dated 2026-08-07 for 115370,80 — the amount a MERPAGO*COTO charge
+// on that date carries in the charges.test.ts "hooks" fixtures, so storing it exercises the
+// storeReceipt → autoLink hook against a real charge already in the database.
+const RECEIPT_2026_08_07 = `## page 1
+COTO
+SUC 90 COTO CICSA
+SEGUROLA 1743
+CUIT:30-54808315-6 INGRESOS BRUTOS:901-923274-2
+07/08/2026 09:42:15 NRO.T.:2090-08070001
+NRO.CAJA:0012 NRO.TERM:3791 NRO.TRAN:5001
+FACTURA B
+ORIGINAL (Cod.006)
+GENERIC SUPERMARKET ITEM
+0000014718 07798140550143\t115370,80
+SUBTOT. SIN DESCUENTOS\t115370,80
+DESCUENTOS POR PROMOCIONES\t0,00
+TOTAL\t115370,80
+MERCADO PAG 177204174592\t115370,80
+SU VUELTO\t0,00
+ART:006 TRX:5001 EMP:123859-SORIA
+C.A.E.Nro.:86361418114641 Vto.:20260914
+`;
+const SUPERMARKET_RULES: Rule[] = [{ match: "COTO", category: "food", subcategory: "supermarket" }];
+function visaStatement(lines: { date: string; description: string; ars: number }[]): StatementJson {
+  return {
+    file: "visa_2026_08_29.pdf", brand: "visa",
+    period: { closing_date: "2026-08-29", due_date: "2026-08-29", previous_closing_date: null },
+    transactions: lines.map(l => ({
+      section: "purchases", block: 1, date: l.date, description: l.description, ars: l.ars, usd: null,
+      installment_number: null, installment_count: null,
+    })),
+  };
+}
 
 let sandbox: string;
 beforeEach(() => {
@@ -152,5 +189,16 @@ describe("ingestCorrected", () => {
     await expect(ingestCorrected(db, "../etc/passwd", "x")).rejects.toMatchObject({ code: "pending_missing" });
     await ingestReceipt(db, pdf, deps([BROKEN, BROKEN, BROKEN])).catch(() => undefined);
     await expect(ingestCorrected(db, sha256(pdf), "\n\n")).rejects.toMatchObject({ code: "bad_rows" });
+  });
+});
+
+describe("storeReceipt", () => {
+  it("auto-links to a charge already on a statement (the storeReceipt → autoLink hook)", async () => {
+    const db = openDb(":memory:");
+    ingestFile(db, visaStatement([{ date: "2026-08-07", description: "MERPAGO*COTO", ars: 115370.8 }]), SUPERMARKET_RULES, []);
+    const stored = await ingestReceipt(db, pdf, deps([RECEIPT_2026_08_07]));
+    expect(stored).toMatchObject({ date: "2026-08-07", totalCents: 11537080 });
+    expect(db.prepare("SELECT receipt_id, method FROM receipt_charge_links WHERE receipt_id = ?").get(stored.id))
+      .toEqual({ receipt_id: stored.id, method: "auto" });
   });
 });

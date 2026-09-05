@@ -108,4 +108,5 @@ rows are backfilled by `migrate()`). `receipt_charge_links` ties one receipt to 
 After a receipt is stored and after a statement is ingested, a receipt with exactly one candidate
 charge (supermarket purchase, first installment, within ±3 days, same amount or amount × installments)
 is linked automatically; `/super/charges` shows both sides, lets you link or unlink by hand, and
-lists the supermarket charges with no receipt. Linking never edits a charge or a receipt.
+lists the supermarket charges with no receipt. Linking never edits a charge or a receipt. A receipt
+unlinked by hand is matched again on the next upload if its charge is still the only candidate.

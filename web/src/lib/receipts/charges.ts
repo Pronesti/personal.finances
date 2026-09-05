@@ -12,11 +12,16 @@ export type AutoLinkReport = { linked: number; pending: number; unmatched: numbe
 /** Card charges post late; three days covers every case seen and keeps a weekly shop from matching the next one. */
 export const MATCH_WINDOW_DAYS = 3;
 
-/** Exact total, or one installment times its count — within a cent per installment, the bank rounds each. */
+/**
+ * Exact total, or one installment times its count. The bank computes each installment by
+ * rounding the true share to the cent and gives the leftover remainder to the first one, so the
+ * first installment can be up to (n − 1) cents away from an even n-way split; multiplied back out
+ * by n, that first-installment deviation is amplified to as much as n·(n − 1) cents.
+ */
 export function amountMatches(ars: number, installmentCount: number | null, totalCents: number): boolean {
   const cents = Math.round(ars * 100);
   if (installmentCount === null || installmentCount <= 1) return cents === totalCents;
-  return Math.abs(cents * installmentCount - totalCents) <= installmentCount;
+  return Math.abs(cents * installmentCount - totalCents) <= installmentCount * (installmentCount - 1);
 }
 
 // A supermarket purchase, first installment only, not yet linked. The date window is SQL; the

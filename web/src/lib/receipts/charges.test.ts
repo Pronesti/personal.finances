@@ -33,13 +33,17 @@ const fpOf = (db: Db, description: string, ars: number) =>
   (db.prepare("SELECT fingerprint FROM transactions WHERE description = ? AND ars = ?").get(description, ars) as { fingerprint: string }).fingerprint;
 
 describe("amountMatches", () => {
-  it("accepts the exact total, or the installment times its count within a cent per installment", () => {
+  it("accepts the exact total, or the installment times its count within n·(n-1) cents", () => {
     expect(amountMatches(115370.8, null, 11537080)).toBe(true);
     expect(amountMatches(42144.25, 2, 8428850)).toBe(true);
     expect(amountMatches(42353.88, 3, 12706163)).toBe(true);   // 127061.63 / 3 rounded per installment
     expect(amountMatches(115370.81, null, 11537080)).toBe(false);
     expect(amountMatches(42144.25, null, 8428850)).toBe(false); // not an installment: half is not the total
     expect(amountMatches(42000, 3, 12706163)).toBe(false);
+    // Live Mercado Pago splits: MP rounds each installment and gives the remainder to the first
+    // one, so the first installment times n can land up to n·(n-1) cents off the printed total.
+    expect(amountMatches(70151.28, 3, 21045380)).toBe(true);  // 210453.80 as 70151.28/70151.26/70151.26
+    expect(amountMatches(34216.69, 3, 10265009)).toBe(true);  // 102650.09 as 34216.69/34216.70/34216.70
   });
 });
 
