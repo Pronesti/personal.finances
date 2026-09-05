@@ -7,7 +7,7 @@ import * as mupdf from "mupdf";
 import { Failure } from "@/lib/failure";
 import { REPO_ROOT, resolvePython } from "@/lib/upload";
 import type { PageImage } from "./pdf";
-import { planSlices, cropSlice, mapBoxToPage, dedupeBoxes, type SlicePlan } from "./slice";
+import { planSlices, cropSlice, mapBoxToPage, dedupeBoxes, ownsBox, type SlicePlan } from "./slice";
 
 const execFileP = promisify(execFile);
 
@@ -27,7 +27,7 @@ function tail(s: string, n = 3): string {
 // One chunk handed to the OCR script: which real page it came from, its pixel slice within that
 // page, the page's own pixel height (needed to turn the slice-local fraction Vision returns back
 // into a whole-page fraction), and the PNG bytes to write out.
-type Chunk = { page: number; slice: SlicePlan; pageHeight: number; png: Buffer };
+type Chunk = { page: number; slice: SlicePlan; sliceIndex: number; plans: SlicePlan[]; pageHeight: number; png: Buffer };
 
 /**
  * Split every page image into overlapping horizontal slices (mupdf's own pixmap warp does the
@@ -39,21 +39,21 @@ function sliceIntoChunks(pages: PageImage[]): Chunk[] {
   for (const p of pages) {
     const plans = planSlices(p.width, p.height);
     if (plans.length === 1) {
-      chunks.push({ page: p.page, slice: plans[0], pageHeight: p.height, png: p.png });
+      chunks.push({ page: p.page, slice: plans[0], sliceIndex: 0, plans, pageHeight: p.height, png: p.png });
       continue;
     }
     const image = new mupdf.Image(p.png);
     try {
       const pix = image.toPixmap();
       try {
-        for (const slice of plans) {
+        plans.forEach((slice, sliceIndex) => {
           const cropped = cropSlice(pix, p.width, slice);
           try {
-            chunks.push({ page: p.page, slice, pageHeight: p.height, png: Buffer.from(cropped.asPNG()) });
+            chunks.push({ page: p.page, slice, sliceIndex, plans, pageHeight: p.height, png: Buffer.from(cropped.asPNG()) });
           } finally {
             cropped.destroy();
           }
-        }
+        });
       } finally {
         pix.destroy();
       }
@@ -118,14 +118,20 @@ export async function ocrPages(pages: PageImage[]): Promise<Box[]> {
     } catch (e) {
       throw new Failure("ocr_failed", "failure.ocr_failed.detail", { detail: (e as Error).message });
     }
-    const mapped = raw.map(box => {
+    // Every box is mapped back to whole-page fractions, then kept only if its own slice owns
+    // the zone it sits in (see ownsBox) — the reading of a line inside an overlap band from the
+    // slice where it sits nearer a cut is dropped without ever comparing it to the other one.
+    const mapped = raw.flatMap(box => {
       const chunkIndex = box.page; // 1-based, matches the chunk this box's slice came from
       const chunk = chunks[chunkIndex - 1];
+      const onPage = mapBoxToPage(box, chunk.slice, chunk.pageHeight);
+      const centerPx = (onPage.y + onPage.h / 2) * chunk.pageHeight;
+      if (!ownsBox(chunk.plans, chunk.sliceIndex, centerPx)) return [];
       const localCenter = box.y + box.h / 2;
       // How far this reading sits from either edge of its own crop: Vision reads worse right at
       // a cut, so between two duplicate readings of the same line, prefer the more central one.
       const centrality = Math.min(localCenter, 1 - localCenter);
-      return { ...mapBoxToPage(box, chunk.slice, chunk.pageHeight), page: chunk.page, source: chunkIndex, score: centrality };
+      return [{ ...onPage, page: chunk.page, source: chunkIndex, score: centrality }];
     });
     return dedupeBoxes(mapped).map(({ source: _source, score: _score, ...box }) => box);
   } finally {

@@ -48,6 +48,27 @@ export function cropSlice(pix: mupdf.Pixmap, width: number, slice: SlicePlan): m
   return pix.warp(points, width, height);
 }
 
+/**
+ * Whether slice `index` is the one that owns a box whose vertical centre sits at `centerPx`
+ * (whole-page pixels). Every overlap band between two neighbouring slices is split at its
+ * midpoint: the upper slice owns everything above it, the lower slice everything at or below it.
+ * A box outside its own slice's half of a band is a reading the *other* slice made from further
+ * inside its crop — and the readings that need throwing away are precisely the ones made right at
+ * a cut, where Vision sees half a line and returns a garbled fragment whose position need not
+ * line up with any clean reading (so positional deduplication alone cannot catch it — and made
+ * loose enough to try, it swallows the genuinely adjacent printed line instead). Ownership by
+ * zone needs no matching at all: each printed line inside a band is read by both slices, and only
+ * the reading from the slice where it sits further from the cut survives.
+ */
+export function ownsBox(plans: SlicePlan[], index: number, centerPx: number): boolean {
+  const own = plans[index];
+  const above = index > 0 ? plans[index - 1] : null;
+  if (above && above.y1 > own.y0 && centerPx < (own.y0 + above.y1) / 2) return false;
+  const below = index + 1 < plans.length ? plans[index + 1] : null;
+  if (below && below.y0 < own.y1 && centerPx >= (below.y0 + own.y1) / 2) return false;
+  return true;
+}
+
 type Fractional = { x: number; y: number; w: number; h: number };
 
 /** Map one box recognised inside a slice back to a fraction of the whole page image. Slices span
@@ -70,9 +91,10 @@ type Located = Fractional & { page: number; text: string; source: number; score?
 
 /**
  * Drop boxes that are a duplicate detection of one already kept — the same line of text read
- * twice because it fell inside the overlap between two neighbouring slices. Two boxes from
- * different slices of the same page, landing at essentially the same position, are treated as
- * one. Text is deliberately *not* part of the match: the two overlap reads of one line are not
+ * twice because it fell inside the overlap between two neighbouring slices. Zone ownership
+ * (ownsBox) already removes nearly all of these; this catches the rare line whose two readings
+ * straddle a band's midpoint. Two boxes from different slices of the same page, landing at
+ * essentially the same position, are treated as one. Text is deliberately *not* part of the match: the two overlap reads of one line are not
  * always transcribed identically (that is exactly the kind of misread slicing exists to reduce,
  * not eliminate), so requiring equal text would let exactly the corrupted-duplicate case through.
  * Position doing the matching alone is safe here because a receipt is a single vertical column of
@@ -95,7 +117,15 @@ function isSameSpot(a: Located, b: Located): boolean {
   if (a.page !== b.page || a.source === b.source) return false;
   const aCenter = a.y + a.h / 2;
   const bCenter = b.y + b.h / 2;
-  const verticalTolerance = Math.max(a.h, b.h, 0.002) * 0.6;
+  // Two reads of one printed line land within a few ten-thousandths of a page of each other (the
+  // same pixels, mapped back through two slices). Adjacent printed lines sit about one line
+  // pitch apart — and at 3× a Vision box is *taller* than that pitch (box height ≈0.018 of the
+  // page against a pitch of ≈0.011 on a real scan), so a tolerance of 0.6 box heights reached the
+  // next line and collapsed a quantity line into the description under it, or a description into
+  // the quantity line above it (two real receipts lost an item's quantity and a description that
+  // way). A quarter of the box height is still an order of magnitude above the true-duplicate
+  // spread, and stays under the line pitch even for the tallest boxes seen.
+  const verticalTolerance = Math.max(a.h, b.h, 0.002) * 0.25;
   if (Math.abs(aCenter - bCenter) > verticalTolerance) return false;
   const left = Math.max(a.x, b.x);
   const right = Math.min(a.x + a.w, b.x + b.w);

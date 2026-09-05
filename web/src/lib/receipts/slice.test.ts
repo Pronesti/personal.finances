@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as mupdf from "mupdf";
-import { planSlices, cropSlice, mapBoxToPage, dedupeBoxes } from "@/lib/receipts/slice";
+import { planSlices, cropSlice, mapBoxToPage, dedupeBoxes, ownsBox } from "@/lib/receipts/slice";
 
 describe("planSlices", () => {
   it("does not slice a page whose own aspect ratio is already reasonable", () => {
@@ -73,6 +73,34 @@ describe("mapBoxToPage", () => {
   });
 });
 
+describe("ownsBox", () => {
+  // Three slices with 100px overlap bands: [0,500], [400,900], [800,1200].
+  const plans = [{ y0: 0, y1: 500 }, { y0: 400, y1: 900 }, { y0: 800, y1: 1200 }];
+  it("gives each slice its own interior outright", () => {
+    expect(ownsBox(plans, 0, 200)).toBe(true);
+    expect(ownsBox(plans, 1, 650)).toBe(true);
+    expect(ownsBox(plans, 2, 1100)).toBe(true);
+  });
+  it("splits an overlap band at its midpoint: the upper slice owns above it, the lower at or below", () => {
+    expect(ownsBox(plans, 0, 440)).toBe(true);   // above 450: slice 0's half
+    expect(ownsBox(plans, 1, 440)).toBe(false);  // slice 1 read it near its own top cut
+    expect(ownsBox(plans, 0, 460)).toBe(false);  // below 450: slice 0 read it near its bottom cut
+    expect(ownsBox(plans, 1, 460)).toBe(true);
+    expect(ownsBox(plans, 0, 450)).toBe(false);  // exactly on the midpoint: exactly one owner
+    expect(ownsBox(plans, 1, 450)).toBe(true);
+  });
+  it("drops a garbled fragment read right at a cut even though nothing else sits at its position", () => {
+    // Real case: Vision returned "MEKLADO" for the half-visible line at the very top of slice 1;
+    // the clean reading of that line came from slice 0, further from the cut.
+    expect(ownsBox(plans, 1, 402)).toBe(false);
+  });
+  it("owns everything when there is no overlap or a single slice", () => {
+    expect(ownsBox([{ y0: 0, y1: 1000 }], 0, 999)).toBe(true);
+    expect(ownsBox([{ y0: 0, y1: 500 }, { y0: 500, y1: 1000 }], 0, 499)).toBe(true);
+    expect(ownsBox([{ y0: 0, y1: 500 }, { y0: 500, y1: 1000 }], 1, 500)).toBe(true);
+  });
+});
+
 describe("dedupeBoxes", () => {
   it("drops a box that lands in the same spot on the same page, read from a different slice", () => {
     const a = { page: 1, x: 0.1, y: 0.4, w: 0.5, h: 0.01, text: "TOTAL 84288.50", source: 3 };
@@ -113,6 +141,19 @@ describe("dedupeBoxes", () => {
     const a = { page: 1, x: 0.1, y: 0.4, w: 0.5, h: 0.01, text: "TOTAL", source: 3 };
     const b = { page: 2, x: 0.1, y: 0.4, w: 0.5, h: 0.01, text: "TOTAL", source: 4 };
     expect(dedupeBoxes([a, b])).toEqual([a, b]);
+  });
+
+  it("keeps two adjacent printed lines whose tall boxes overlap vertically", () => {
+    // Real 3× scan: the quantity line and the description right under it. Vision's boxes are
+    // taller than the line pitch, so their centres sit only 0.0104 apart while each box is 0.018
+    // tall — a tolerance measured in box heights must still tell them apart.
+    const qty = { page: 1, x: 0.102, y: 0.6547, w: 0.286, h: 0.0180, text: "1,072 x 2999,00", source: 2 };
+    const desc = { page: 1, x: 0.055, y: 0.6653, w: 0.388, h: 0.0176, text: "-BANANA CAVENDISHX KG", source: 3 };
+    expect(dedupeBoxes([desc, qty])).toEqual([desc, qty]);
+    // And the other real case: a description whose box is much taller than the quantity line's.
+    const qty2 = { page: 1, x: 0.117, y: 0.1926, w: 0.295, h: 0.0077, text: "4,000 x 3390,00", source: 1 };
+    const desc2 = { page: 1, x: 0.056, y: 0.1953, w: 0.929, h: 0.0132, text: "AGUA SIN GAS V.D.S LEVITE", source: 2 };
+    expect(dedupeBoxes([qty2, desc2])).toEqual([qty2, desc2]);
   });
 
   it("does not dedupe boxes beside each other horizontally on the same line", () => {
