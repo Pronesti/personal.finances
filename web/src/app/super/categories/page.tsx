@@ -1,15 +1,18 @@
 import { getDb } from "@/lib/db";
 import { loadFacts } from "@/lib/receipts/facts";
+import { valueFacts } from "@/lib/receipts/value";
 import { buildAnalytics } from "@/lib/receipts/analytics";
-import { fmtArsCents } from "@/lib/receipts/money";
+import { fmtMoneyCents } from "@/lib/receipts/money";
 import { fmtPct } from "@/lib/format";
 import { getT } from "@/lib/locale";
+import { parseModes, valueOpts, type SP } from "@/lib/params";
 
 export const dynamic = "force-dynamic";
 
-export default async function SuperCategories() {
+export default async function SuperCategories({ searchParams }: { searchParams: Promise<SP> }) {
   const tr = await getT();
-  const { receipts, items } = loadFacts(getDb());
+  const modes = parseModes(await searchParams);
+  const { receipts, items } = valueFacts(loadFacts(getDb()), valueOpts(modes));
   const a = buildAnalytics(receipts, items);
   if (!a.kpis) return <main><p className="text-sm text-ink-muted">{tr("super.empty")}</p></main>;
   const max = Math.max(1, ...a.categories.flatMap(c => c.perPeriod));
@@ -32,12 +35,12 @@ export default async function SuperCategories() {
                 {c.perPeriod.map((v, i) => (
                   // One hue, light to dark: the accent at an opacity that follows the amount.
                   <td key={i} className="text-right font-mono tabular-nums" style={{ background: `color-mix(in srgb, var(--accent) ${Math.max(0, Math.round(v / max * 70))}%, transparent)` }}>
-                    {v === 0 ? <span className="text-ink-subtle">—</span> : fmtArsCents(v)}
+                    {v === 0 ? <span className="text-ink-subtle">—</span> : fmtMoneyCents(v, modes.value)}
                   </td>
                 ))}
-                <td className="text-right font-mono">{fmtArsCents(c.totalNetCents)}</td>
+                <td className="text-right font-mono">{fmtMoneyCents(c.totalNetCents, modes.value)}</td>
                 <td className="text-right">{fmtPct(c.sharePct).replace("+", "")}</td>
-                <td className="text-right font-mono">{fmtArsCents(c.totalDiscountCents)}</td>
+                <td className="text-right font-mono">{fmtMoneyCents(c.totalDiscountCents, modes.value)}</td>
               </tr>
             ))}
           </tbody>

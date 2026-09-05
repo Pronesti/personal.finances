@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseAmountCents, isAmount, parseQtyMilli, fmtCents, fmtArsCents } from "@/lib/receipts/money";
+import { parseAmountCents, isAmount, parseQtyMilli, fmtCents, fmtArsCents , fmtMoneyCents } from "@/lib/receipts/money";
 
 describe("parseAmountCents", () => {
   it("reads receipt amounts: decimal comma, no thousands separator", () => {
@@ -42,5 +42,11 @@ describe("formatting", () => {
     expect(fmtCents(10972834)).toBe("109.728,34");
     expect(fmtCents(-133639)).toBe("-1.336,39");
     expect(fmtArsCents(10972834)).toMatch(/^\$\s?109\.728,34$/);
+  });
+
+  it("prints USD cents as dollars and pesos as pesos, whichever basis", () => {
+    expect(fmtMoneyCents(1234, "usd")).toBe("US$ 12.34");
+    expect(fmtMoneyCents(1234, "real")).toBe(fmtArsCents(1234));
+    expect(fmtMoneyCents(1234, "nominal")).toBe(fmtArsCents(1234));
   });
 });

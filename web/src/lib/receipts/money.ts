@@ -1,3 +1,5 @@
+import type { ValueMode } from "@/lib/queries";
+
 // Coto prints amounts with a decimal comma and no thousands separator ("146931,91"). Everything
 // here is integer cents or integer thousandths: the verification gate compares integers, and a
 // float that lands 0.004 off would fail a receipt that reconciles on paper.
@@ -39,4 +41,9 @@ export function fmtCents(cents: number): string {
 /** Receipts are the one place the app shows cents: a gate that reconciles to the cent must show them. */
 export function fmtArsCents(cents: number): string {
   return ars.format(cents / 100);
+}
+
+/** The same cents in the page's value basis: pesos (real or nominal) print as ARS, USD cents as "US$ 12.34". */
+export function fmtMoneyCents(cents: number, value: ValueMode): string {
+  return value === "usd" ? `US$ ${(cents / 100).toFixed(2)}` : fmtArsCents(cents);
 }

@@ -1,10 +1,12 @@
 import { getDb } from "@/lib/db";
 import { loadFacts } from "@/lib/receipts/facts";
+import { valueFacts } from "@/lib/receipts/value";
 import { buildAnalytics, type ProductStat } from "@/lib/receipts/analytics";
-import { fmtArsCents, fmtCents } from "@/lib/receipts/money";
+import { fmtMoneyCents, fmtCents } from "@/lib/receipts/money";
 import { fmtPct } from "@/lib/format";
 import { TrendSparkline } from "@/components/TrendSparkline";
 import { getT } from "@/lib/locale";
+import { parseModes, valueOpts, type SP } from "@/lib/params";
 import type { Translator } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +27,10 @@ function Habit({ title, products, tr }: { title: string; products: ProductStat[]
   );
 }
 
-export default async function SuperProducts() {
+export default async function SuperProducts({ searchParams }: { searchParams: Promise<SP> }) {
   const tr = await getT();
-  const { receipts, items } = loadFacts(getDb());
+  const modes = parseModes(await searchParams);
+  const { receipts, items } = valueFacts(loadFacts(getDb()), valueOpts(modes));
   const a = buildAnalytics(receipts, items);
   if (!a.kpis) return <main><p className="text-sm text-ink-muted">{tr("super.empty")}</p></main>;
   const repeated = a.products.filter(p => p.lastChange !== null)
@@ -83,7 +86,7 @@ export default async function SuperProducts() {
                 <td className="py-1">{p.name}</td><td>{tr(`productCategory.${p.category}`)}</td>
                 <td className="text-right">{p.timesBought}</td>
                 <td className="text-right">{qty(p.totalQtyMilli, p.unit)}</td>
-                <td className="text-right font-mono">{fmtArsCents(p.totalSpentCents)}</td>
+                <td className="text-right font-mono">{fmtMoneyCents(p.totalSpentCents, modes.value)}</td>
               </tr>
             ))}
           </tbody>
@@ -107,7 +110,7 @@ export default async function SuperProducts() {
               <h3 className="text-xs font-medium uppercase tracking-wide text-ink-subtle">{tr(key)}</h3>
               <ul className="mt-1 text-sm">
                 {list.length === 0 && <li className="text-ink-muted">{tr("super.products.nothing")}</li>}
-                {list.map(b => <li key={b.productId} className="flex justify-between gap-4"><span>{b.name}</span><span className="font-mono">{fmtArsCents(b.netCents)}</span></li>)}
+                {list.map(b => <li key={b.productId} className="flex justify-between gap-4"><span>{b.name}</span><span className="font-mono">{fmtMoneyCents(b.netCents, modes.value)}</span></li>)}
               </ul>
             </div>
           ))}

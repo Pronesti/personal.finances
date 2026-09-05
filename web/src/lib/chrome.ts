@@ -107,10 +107,12 @@ export const CHROME: Record<string, RouteChrome> = {
     granularities: GRANULARITIES,
     period: "latest",
   },
-  "/super": { title: "super.title" },
-  "/super/categories": { title: "super.categories.title" },
+  // Receipts are pesos on paper; the value toggle restates them (real / nominal / USD at MEP).
+  // Spend and tax do not apply: a receipt has no installments and no tax lines to strip.
+  "/super": { title: "super.title", toggles: { spend: false, tax: false } },
+  "/super/categories": { title: "super.categories.title", toggles: { spend: false, tax: false } },
   "/super/charges": { title: "super.charges.title" },
-  "/super/products": { title: "super.products.title" },
+  "/super/products": { title: "super.products.title", toggles: { spend: false, tax: false } },
   "/super/review": { title: "super.review.title" },
   "/taxes": {
     title: "taxes.title",
