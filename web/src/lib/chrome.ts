@@ -110,6 +110,7 @@ export const CHROME: Record<string, RouteChrome> = {
   "/super": { title: "super.title" },
   "/super/categories": { title: "super.categories.title" },
   "/super/products": { title: "super.products.title" },
+  "/super/review": { title: "super.review.title" },
   "/taxes": {
     title: "taxes.title",
     // tax toggle hidden: this page IS the tax view — "true cost" would double-count
