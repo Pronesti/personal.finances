@@ -159,6 +159,62 @@ describe("parseRows: items", () => {
     expect(r.items[0].lineTotalCents).toBeNull();
     expect(r.notes.join(" ")).toContain("line total");
   });
+
+  it("splits a code row glued to the discount's bracket tag and its already-negative amount " +
+    "(defect D): the item still gets built, and the discount attaches to it rather than " +
+    "absorbing into the previous item like it does with no fix", () => {
+    const rows = parseRowsText(
+      "PREV\n0000000001 000000000001\t100,00\n" +
+      "PISI\t21950,00\n" +
+      "0000614299 07798078733526 [A]\t-5487,50\n",
+    );
+    const { items } = parseRows(rows);
+    expect(items).toHaveLength(2);
+    expect(items[1]).toMatchObject({
+      descPrinted: "PISI", sku: "0000614299", ean: "07798078733526", lineTotalCents: 2195000,
+    });
+    expect(items[1].discounts).toEqual([{ label: "", tag: "A", amountCents: -548750 }]);
+    expect(items[0].discounts).toEqual([]); // must not have absorbed PISI's discount
+  });
+
+  it("splits a code row glued to a doubled bracket tag ('[M)]', two stray closing marks) the " +
+    "same way", () => {
+    const rows = parseRowsText("MANTA POLAR\t19999,00\n0000593923 02800005939231 [M)]\t-9999,50\n");
+    expect(parseRows(rows).items[0].discounts).toEqual([{ label: "", tag: "M", amountCents: -999950 }]);
+  });
+
+  it("splits a code row glued to the item's own description (defect E), whichever side it " +
+    "lands on, keeping the description above the code row (printed order) and the amount on " +
+    "the code row", () => {
+    const before = parseRowsText("CIF 0000574549 07791290795600\t2506,99\n");
+    expect(parseRows(before).items[0]).toMatchObject({
+      descPrinted: "CIF", sku: "0000574549", ean: "07791290795600", lineTotalCents: 250699,
+    });
+
+    const after = parseRowsText("0000574543 07791290795587 CIF\t2506,99\n");
+    expect(parseRows(after).items[0]).toMatchObject({
+      descPrinted: "CIF", sku: "0000574543", ean: "07791290795587", lineTotalCents: 250699,
+    });
+  });
+
+  it("does not mistake a period-decimal amount Vision failed to box (comma misread as period) " +
+    "for a glued description: ungluePeriodAmounts still gets first crack at it", () => {
+    const rows = parseRowsText("JAMON COCIDO\n0000563919 07798013103377 7699.00\n");
+    expect(parseRows(rows).items[0]).toMatchObject({
+      sku: "0000563919", ean: "07798013103377", descPrinted: "JAMON COCIDO", lineTotalCents: 769900,
+    });
+  });
+
+  it("splits a description row glued to its own quantity line (defect F), restoring printed " +
+    "order (quantity above description) so the quantity is recovered instead of defaulting to " +
+    "one unit", () => {
+    const rows = parseRowsText(
+      "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC 2,000 x 3670,00\n0000000001 000000000001\n",
+    );
+    expect(parseRows(rows).items[0]).toMatchObject({
+      descPrinted: "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC", qtyMilli: 2000, unitPriceCents: 367000,
+    });
+  });
 });
 
 describe("parseRows: footer", () => {
@@ -287,6 +343,30 @@ describe("parseRows: footer", () => {
       // The false-positive would have swallowed the SUBTOT/DESCUENTOS/TOTAL rows into the offers
       // block instead of reading them as the footer; confirm they were read normally.
       expect(parsedReceipt.footer).toMatchObject({ subtotalCents: 100, discountsCents: 0, totalCents: 100 });
+    });
+  });
+
+  describe("savings marker ('TOT.AHORRO'): OCR-tolerant recognition (defect G)", () => {
+    it("closes the offers block on the real garbled reading from 2026-08-28: a stray space " +
+      "before the period, which the old literal regex never anticipated", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "DETALLE DE OFERTAS APLICADAS\n1 *30% ELABORADOS\t1336,39\nTOT . AHORRO\t1336,39\n" +
+        "TELEFONO GRATUITO CABA\nwww.COTODIGITAL.com.ar\n");
+      const r = parseRows(rows);
+      expect(r.footer.savingsCents).toBe(133639);
+      expect(r.footer.offers).toEqual([{ label: "1 *30% ELABORADOS", amountCents: 133639 }]);
+      // The false positive this must not repeat: the legal footer text swallowed as offer rows
+      // because the block never closed.
+      expect(r.notes.join(" ")).not.toContain("offers:");
+    });
+
+    it("does not mistake the ordinary TOTAL marker for the savings marker (ratio 0.44, well " +
+      "under the 0.7 threshold): the real TOT.AHORRO row is still the one that sets savingsCents", () => {
+      const rows = parseRowsText(
+        "X\n0000000001 000000000001\t1,00\n" +
+        "DETALLE DE OFERTAS APLICADAS\n1 *30% ELABORADOS\t1336,39\nTOTAL\t1,00\nTOT.AHORRO\t1336,39\n");
+      expect(parseRows(rows).footer.savingsCents).toBe(133639);
     });
   });
 });

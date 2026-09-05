@@ -35,7 +35,11 @@ const QTY_RE = /^(\d+,\d{3})\s*[xX×хХ]\s*(-?\d[\d.]*,\d{2})$/;
 // nearby amount text).
 export const CODE_RE = /^(\d{10})[.,]?\s+(\d{12,14})$/;
 // The L/I readings of "[" only count after a space, or FRUTILLA and SANDIA would end in a tag.
-export const TAG_RE = /(?:\[|\(|\||\s[LI])\s*([AM])\s*[\])|J]?\s*$/;
+// Up to two stray closing marks are tolerated after the letter ("[M)]" — a doubled bracket/paren
+// misread) since a single one already was; widening `?` to `{0,2}` only ever costs an extra
+// character of slop at the very end of the string, still anchored by the opening bracket/paren/
+// pipe/L-I before the letter, so it can't start matching ordinary description text.
+export const TAG_RE = /(?:\[|\(|\||\s[LI])\s*([AM])\s*[\])|J]{0,2}\s*$/;
 // The two known discount-line shapes when the bracket tag is dropped entirely: "N *label" and
 // "MERCADO PAGO...". Used both to recognise such a line and to know a page-boundary row is one.
 const DISCOUNT_SHAPE_RE = /^(?:\d+\s*[x×хX]?\s*\*|MERCADO\s*PAGO)/i;
@@ -84,12 +88,28 @@ function levenshtein(a: string, b: string): number {
   }
   return dp[n];
 }
-function isOffersMarker(label: string): boolean {
+function similarityRatio(label: string, canon: string): number {
   const candidate = normalizeForSimilarity(label);
-  if (!candidate) return false;
-  const distance = levenshtein(candidate, OFFERS_MARKER_CANON);
-  const ratio = 1 - distance / Math.max(candidate.length, OFFERS_MARKER_CANON.length);
-  return ratio >= OFFERS_MARKER_THRESHOLD;
+  if (!candidate) return 0;
+  const distance = levenshtein(candidate, canon);
+  return 1 - distance / Math.max(candidate.length, canon.length);
+}
+function isOffersMarker(label: string): boolean {
+  return similarityRatio(label, OFFERS_MARKER_CANON) >= OFFERS_MARKER_THRESHOLD;
+}
+
+// The "TOT.AHORRO" marker that closes the offers block gets the same OCR tolerance, for the same
+// reason: its punctuation moves around ("TOT . AHORRO" — a space *before* the period, which the
+// literal `/^TOT\.?\s*AHORRO/i` never anticipates) and a fresh scan can misplace it a new way.
+// Letters-only normalisation collapses "TOT.AHORRO", "TOT . AHORRO" and "TOTAHORRO" to the same
+// string, so the real reading scores 1.0; the closest thing on a real receipt that must NOT
+// match is "TOTAL" (ratio 0.44 — see parse.test.ts), well under the 0.7 threshold shared with
+// the offers marker above. A false positive here is just as expensive in the other direction: it
+// closes the offers block early and starts reading ordinary footer rows as offer pairs.
+const SAVINGS_MARKER_CANON = normalizeForSimilarity("TOT.AHORRO");
+const SAVINGS_MARKER_THRESHOLD = 0.7;
+function isSavingsMarker(label: string): boolean {
+  return similarityRatio(label, SAVINGS_MARKER_CANON) >= SAVINGS_MARKER_THRESHOLD;
 }
 
 function emptyHeader(): ParsedHeader {
@@ -150,7 +170,7 @@ function pairOffers(rows: Row[]): { labels: string[]; amounts: number[]; pairs: 
     const label = norm(row.label);
     if (isOffersMarker(label)) { inOffers = true; labels.length = 0; amounts.length = 0; continue; }
     if (!inOffers) continue;
-    if (/^TOT\.?\s*AHORRO/i.test(label)) { inOffers = false; continue; }
+    if (isSavingsMarker(label)) { inOffers = false; continue; }
     if (label) labels.push(label);
     const amount = row.amount === null ? null : parseAmountCents(row.amount);
     if (amount !== null) amounts.push(amount);
@@ -415,6 +435,100 @@ function ungluePeriodAmounts(rows: Row[]): Row[] {
   });
 }
 
+// Anchors a code+ean pair anywhere in a row's label (not just a full-row match like CODE_RE), so
+// a glued neighbour can be found and split off on either side. Digits only — unlike
+// CODE_ANCHOR_RE above, this is used to build the sku/ean that actually gets stored, so it must
+// not tolerate the round-letter-for-zero substitution that anchor is allowed to.
+const CODE_INLINE_RE = /(\d{10})[.,]?\s+(\d{12,14})/;
+
+// Defect D: box-grouping glues a code row to the discount tag (and its amount, already split
+// into row.amount by boxesToRows) that follows it on the next printed line: "<code> <ean> [A]"
+// with the row's own amount already negative. CODE_RE's `$` anchor then matches nothing and no
+// item gets built at all — worse, the still-open *previous* item is still `current`, so the
+// discount below (via TAG_RE) silently attaches to it instead (see FINDINGS defect D). Anchor on
+// the code prefix, as ungluePeriodAmounts and codeOf() do, and require the entire glued tail to
+// be nothing but the tag — never text, so this can't be confused with a glued description
+// (defect E, handled separately, and run after this one for that reason).
+function unglueCodeTag(rows: Row[]): Row[] {
+  return rows.flatMap(row => {
+    const label = norm(row.label);
+    if (CODE_RE.test(label) || row.amount === null) return [row];
+    const amount = parseAmountCents(row.amount);
+    if (amount === null || amount >= 0) return [row]; // a printed line total is never negative
+    const m = CODE_INLINE_RE.exec(label);
+    if (!m || m.index !== 0) return [row]; // the code must anchor the start of the row
+    const tail = norm(label.slice(m[0].length));
+    if (!tail || !TAG_RE.test(tail)) return [row];
+    return [
+      { ...row, label: `${m[1]} ${m[2]}`, amount: null },
+      { ...row, label: tail, amount: row.amount },
+    ];
+  });
+}
+
+// Defect E: box-grouping glues a code row to the item's own description, on either side —
+// "CIF 0000574549 07791290795600" or "0000574543 07791290795587 CIF". Same cause as defect D,
+// different neighbour: CODE_RE's anchors match neither shape, so no item gets built. Find the
+// code anchor anywhere in the row, and if there is exactly one non-empty neighbour (before or
+// after) that isn't itself a discount shape (defect D's territory — run this pass after
+// unglueCodeTag so a tag never reaches here), split it into two rows in printed order: the
+// description first, then the bare code row — the state machine takes an item's description from
+// the last unclassified label row above its code line, so the description must sit above it
+// regardless of which side of the glued text it started on. The row's own amount (usually the
+// line total) stays on the code row, matching the shape the state machine already handles.
+function unglueCodeDescription(rows: Row[]): Row[] {
+  return rows.flatMap(row => {
+    const label = norm(row.label);
+    if (CODE_RE.test(label)) return [row];
+    // Defect E's shape is specifically a clean amount box that Vision already split off
+    // correctly, with only the description text leaking into the label — never a negative
+    // amount (a printed line total is never negative, the same invariant unglueCodeTag checks;
+    // a negative amount glued here is the pendingDiscountAmount shape instead, however badly its
+    // own tag got misread) and never a row with no amount box of its own at all (that shape is
+    // usually a garbled amount still embedded as text, which ungluePeriodAmounts is the one
+    // built to recover — grabbing it here first would bury it inside a bogus description).
+    if (row.amount === null) return [row];
+    const amount = parseAmountCents(row.amount);
+    if (amount === null || amount < 0) return [row];
+    const m = CODE_INLINE_RE.exec(label);
+    if (!m) return [row];
+    const before = label.slice(0, m.index).trim();
+    const after = label.slice(m.index + m[0].length).trim();
+    if (before && after) return [row]; // neighbours on both sides — not this defect's shape
+    const desc = before || after;
+    // A neighbour with no letters at all is never a description (every printed description has
+    // letters in it) — likely leftover digit noise from a misread code.
+    if (!desc || TAG_RE.test(desc) || DISCOUNT_SHAPE_RE.test(desc) || !/[A-Za-zÀ-ÿ]/.test(desc)) return [row];
+    return [
+      { ...row, label: desc, amount: null },
+      { ...row, label: `${m[1]} ${m[2]}`, amount: row.amount },
+    ];
+  });
+}
+
+// Defect F: box-grouping glues a description row to the quantity line that belongs above it —
+// "CREMA DE LECHE MILKAUT DOBLEPOT 200 CC 2,000 x 3670,00" — because the two boxes' text got
+// sorted left-to-right into one row despite sitting on separate printed lines (the quantity box
+// often lands further right). QTY_RE's anchors then match neither the glued row nor anything
+// else, so the item is born with qty 1000 and no unit price. Recognised by a QTY_RE-shaped tail;
+// split into two rows in *printed* (not glued-text) order — the quantity line above the
+// description, exactly as the clean shape elsewhere in this file and in spec §5 — since the main
+// loop clears `candidate` on every quantity line (it is only ever meant to precede a
+// description), so emitting the description first would silently drop it.
+const QTY_TAIL_RE = /^(.*\S)\s+(\d+,\d{3}\s*[xX×хХ]\s*-?\d[\d.]*,\d{2})$/;
+function unglueQtyLine(rows: Row[]): Row[] {
+  return rows.flatMap(row => {
+    const label = norm(row.label);
+    if (QTY_RE.test(label)) return [row];
+    const m = QTY_TAIL_RE.exec(label);
+    if (!m) return [row];
+    return [
+      { ...row, label: m[2], amount: null },
+      { ...row, label: m[1], amount: row.amount },
+    ];
+  });
+}
+
 // A row whose box-grouping left it with no label at all: the whole row is just an amount. Only
 // positive, since this is used to recognise a stray printed subtotal — never negative — and a
 // bare negative amount directly above a footer marker is routinely just the previous item's
@@ -432,7 +546,15 @@ function barePositiveAmountOf(r: Row): number | null {
  */
 export function parseRows(input: Row[]): ParsedReceipt {
   const notes: string[] = [];
-  const rows = ungluePeriodAmounts(mergePages(input, notes));
+  // Glue-splitters run before mergePages, so its own code anchoring (already tolerant of a glued
+  // trailer — see codeOf()) sees clean code rows too, and before the state machine for the reason
+  // each is commented with above. Order among them matters: unglueCodeTag must run before
+  // unglueCodeDescription, since a still-glued tag would otherwise be mistaken for a glued
+  // description; unglueQtyLine is independent of the code-row splitters (it never touches a code
+  // line) so its position relative to them doesn't matter, but it must run before mergePages can
+  // see a clean quantity line for its own duplicate-page reconciliation.
+  const preSplit = unglueCodeDescription(unglueCodeTag(unglueQtyLine(input)));
+  const rows = ungluePeriodAmounts(mergePages(preSplit, notes));
   const header = emptyHeader();
   const footer: ParsedFooter = { subtotalCents: null, discountsCents: null, totalCents: null, savingsCents: null, offers: [] };
   const items: ParsedItem[] = [];
@@ -466,7 +588,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
       continue;
     }
     if (inOffers) {
-      if (/^TOT\.?\s*AHORRO/i.test(label)) { inOffers = false; footer.savingsCents = amount; continue; }
+      if (isSavingsMarker(label)) { inOffers = false; footer.savingsCents = amount; continue; }
       continue;
     }
     if (/^SUBTOT/i.test(label)) {
