@@ -353,4 +353,64 @@ describe("mergePages", () => {
     const merged = mergePages(rows("## page 1\nA\n0000000001 000000000001\t1,00\n## page 2\nTOTAL\t1,00\n"));
     expect(merged).toHaveLength(3);
   });
+
+  describe("offers-section discount tiebreaker", () => {
+    // Same duplicated item as the "reconciles a duplicated item field by field" test above (page
+    // 1's quantity line mangled, page 2's clean, so the quantity-line proxy always prefers page
+    // 2's discount reading) — except here the offers section shows page 2's reading is the WRONG
+    // one and page 1's is right. Without the rule, the proxy still picks page 2's -2660,99;
+    // with it, the offers total (2060,99) settles on page 1's -2060,99 instead.
+    const disputedItem = (offersBlock: string) => rows(
+      "## page 1\n" +
+      "1,000 x 200U,: 2661 90\nPALMOLIVE\n0000608115 07509546070988\t7982,97\n" +
+      "1 *3X2 JABON TOCADOR [A]\t-2060,99\n" +
+      "## page 2\n" +
+      "3,000 x 2660,99\nPALMOLIVE\n0000608115 07509546070988\t1982,97\n" +
+      "1 *3X2 JABON TOCADOR [A]\t-2660,99\n" +
+      offersBlock);
+
+    it("earns its place: rescues a duplicated discount the quantity-line proxy would otherwise " +
+      "get wrong, using the offers section total as a tiebreaker between the two OCR readings", () => {
+      const notes: string[] = [];
+      const merged = mergePages(disputedItem(
+        "DETALLE DE OFERTAS APLICADAS\n1 *3X2 JABON TOCADOR\t2060,99\nTOT.AHORRO\t2060,99\n"), notes);
+      expect(merged.filter(r => /^1 \*3X2 JABON TOCADOR \[A\]$/.test(r.label))).toEqual([
+        { page: 2, label: "1 *3X2 JABON TOCADOR [A]", amount: "-2060,99" },
+      ]);
+      expect(notes.join(" ")).toContain("JABON TOCADOR");
+    });
+
+    it("does not fire when the label is ambiguous: carried by a second discount row elsewhere on " +
+      "the receipt", () => {
+      const merged = mergePages(disputedItem(
+        "ANOTHER ITEM\n0000000009 000000000009\t100,00\n1 *3X2 JABON TOCADOR [A]\t-50,00\n" +
+        "DETALLE DE OFERTAS APLICADAS\n1 *3X2 JABON TOCADOR\t2060,99\nTOT.AHORRO\t2060,99\n"));
+      const disputed = merged.filter(r => /^1 \*3X2 JABON TOCADOR \[A\]/.test(r.label));
+      expect(disputed).toContainEqual({ page: 2, label: "1 *3X2 JABON TOCADOR [A]", amount: "-2660,99" });
+    });
+
+    it("does not fire when the label is 'MERCADO PAGO 25% - V' aggregated across several items: " +
+      "sharing one offer total is the same ambiguity as two labelled discount rows", () => {
+      const merged = mergePages(rows(
+        "## page 1\n" +
+        "1,000 x 200U,: 2661 90\nPALMOLIVE\n0000608115 07509546070988\t7982,97\n" +
+        "MERCADO PAGO 25% - V [M]\t-2060,99\n" +
+        "## page 2\n" +
+        "3,000 x 2660,99\nPALMOLIVE\n0000608115 07509546070988\t1982,97\n" +
+        "MERCADO PAGO 25% - V [M]\t-2660,99\n" +
+        "OTHER ITEM\n0000000009 000000000009\t500,00\nMERCADO PAGO 25% - V [M]\t-100,00\n" +
+        "DETALLE DE OFERTAS APLICADAS\nMERCADO PAGO 25% - V\t2160,99\nTOT.AHORRO\t2160,99\n"));
+      const disputed = merged.filter(r => /^MERCADO PAGO 25% - V \[M\]/.test(r.label));
+      expect(disputed).toContainEqual({ page: 2, label: "MERCADO PAGO 25% - V [M]", amount: "-2660,99" });
+    });
+
+    it("does not fire when neither OCR reading matches the printed offer total (garbled offers " +
+      "row): the existing quantity-line proxy still decides", () => {
+      const merged = mergePages(disputedItem(
+        "DETALLE DE OFERTAS APLICADAS\n1 *3X2 JABON TOCADOR\t9999,99\nTOT.AHORRO\t9999,99\n"));
+      expect(merged.filter(r => /^1 \*3X2 JABON TOCADOR \[A\]$/.test(r.label))).toEqual([
+        { page: 2, label: "1 *3X2 JABON TOCADOR [A]", amount: "-2660,99" },
+      ]);
+    });
+  });
 });

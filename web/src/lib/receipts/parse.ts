@@ -98,6 +98,55 @@ function codeOf(row: Row): { sku: string; ean: string } | null {
 }
 
 /**
+ * Labels and amounts printed in "DETALLE DE OFERTAS APLICADAS" are collected in two separate
+ * lists, in the order encountered, and paired by index afterwards — that is what survives the
+ * row offset the scan introduces there (spec §5). Shared by parseRows (which reports the pairs)
+ * and mergePages (which uses them only as a tiebreaker, never as a source of truth — see the
+ * discount-dispute resolution below).
+ */
+function pairOffers(rows: Row[]): { labels: string[]; amounts: number[]; pairs: ParsedOffer[] } {
+  const labels: string[] = [];
+  const amounts: number[] = [];
+  let inOffers = false;
+  for (const row of rows) {
+    const label = norm(row.label);
+    if (/DETALLE DE OFERTAS/i.test(label)) { inOffers = true; labels.length = 0; amounts.length = 0; continue; }
+    if (!inOffers) continue;
+    if (/^TOT\.?\s*AHORRO/i.test(label)) { inOffers = false; continue; }
+    if (label) labels.push(label);
+    const amount = row.amount === null ? null : parseAmountCents(row.amount);
+    if (amount !== null) amounts.push(amount);
+  }
+  const pairs = labels.map((l, i) => ({ label: l, amountCents: amounts[i] ?? null }));
+  return { labels, amounts, pairs };
+}
+
+/**
+ * Reads a discount row the same way the parser's main loop eventually would: a tagged row's
+ * label is whatever sits before the bracket, its amount forced negative; an untagged "N *label"
+ * or "MERCADO PAGO..." row only counts when its own amount already reads negative. Returns null
+ * for anything else (including a tagged row still waiting on a following bare-amount row — that
+ * split-row shape isn't attempted here, only the common single-row discount line is).
+ */
+function discountFields(row: Row): { label: string; tag: "M" | "A"; amountCents: number } | null {
+  const label = norm(row.label);
+  const amountRaw = row.amount === null ? null : parseAmountCents(row.amount);
+  const tagMatch = TAG_RE.exec(label);
+  if (tagMatch) {
+    if (amountRaw === null) return null;
+    return {
+      label: norm(label.slice(0, tagMatch.index)),
+      tag: tagMatch[1] as "M" | "A",
+      amountCents: amountRaw > 0 ? -amountRaw : amountRaw,
+    };
+  }
+  if (DISCOUNT_SHAPE_RE.test(label) && amountRaw !== null && amountRaw < 0) {
+    return { label, tag: /^MERCADO\s*PAGO/i.test(label) ? "M" : "A", amountCents: amountRaw };
+  }
+  return null;
+}
+
+/**
  * The scans overlap: page k+1 starts with lines already on page k. Code lines are the anchors —
  * every item has exactly one — so the longest run of codes that ends page k and starts page k+1
  * is the duplicated stretch. Each duplicated item is reconciled field by field rather than one
@@ -106,8 +155,32 @@ function codeOf(row: Row): { sku: string; ean: string } | null {
  * quantity line itself — comes from whichever copy's own quantity line parsed cleanly, or
  * (failing that signal on both sides) whichever copy carries more discount rows, since the page
  * break can fall between an item and its discounts, leaving them on one page only.
+ *
+ * One exception to "no arithmetic check can settle a disputed discount amount": when both copies
+ * of a duplicated item's discount row agree on label and tag but disagree on the amount, and that
+ * label is carried by exactly one discount row in the whole merged receipt, the printed
+ * "DETALLE DE OFERTAS APLICADAS" total for that label — if exactly one of the two OCR readings
+ * matches it — settles which reading was right. This never adopts a number OCR didn't already
+ * read off the discount line itself, only chooses between the two readings already held; the
+ * offers section is still never a source of truth (spec §2), and the exact-cent gate still has
+ * final say. `notes` (optional; defaults to a throwaway array so existing callers are unaffected)
+ * receives one line per resolved dispute.
  */
-export function mergePages(rows: Row[]): Row[] {
+export function mergePages(rows: Row[], notes: string[] = []): Row[] {
+  const offerPairs = pairOffers(rows).pairs;
+  const offerAmountsByLabel = new Map<string, Set<number>>();
+  for (const p of offerPairs) {
+    if (p.amountCents === null || !p.label) continue;
+    if (!offerAmountsByLabel.has(p.label)) offerAmountsByLabel.set(p.label, new Set());
+    offerAmountsByLabel.get(p.label)!.add(p.amountCents);
+  }
+  // Only trust a label whose printed offer total is unambiguous (a repeated label with
+  // disagreeing totals is a garbled footer, not evidence).
+  const offerCentsByLabel = new Map<string, number>();
+  for (const [label, amounts] of offerAmountsByLabel) if (amounts.size === 1) offerCentsByLabel.set(label, [...amounts][0]);
+
+  const disputes: { row: Row; label: string; tag: "M" | "A"; chosenAmount: number; otherAmount: number }[] = [];
+
   const pageNumbers = [...new Set(rows.map(r => r.page))].sort((a, b) => a - b);
   const pages = pageNumbers.map(p => rows.filter(r => r.page === p));
   let merged: Row[] = pages[0] ?? [];
@@ -192,6 +265,28 @@ export function mergePages(rows: Row[]): Row[] {
       const chosenCodeRow = preferB ? rowCodeB : rowCodeA;
       const otherCodeRow = preferB ? rowCodeA : rowCodeB;
 
+      // Record a dispute for every discount row the two copies read the same label/tag on but a
+      // different amount for. The whole trailer is chosen from one copy above (preferB), so at
+      // most one of the two rows in a matched pair actually survives into the output — hold a
+      // reference to that one so the resolution sweep below can replace just its amount in place.
+      const discFieldsA = trailA
+        .map(row => ({ row, f: discountFields(row) }))
+        .filter((x): x is { row: Row; f: NonNullable<ReturnType<typeof discountFields>> } => x.f !== null);
+      const discFieldsB = trailB
+        .map(row => ({ row, f: discountFields(row) }))
+        .filter((x): x is { row: Row; f: NonNullable<ReturnType<typeof discountFields>> } => x.f !== null);
+      for (const dA of discFieldsA) {
+        const dB = discFieldsB.find(x => x.f.label === dA.f.label && x.f.tag === dA.f.tag && x.f.amountCents !== dA.f.amountCents);
+        if (!dB) continue;
+        disputes.push({
+          row: preferB ? dB.row : dA.row,
+          label: dA.f.label,
+          tag: dA.f.tag,
+          chosenAmount: preferB ? dB.f.amountCents : dA.f.amountCents,
+          otherAmount: preferB ? dA.f.amountCents : dB.f.amountCents,
+        });
+      }
+
       // Line total: corroborated by qty × unit price. Only overridden when the chosen copy's own
       // code row carries an amount that the arithmetic refutes AND the other copy's own code row
       // carries one it confirms — swapping in just that number, never the row structure, so the
@@ -218,6 +313,35 @@ export function mergePages(rows: Row[]): Row[] {
     }
     merged = out.concat(next.slice(lastTrailBEnd));
   }
+
+  if (disputes.length > 0) {
+    // Condition 2 needs a count over the merged result, so it can only be resolved once merging
+    // (across every page pair) is done.
+    const finalLabelCounts = new Map<string, number>();
+    for (const row of merged) {
+      const f = discountFields(row);
+      if (f) finalLabelCounts.set(f.label, (finalLabelCounts.get(f.label) ?? 0) + 1);
+    }
+    for (const d of disputes) {
+      if ((finalLabelCounts.get(d.label) ?? 0) !== 1) continue; // attribution ambiguous
+      const offerCents = offerCentsByLabel.get(d.label);
+      if (offerCents === undefined) continue; // no unambiguous offer total for this label
+      const chosenMatches = Math.abs(d.chosenAmount) === offerCents;
+      const otherMatches = Math.abs(d.otherAmount) === offerCents;
+      if (chosenMatches === otherMatches) continue; // neither, or both (uninformative) — garbled offers row
+      const winner = chosenMatches ? d.chosenAmount : d.otherAmount;
+      const loser = chosenMatches ? d.otherAmount : d.chosenAmount;
+      if (winner !== d.chosenAmount) {
+        merged = merged.map(row => (row === d.row ? { ...row, amount: centsToAmountString(winner) } : row));
+      }
+      notes.push(
+        `discount "${d.label}" [${d.tag}]: two OCR readings disagreed (${centsToAmountString(d.chosenAmount)} vs ` +
+        `${centsToAmountString(d.otherAmount)}); the offers section total settled on ${centsToAmountString(winner)}` +
+        (winner === d.chosenAmount ? "" : `, over the proxy's own pick of ${centsToAmountString(loser)}`),
+      );
+    }
+  }
+
   return merged;
 }
 
@@ -269,11 +393,11 @@ function barePositiveAmountOf(r: Row): number | null {
  * every discount row until the next quantity line, code line or footer marker.
  */
 export function parseRows(input: Row[]): ParsedReceipt {
-  const rows = ungluePeriodAmounts(mergePages(input));
+  const notes: string[] = [];
+  const rows = ungluePeriodAmounts(mergePages(input, notes));
   const header = emptyHeader();
   const footer: ParsedFooter = { subtotalCents: null, discountsCents: null, totalCents: null, savingsCents: null, offers: [] };
   const items: ParsedItem[] = [];
-  const notes: string[] = [];
   let pending: { qtyMilli: number; unitPriceCents: number } | null = null;
   let candidate: Row | null = null;     // the last unclassified label row: the next description
   let current: ParsedItem | null = null; // the item still accepting a line total and discounts
@@ -288,8 +412,6 @@ export function parseRows(input: Row[]): ParsedReceipt {
   let awaitingSubtotal = false;  // same, for SUBTOT. SIN DESCUENTOS
   let awaitingDescuentos = false; // same, for DESCUENTOS POR PROMOCIONES
   let inOffers = false;
-  const offerLabels: string[] = [];
-  const offerAmounts: number[] = [];
   // A printed discount total (DESCUENTOS POR PROMOCIONES) is always a subtraction, so it prints
   // negative; OCR sometimes drops the minus sign when the row gets glued to something else.
   const forceNegative = (n: number) => (n > 0 ? -n : n);
@@ -302,13 +424,11 @@ export function parseRows(input: Row[]): ParsedReceipt {
     scanHeader(label, header);
 
     if (/DETALLE DE OFERTAS/i.test(label)) {
-      inOffers = true; offerLabels.length = 0; offerAmounts.length = 0; current = null; candidate = null;
+      inOffers = true; current = null; candidate = null;
       continue;
     }
     if (inOffers) {
       if (/^TOT\.?\s*AHORRO/i.test(label)) { inOffers = false; footer.savingsCents = amount; continue; }
-      if (label) offerLabels.push(label);
-      if (amount !== null) offerAmounts.push(amount);
       continue;
     }
     if (/^SUBTOT/i.test(label)) {
@@ -449,8 +569,9 @@ export function parseRows(input: Row[]): ParsedReceipt {
   for (const it of items) {
     if (it.lineTotalCents === null) notes.push(`item ${it.position} (${it.descPrinted}) has no line total`);
   }
-  footer.offers = offerLabels.map((l, i) => ({ label: l, amountCents: offerAmounts[i] ?? null }));
-  if (offerLabels.length !== offerAmounts.length)
-    notes.push(`offers: ${offerLabels.length} labels but ${offerAmounts.length} amounts`);
+  const offerScan = pairOffers(rows);
+  footer.offers = offerScan.pairs;
+  if (offerScan.labels.length !== offerScan.amounts.length)
+    notes.push(`offers: ${offerScan.labels.length} labels but ${offerScan.amounts.length} amounts`);
   return { header, items, footer, notes };
 }
