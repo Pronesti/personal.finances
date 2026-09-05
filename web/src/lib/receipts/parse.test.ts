@@ -205,6 +205,15 @@ describe("parseRows: items", () => {
     });
   });
 
+  it("splits a row glued three ways at once — code, description and a period-decimal amount all " +
+    "on one line (defect E composed with the period-amount defect): ungluePeriodAmounts must run " +
+    "first so the amount is recognised before unglueCodeDescription looks for a glued neighbour", () => {
+    const rows = parseRowsText("0000574549 07791290795600 WIDGET 2506.99\n");
+    expect(parseRows(rows).items[0]).toMatchObject({
+      sku: "0000574549", ean: "07791290795600", descPrinted: "WIDGET", lineTotalCents: 250699,
+    });
+  });
+
   it("splits a description row glued to its own quantity line (defect F), restoring printed " +
     "order (quantity above description) so the quantity is recovered instead of defaulting to " +
     "one unit", () => {
@@ -421,6 +430,47 @@ describe("mergePages", () => {
     const boundary = merged.find(r => r.label.startsWith("0000000002"))!;
     expect(boundary).toEqual({ page: 2, label: "0000000002 000000000002", amount: "2,00" });
   });
+  describe("bounded mismatch tolerance in the run match (garbled-beyond-anchor codes)", () => {
+    // A real failure mode: one code in the middle of an otherwise-clean overlap is garbled past
+    // even codeOf()'s round-letter tolerance (real digits replaced, not just a "0" misread), so
+    // requiring an unbroken run would defeat the whole dedupe for every item in the stretch, not
+    // just the one that's actually unreadable. A run of 4 with a single interior mismatch and
+    // both endpoints clean still qualifies.
+    it("dedupes a run whose anchor codes contain one garbled position in the middle", () => {
+      const merged = mergePages(rows(
+        "## page 1\n" +
+        "W\n0000000000 000000000000\t9,00\n" +
+        "A\n0000000001 000000000001\t1,00\nB\n0000000002 000000000002\t2,00\n" +
+        "C\n0000000003 000000000003\t3,00\nD\n0000000004 000000000004\t4,00\n" +
+        "## page 2\n" +
+        "A\n0000000001 000000000001\t1,00\nB\n0000000002 000000000002\t2,00\n" +
+        "C\n0000000099 000000000099\t3,00\nD\n0000000004 000000000004\t4,00\n" +
+        "E\n0000000005 000000000005\t5,00\n"));
+      // W (page 1 only), A, B, one copy of C, D (deduped), E (page 2 only) — six code rows, not ten.
+      expect(merged.filter(r => /^\d{10} /.test(r.label))).toHaveLength(6);
+      expect(merged.filter(r => r.label.startsWith("0000000001"))).toHaveLength(1);
+      expect(merged.filter(r => r.label.startsWith("0000000002"))).toHaveLength(1);
+      expect(merged.filter(r => r.label.startsWith("0000000004"))).toHaveLength(1);
+    });
+
+    // The same shape, one item shorter (3 long instead of 4): still exactly one interior mismatch
+    // with both endpoints clean, but below the minimum run length the tolerance requires. This is
+    // the bound doing its job — a short coincidental near-match must NOT be trusted as a real
+    // page overlap, because the same guard is what stops two genuinely separate purchases of one
+    // product from being collapsed into one. Neither copy of A or C is dropped.
+    it("does not merge a too-short run even with only one interior mismatch and clean endpoints", () => {
+      const merged = mergePages(rows(
+        "## page 1\n" +
+        "A\n0000000001 000000000001\t1,00\nB\n0000000002 000000000002\t2,00\n" +
+        "C\n0000000003 000000000003\t3,00\n" +
+        "## page 2\n" +
+        "A\n0000000001 000000000001\t1,00\nB\n0000000099 000000000099\t2,00\n" +
+        "C\n0000000003 000000000003\t3,00\nD\n0000000004 000000000004\t4,00\n"));
+      expect(merged.filter(r => r.label.startsWith("0000000001"))).toHaveLength(2);
+      expect(merged.filter(r => r.label.startsWith("0000000003"))).toHaveLength(2);
+    });
+  });
+
   it("still anchors when a mid-run code had a '0' misread as a round letter", () => {
     // A real failure mode: page k+1's own scan reads one duplicated item's leading digit as a
     // similarly-round letter ("C" for "0"). Filtering that item's code out entirely (rather than

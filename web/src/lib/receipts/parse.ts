@@ -247,10 +247,31 @@ export function mergePages(rows: Row[], notes: string[] = []): Row[] {
     const b = next.map((r, i) => ({ i, code: codeOf(r) })).filter(x => x.code !== null);
     const same = (p: { sku: string; ean: string }, q: { sku: string; ean: string }) =>
       p.sku === q.sku || p.ean === q.ean;
+    // Requiring every position to match is brittle: one code garbled past codeOf()'s own anchor
+    // tolerance (a stray character inside the digit run itself, not just a round-letter zero)
+    // defeats the whole run, even though every other item in the stretch lines up. Tolerate up to
+    // one interior mismatch, bounded three ways so a short coincidental run — most importantly,
+    // a receipt that legitimately lists the same product twice — can't be mistaken for a real
+    // page overlap: (1) the run must be at least MIN_RUN_LENGTH long, so the tolerance only ever
+    // applies to a stretch with several other items already corroborating it; (2) at most
+    // MAX_MISMATCHES position may disagree, keeping the mismatch ratio at or below 1 in 4 even at
+    // the minimum length; (3) the run's own two endpoints (its first and last position) must
+    // match cleanly — a run that is shaky right at the seam is exactly the case that must NOT
+    // merge. A real duplicate purchase would have to coincidentally sit at the page boundary AND
+    // have several neighbouring items also coincide on both sides for this to misfire, which a
+    // genuine second purchase of one product elsewhere in the receipt never does.
+    const MIN_RUN_LENGTH = 4;
+    const MAX_MISMATCHES = 1;
     let k = 0;
     for (let n = Math.min(a.length, b.length); n >= 1; n--) {
       const tailA = a.slice(-n), headB = b.slice(0, n);
-      if (tailA.every((x, j) => same(x.code!, headB[j].code!))) { k = n; break; }
+      const matches = tailA.map((x, j) => same(x.code!, headB[j].code!));
+      const mismatchCount = matches.filter(m => !m).length;
+      if (mismatchCount === 0) { k = n; break; } // exact match always wins outright
+      if (n >= MIN_RUN_LENGTH && mismatchCount <= MAX_MISMATCHES && matches[0] && matches[n - 1]) {
+        k = n;
+        break;
+      }
     }
     if (k === 0) { merged = merged.concat(next); continue; }
 
@@ -441,6 +462,45 @@ function ungluePeriodAmounts(rows: Row[]): Row[] {
   });
 }
 
+// Defect: box-grouping sometimes pulls the AMOUNT box of the line that follows a quantity line
+// into the quantity line's own row (the two sit close enough vertically for the row-grouping
+// tolerance to treat them as one). A quantity line never prints its own amount — spec §5's shape
+// is just "qty x unit_price" — so any amount attached to a QTY_RE-shaped row is always spillover
+// that belongs to the very next row, and only ever the next row (the one immediately below it,
+// same page), never further down. Move it there, but only when that row doesn't already carry an
+// amount of its own — a row that already has one read its amount correctly and the spillover is
+// simply lost box noise, not a second figure to overwrite it with.
+function unglueQtyAmount(rows: Row[]): Row[] {
+  const out = rows.map(r => ({ ...r }));
+  for (let i = 0; i < out.length - 1; i++) {
+    const row = out[i];
+    if (row.amount === null || !QTY_RE.test(norm(row.label))) continue;
+    const next = out[i + 1];
+    if (next.page !== row.page || next.amount !== null) continue;
+    out[i + 1] = { ...next, amount: row.amount };
+    out[i] = { ...row, amount: null };
+  }
+  return out;
+}
+
+// Defect: Vision occasionally reads one printed code+ean line as two boxes that duplicate each
+// other, so box-grouping glues the SAME "<code> <ean>" text to itself ("<code> <ean> <code>
+// <ean>"). CODE_RE's `$` anchor then fails just like it does for defects D, E and F below.
+// General, not receipt-specific: collapse any row whose entire label is the same code+ean anchor
+// match repeated twice in a row into the single clean reading.
+function dedupeSelfRepeatedCode(rows: Row[]): Row[] {
+  return rows.map(row => {
+    const label = norm(row.label);
+    if (CODE_RE.test(label)) return row;
+    const m = CODE_INLINE_RE.exec(label);
+    if (!m || m.index !== 0) return row;
+    const first = `${m[1]} ${m[2]}`;
+    const rest = norm(label.slice(m[0].length));
+    if (rest !== first) return row;
+    return { ...row, label: first };
+  });
+}
+
 // Anchors a code+ean pair anywhere in a row's label (not just a full-row match like CODE_RE), so
 // a glued neighbour can be found and split off on either side. Digits only — unlike
 // CODE_ANCHOR_RE above, this is used to build the sku/ean that actually gets stored, so it must
@@ -455,6 +515,16 @@ const CODE_INLINE_RE = /(\d{10})[.,]?\s+(\d{12,14})/;
 // the code prefix, as ungluePeriodAmounts and codeOf() do, and require the entire glued tail to
 // be nothing but the tag — never text, so this can't be confused with a glued description
 // (defect E, handled separately, and run after this one for that reason).
+//
+// A printed line total is never negative (the same invariant unglueCodeDescription checks in the
+// other direction), so once the code anchors the row's start and its own amount already reads
+// negative, the glued tail can only ever be the discount's bracket tag — never a description,
+// regardless of what OCR made of the bracket itself. TAG_RE recognises the usual bracket shapes
+// directly; when even the opening bracket is misread into some other letter ("CA]" for "[A]", the
+// discount label's own row is never glued here — only its tag is, so the tail is short), fall
+// back to whichever of A/M the remnant actually contains. Never both: a genuine tag remnant only
+// ever carries one of the two letters, so an ambiguous tail (both, or neither) is left unsplit
+// rather than guessed at.
 function unglueCodeTag(rows: Row[]): Row[] {
   return rows.flatMap(row => {
     const label = norm(row.label);
@@ -464,10 +534,17 @@ function unglueCodeTag(rows: Row[]): Row[] {
     const m = CODE_INLINE_RE.exec(label);
     if (!m || m.index !== 0) return [row]; // the code must anchor the start of the row
     const tail = norm(label.slice(m[0].length));
-    if (!tail || !TAG_RE.test(tail)) return [row];
+    if (!tail) return [row];
+    const direct = TAG_RE.exec(tail);
+    let tagTail = direct ? tail : null;
+    if (!direct) {
+      const hasA = /A/.test(tail), hasM = /M/.test(tail);
+      if (hasA !== hasM) tagTail = `[${hasA ? "A" : "M"}]`;
+    }
+    if (tagTail === null) return [row];
     return [
       { ...row, label: `${m[1]} ${m[2]}`, amount: null },
-      { ...row, label: tail, amount: row.amount },
+      { ...row, label: tagTail, amount: row.amount },
     ];
   });
 }
@@ -554,13 +631,22 @@ export function parseRows(input: Row[]): ParsedReceipt {
   const notes: string[] = [];
   // Glue-splitters run before mergePages, so its own code anchoring (already tolerant of a glued
   // trailer — see codeOf()) sees clean code rows too, and before the state machine for the reason
-  // each is commented with above. Order among them matters: unglueCodeTag must run before
-  // unglueCodeDescription, since a still-glued tag would otherwise be mistaken for a glued
-  // description; unglueQtyLine is independent of the code-row splitters (it never touches a code
-  // line) so its position relative to them doesn't matter, but it must run before mergePages can
-  // see a clean quantity line for its own duplicate-page reconciliation.
-  const preSplit = unglueCodeDescription(unglueCodeTag(unglueQtyLine(input)));
-  const rows = ungluePeriodAmounts(mergePages(preSplit, notes));
+  // each is commented with above. Order among them matters: ungluePeriodAmounts runs first so a
+  // triple-glued row (code + description + a period-decimal amount, all one row — see defect E
+  // composed with the period-amount defect) has its amount recognised before unglueCodeDescription
+  // ever sees the row, the same way it already does for a plain code+amount row; unglueQtyAmount
+  // must also run before the code-row splitters, so a quantity line's stray amount lands on the
+  // very row those splitters are about to act on rather than staying stranded; dedupeSelfRepeatedCode
+  // is independent (it only ever touches a row CODE_RE already rejects) so its position doesn't
+  // matter beyond running before unglueCodeDescription would otherwise treat the repeat as a glued
+  // description. unglueCodeTag must run before unglueCodeDescription, since a still-glued tag would
+  // otherwise be mistaken for a glued description; unglueQtyLine is independent of the code-row
+  // splitters (it never touches a code line) so its position relative to them doesn't matter, but
+  // it must run before mergePages can see a clean quantity line for its own duplicate-page
+  // reconciliation.
+  const preSplit = unglueCodeDescription(unglueCodeTag(unglueQtyLine(
+    dedupeSelfRepeatedCode(unglueQtyAmount(ungluePeriodAmounts(input))))));
+  const rows = mergePages(preSplit, notes);
   const header = emptyHeader();
   const footer: ParsedFooter = { subtotalCents: null, discountsCents: null, totalCents: null, savingsCents: null, offers: [] };
   const items: ParsedItem[] = [];
