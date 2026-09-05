@@ -3,7 +3,7 @@ import { reviewQueue, allProducts } from "@/lib/receipts/products";
 import { PRODUCT_CATEGORIES } from "@/lib/receipts/categories";
 import { fmtArsCents } from "@/lib/receipts/money";
 import { getT } from "@/lib/locale";
-import { saveProductAction, mergeProductAction } from "./actions";
+import { saveProductAction, mergeProductAction, rematchAllAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +19,10 @@ export default async function SuperReview() {
       <p className="mb-4 text-sm text-ink-muted">
         {queue.length === 0 ? tr("super.review.none") : tr("super.review.summary", { count: queue.length })}
       </p>
+      <form action={rematchAllAction} className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-4">
+        <button type="submit" className={button}>{tr("super.review.rematch")}</button>
+        <p className="text-xs text-ink-muted">{tr("super.review.rematchNote")}</p>
+      </form>
       <div className="space-y-4">
         {queue.map(p => (
           <div key={p.id} className="rounded-xl border border-line bg-surface p-4">

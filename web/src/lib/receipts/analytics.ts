@@ -108,8 +108,8 @@ export function buildAnalytics(receiptsIn: ReceiptFact[], items: ItemFact[]): An
     app.grossCents += it.grossCents;
     app.discountCents += it.discountCents;
     app.netCents = app.grossCents + app.discountCents;
-    app.unitGross = app.grossCents * 1000 / app.qtyMilli;
-    app.unitNet = app.netCents * 1000 / app.qtyMilli;
+    app.unitGross = app.qtyMilli === 0 ? 0 : app.grossCents * 1000 / app.qtyMilli;
+    app.unitNet = app.qtyMilli === 0 ? 0 : app.netCents * 1000 / app.qtyMilli;
     byProduct.set(it.productId, stat);
   }
   const products = [...byProduct.values()].map(stat => {
@@ -120,7 +120,8 @@ export function buildAnalytics(receiptsIn: ReceiptFact[], items: ItemFact[]): An
     stat.totalDiscountCents = stat.appearances.reduce((s, a) => s + a.discountCents, 0);
     if (stat.appearances.length >= 2) {
       const [from, to] = stat.appearances.slice(-2);
-      stat.lastChange = { from: from.index, to: to.index, grossPct: pct(to.unitGross, from.unitGross), netPct: pct(to.unitNet, from.unitNet) };
+      stat.lastChange = from.unitGross === 0 || from.unitNet === 0 ? null
+        : { from: from.index, to: to.index, grossPct: pct(to.unitGross, from.unitGross), netPct: pct(to.unitNet, from.unitNet) };
     }
     return stat;
   }).sort((a, b) => b.totalSpentCents - a.totalSpentCents || a.name.localeCompare(b.name));

@@ -106,4 +106,23 @@ describe("buildAnalytics", () => {
     expect(empty.kpis).toBeNull();
     expect(empty.index).toEqual([]);
   });
+
+  it("keeps lastChange null when an earlier appearance was fully discounted", () => {
+    // productId 9 was free (100% discount) in receipt 1, then paid normally in receipt 2: the
+    // earlier unitNet is 0, so a percent change against it would be Infinity, not a real signal.
+    const freeItems: ItemFact[] = [
+      item({ receiptId: 1, productId: 9, qtyMilli: 1000, grossCents: 100000, discountCents: -100000 }),
+      item({ receiptId: 2, productId: 9, qtyMilli: 1000, grossCents: 100000 }),
+    ];
+    const fa = buildAnalytics(receipts, freeItems);
+    const free = fa.products.find(p => p.productId === 9)!;
+    expect(free.appearances.map(x => [x.unitGross, x.unitNet])).toEqual([[100000, 0], [100000, 100000]]);
+    expect(free.lastChange).toBeNull();
+    for (const p of fa.products) {
+      for (const x of p.appearances) {
+        expect(Number.isFinite(x.unitGross)).toBe(true);
+        expect(Number.isFinite(x.unitNet)).toBe(true);
+      }
+    }
+  });
 });

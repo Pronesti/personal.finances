@@ -183,6 +183,8 @@ export function storeReceipt(db: Database.Database, input: StoreInput): ReceiptS
   }
   // Products are a layer over the stored receipt: matched now so every page sees the new
   // receipt at once, in its own transaction so a matcher bug can never lose a verified receipt.
+  // If matching throws, the receipt is already committed and its file-hash dedupe blocks a
+  // re-upload; recovery is the re-match control on /super/review, not re-ingesting this file.
   matchReceipt(db, id);
   // verify() guarantees these are non-null when report.ok, and storeReceipt is only reached then.
   return { id, date: h.date!, totalCents: parsed.footer.totalCents!, items: parsed.items.length, report };

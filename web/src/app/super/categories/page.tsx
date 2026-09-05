@@ -31,7 +31,7 @@ export default async function SuperCategories() {
                 <td className="py-1">{tr(`productCategory.${c.category}`)}</td>
                 {c.perPeriod.map((v, i) => (
                   // One hue, light to dark: the accent at an opacity that follows the amount.
-                  <td key={i} className="text-right font-mono tabular-nums" style={{ background: `color-mix(in srgb, var(--accent) ${Math.round(v / max * 70)}%, transparent)` }}>
+                  <td key={i} className="text-right font-mono tabular-nums" style={{ background: `color-mix(in srgb, var(--accent) ${Math.max(0, Math.round(v / max * 70))}%, transparent)` }}>
                     {v === 0 ? <span className="text-ink-subtle">—</span> : fmtArsCents(v)}
                   </td>
                 ))}
