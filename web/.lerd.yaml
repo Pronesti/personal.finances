@@ -1,0 +1,8 @@
+domains:
+  - web
+  - gastos
+node_version: "20"
+secured: true
+proxy:
+  command: npm run dev
+  port: 3000
