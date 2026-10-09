@@ -1,13 +1,13 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { categoryDrill, coverage, merchantNames } from "@/lib/queries";
+import { categoryDrill, coverage, merchantNames, subcategoryNames } from "@/lib/queries";
 import { parseModes, parseGranularity, withModes, valueOpts, periodsFor, resolvePeriod } from "@/lib/params";
 import { getT } from "@/lib/locale";
 import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
 import { DrillBars } from "@/components/DrillBars";
-import { RecategorizeButton } from "@/components/RecategorizeButton";
+import { RecategorizeButton, SubcategoryNameLists } from "@/components/RecategorizeButton";
 import { MergeMerchantButton, MerchantNameList } from "@/components/MergeMerchantButton";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +128,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
       {/* Rendered once for every merge dialog on the page — see MERCHANT_LIST_ID. */}
       <MerchantNameList names={names} />
+      <SubcategoryNameLists names={subcategoryNames(db)} />
 
       <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("categories.footer")}</p>
     </main>

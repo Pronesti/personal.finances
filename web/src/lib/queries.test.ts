@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { openDb } from "@/lib/db";
 import { ingestFile } from "@/lib/ingest";
-import { spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers, chromeData } from "@/lib/queries";
+import { subcategoryNames, spendByCategory, periodTotals, categoryDrill, periodComparison, eli5, coverage, statementList, reviewableAlerts, setAlertReview, staleReviews, unknownMerchants, rulePreview, recategorize, merchantEvidence, merchantConcentration, merchantNovelty, installmentBurden, activePlans, taxBurden, bankTerms, cyclePace, categoryMovers, chromeData } from "@/lib/queries";
 import { fixture, rules, aliases } from "@/lib/__fixtures__/statement";
 
 import type { SpendMode, TaxMode, ValueMode, ValueOpts } from "@/lib/queries";
@@ -37,6 +37,24 @@ function seed(db: Database.Database) {
 describe("queries", () => {
   let db: Database.Database;
   beforeEach(() => { db = openDb(":memory:"); seed(db); });
+
+  it("subcategory suggestions reuse historical transactions and rules without duplicates or blanks", () => {
+    db.prepare("UPDATE transactions SET subcategory = 'groceries' WHERE merchant = 'COTO'").run();
+    const rule = db.prepare("INSERT INTO category_rules (position, match, category, subcategory) VALUES (?, ?, ?, ?)");
+    rule.run(0, 'NEW', 'food', 'bakery');
+    rule.run(1, 'DUP', 'food', 'groceries');
+    rule.run(2, 'BLANK', 'food', '  ');
+    expect(subcategoryNames(db)).toEqual([
+      { category: 'food', subcategory: 'bakery' },
+      { category: 'food', subcategory: 'groceries' },
+      { category: 'shopping', subcategory: 'electronics' },
+      { category: 'subscriptions', subcategory: 'music' },
+      { category: 'transport', subcategory: 'fuel' },
+    ]);
+    const empty = openDb(":memory:");
+    expect(subcategoryNames(empty)).toEqual([]);
+    empty.close();
+  });
 
   it("chromeData returns the months on file and the newest closing date", () => {
     expect(chromeData(db)).toEqual({ months: ["2026-06", "2026-07"], latestClosing: "2026-07-30" });

@@ -13,6 +13,18 @@ import type { Alias } from "@/lib/aliases";
 import { deriveTransaction } from "@/lib/ingest";
 
 export type SpendMode = "cash" | "accrual";
+
+/** Reusable labels from every month and saved rule, independent of the current drill. */
+export function subcategoryNames(db: Database.Database): { category: string; subcategory: string }[] {
+  return db.prepare(`
+    SELECT category, trim(subcategory) AS subcategory FROM transactions
+    WHERE subcategory IS NOT NULL AND trim(subcategory) <> ''
+    UNION
+    SELECT category, trim(subcategory) AS subcategory FROM category_rules
+    WHERE subcategory IS NOT NULL AND trim(subcategory) <> ''
+    ORDER BY category, subcategory COLLATE NOCASE
+  `).all() as { category: string; subcategory: string }[];
+}
 export type ValueMode = "nominal" | "real" | "usd";
 export type TaxMode = "excl" | "incl";
 export type ValueOpts = {

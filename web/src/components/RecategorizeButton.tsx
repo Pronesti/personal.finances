@@ -11,6 +11,14 @@ export type RecategorizeRow = {
 
 type Props = { row: RecategorizeRow };
 
+export function SubcategoryNameLists({ names }: { names: { category: string; subcategory: string }[] }) {
+  return CATEGORIES.map(category => (
+    <datalist key={category} id={`recategorize-subcategories-${category}`}>
+      {names.filter(n => n.category === category).map(n => <option key={n.subcategory} value={n.subcategory} />)}
+    </datalist>
+  ));
+}
+
 /**
  * Per-charge escape hatch from the drill table. The dialog is mounted only while it is open —
  * 200 rows render 200 buttons, not 200 hidden forms — and it is a native <dialog>, so the
@@ -32,6 +40,7 @@ export function RecategorizeButton({ row }: Props) {
 function Dialog({ row, onClose }: Props & { onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
+  const [category, setCategory] = useState(row.category);
   const titleId = useId();
   const t = useT();
 
@@ -77,13 +86,13 @@ function Dialog({ row, onClose }: Props & { onClose: () => void }) {
         <div className="mt-3 flex gap-3">
           <label className="min-w-0 flex-1 text-xs text-ink-muted">
             {t("categories.modal.category")}
-            <select name="category" defaultValue={row.category} className={field}>
+            <select name="category" value={category} onChange={e => setCategory(e.target.value)} className={field}>
               {CATEGORIES.map(c => <option key={c} value={c}>{t(`category.${c}`)}</option>)}
             </select>
           </label>
           <label className="min-w-0 flex-1 text-xs text-ink-muted">
             {t("categories.modal.subcategory")}
-            <input name="subcategory" defaultValue={row.subcategory ?? ""} className={field} />
+            <input name="subcategory" list={`recategorize-subcategories-${category}`} autoComplete="off" defaultValue={row.subcategory ?? ""} className={field} />
           </label>
         </div>
 
