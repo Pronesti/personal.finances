@@ -144,3 +144,14 @@ button:disabled, input:disabled { cursor: wait; opacity: .65; }
   .mode-help { margin-left: 0; }
   .mode-help-content { position: static; width: 100%; margin-top: .5rem; }
 }
+
+/* Reserve an arrow lane instead of relying on browser-specific select padding. */
+.mode-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394989f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 1rem;
+}
+@media (forced-colors: active) {
+  .mode-select { appearance: auto; background-image: none; padding-right: .75rem; }
+}

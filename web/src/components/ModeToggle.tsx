@@ -17,7 +17,7 @@ function ModeSelect({ param, options, current }: { param: "value" | "spend" | "t
           next.set(param, event.target.value);
           router.replace(`${pathname}?${next.toString()}`, { scroll: false });
         }}
-        className="min-h-11 min-w-0 rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm leading-5 text-ink"
+        className="mode-select min-h-11 min-w-0 appearance-none rounded-lg border border-line-strong bg-surface py-2 pl-3 pr-9 text-sm leading-5 text-ink"
       >
         {options.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
       </select>
