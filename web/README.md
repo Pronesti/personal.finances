@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Backups and restoring data
+
+See [the backup guide](../BACKUP.md) for complete SQLite/document backups, local
+restore, and importing into another Tarjetas deployment with persistent storage.
+From the repository root, run `python3 scripts/backup.py create`.
+
 ## Getting Started
 
 First, run the development server:
