@@ -1,3 +1,8 @@
 import type { NextConfig } from "next";
-const nextConfig: NextConfig = { serverExternalPackages: ["better-sqlite3"] };
+
+const nextConfig: NextConfig = {
+  allowedDevOrigins: ["gastos.test"],
+  serverExternalPackages: ["better-sqlite3"],
+};
+
 export default nextConfig;
