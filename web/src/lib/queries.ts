@@ -221,12 +221,11 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
     (s, u) => s + toMode(u.amount, lastMonthKey, opts, baseMonth), 0
   );
 
-  const alerts = db.prepare("SELECT kind, message FROM alerts ORDER BY id DESC LIMIT 5")
-    .all() as { kind: string; message: string }[];
+  // Use the same review states as the Alerts page; only the UI preview is capped.
+  const openAlerts = reviewableAlerts(db, opts.cpi).filter(a => a.state === "open");
 
   const latest = latestPerBrand.sort((a, b) => b.closing_date.localeCompare(a.closing_date))[0];
 
-  const openAnomalies = anomalies(db, opts.cpi).filter(a => !a.resolved).slice(0, 5);
   const [next] = installmentProjection(db, opts, 1);
   const nextStatementForecast = next
     ? { certain: next.certain, expected: next.expected, estLow: next.estLow, estHigh: next.estHigh }
@@ -235,12 +234,11 @@ export function eli5(db: Database.Database, opts: ValueOpts) {
   return {
     spentThisMonth,
     pctVsPrev: prev ? ((spentThisMonth - prev) / prev) * 100 : null,
-    openAnomalies,
+    openAlerts,
     nextStatementForecast,
     topCategories: months.filter(m => m.period === lastMonthKey)
       .sort((a, b) => b.amount - a.amount).slice(0, 3)
       .map(m => ({ category: m.category, amount: m.amount })),
-    alerts,
     installmentMonths: upcoming.length,
     installmentTotal,
     sparkline: sorted.slice(-12).map(([month, amount]) => ({ month, amount })),

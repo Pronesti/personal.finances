@@ -28,7 +28,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const t = eli5(getDb(), valueOpts(modes));
   const tr = await getT();
   const valueLabel = tr(`value.${modes.value}`);
-  const openCount = t.alerts.length + t.openAnomalies.length;
+  const openCount = t.openAlerts.length;
   return (
     <main>
       <div className="mb-6 flex items-center justify-between">
@@ -66,11 +66,9 @@ export default async function Overview({ searchParams }: { searchParams: Promise
           {openCount === 0
             ? <div className="text-sm text-ink-muted">{tr("overview.alerts.none")}</div>
             : <>
-                {/* Integrity alerts are stored at ingest in the statement's own words — see i18n.ts. */}
-                {t.alerts.map((a, i) => <div key={`a${i}`} className="text-xs text-negative">{a.message}</div>)}
-                {t.openAnomalies.map((a, i) => (
-                  <div key={`n${i}`} className="text-xs text-negative">
-                    {a.merchant}: {tr(a.messageKey, a.messageParams)}
+                {t.openAlerts.slice(0, 2).map(a => (
+                  <div key={a.key} className="mt-2 text-sm text-ink-muted">
+                    {a.merchant && `${a.merchant}: `}{a.messageKey ? tr(a.messageKey, a.messageParams) : a.message}
                   </div>
                 ))}
               </>}

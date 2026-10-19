@@ -60,6 +60,25 @@ describe("queries", () => {
     expect(reviewableAlerts(db, cpi).find(r => r.key === key)!.state).toBe("dismissed");
   });
 
+  it("overview counts all open alerts and follows reviewed, dismissed and reopened states", () => {
+    const sid = db.prepare("SELECT id FROM statements WHERE file = 'v_2026_07.json'").get() as { id: number };
+    const insert = db.prepare("INSERT INTO alerts (statement_id, kind, message, expected, actual) VALUES (?,?,?,?,?)");
+    for (let i = 0; i < 7; i++) insert.run(sid.id, "math_mismatch", `Mismatch ${i}`, i, i + 1);
+    const original = reviewableAlerts(db, cpi).filter(a => a.state === "open");
+    expect(original.length).toBeGreaterThan(5);
+    expect(eli5(db, o("cash", "nominal")).openAlerts.map(a => a.key)).toEqual(original.map(a => a.key));
+    setAlertReview(db, original[0].key, "reviewed");
+    setAlertReview(db, original[1].key, "dismissed");
+    let result = eli5(db, o("cash", "nominal")).openAlerts;
+    expect(result).toHaveLength(original.length - 2);
+    expect(result.map(a => a.key)).not.toContain(original[0].key);
+    expect(result.map(a => a.key)).not.toContain(original[1].key);
+    setAlertReview(db, original[0].key, "open");
+    result = eli5(db, o("cash", "nominal")).openAlerts;
+    expect(result).toHaveLength(original.length - 1);
+    expect(result.map(a => a.key)).toContain(original[0].key);
+  });
+
   it("stores an explicit reopen so it beats a computed default", () => {
     setAlertReview(db, "anomaly|duplicate|X|2026-07|2026-07-01|100", "open");
     expect(db.prepare("SELECT state FROM alert_reviews WHERE key = ?")
@@ -292,7 +311,7 @@ describe("queries", () => {
     expect(t.installmentMonths).toBe(2);
     expect(t.installmentTotal).toBe(350);
     expect(t.baseMonth).toBe("2026-07");
-    expect(t.alerts).toEqual([]);
+    expect(t.openAlerts.filter(a => a.source === "integrity")).toEqual([]);
     const nom = eli5(db, o("cash", "nominal"));
     expect(nom.sparkline.find(s => s.month === "2026-06")!.amount).toBe(1000);
   });
@@ -620,8 +639,8 @@ describe("eli5 phase 2 tiles", () => {
     ins.run(90000); ins.run(90000);                  // open duplicate
     ins.run(80000); ins.run(80000); ins.run(-80000); // duplicate the bank already reversed
     const t = eli5(db, o("cash", "nominal"));
-    expect(t.openAnomalies.every(a => !a.resolved)).toBe(true);
-    const dupes = t.openAnomalies.filter(a => a.kind === "duplicate");
+    expect(t.openAlerts.every(a => a.state === "open")).toBe(true);
+    const dupes = t.openAlerts.filter(a => a.kind === "duplicate");
     expect(dupes.map(a => a.amount)).toEqual([90000]);
   });
 });
