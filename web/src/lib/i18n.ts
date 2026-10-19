@@ -21,6 +21,9 @@ export function isLocale(value: unknown): value is Locale {
 }
 
 const en = {
+  "nav.menu": "Explore sections",
+  "nav.subtitle": "Understand your card spending",
+  "nav.skip": "Skip to content",
   // ── chrome ────────────────────────────────────────────────────────────────
   "app.description": "Credit card statement analysis",
   "lang.label": "Language",
@@ -28,12 +31,12 @@ const en = {
   "nav.overview": "Overview",
   "nav.trends": "Trends",
   "nav.currency": "Currency",
-  "nav.future": "Future",
+  "nav.future": "Upcoming payments",
   "nav.installments": "Installments",
-  "nav.float": "Float",
+  "nav.float": "Payment timing",
   "nav.categories": "Categories",
   "nav.merchants": "Merchants",
-  "nav.sankey": "Sankey",
+  "nav.sankey": "Spending flow",
   "nav.calendar": "Calendar",
   "nav.habits": "Habits",
   "nav.recurring": "Recurring",
@@ -44,7 +47,7 @@ const en = {
   "nav.compare": "Compare",
   "nav.bank": "Bank",
   "nav.pace": "Pace",
-  "nav.movers": "Movers",
+  "nav.movers": "Spending changes",
   "nav.upload": "Upload",
   "nav.review": "Review",
 
@@ -512,6 +515,9 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const es: Dictionary = {
+  "nav.menu": "Explorar secciones",
+  "nav.subtitle": "Entendé los gastos de tus tarjetas",
+  "nav.skip": "Ir al contenido",
   // ── chrome ────────────────────────────────────────────────────────────────
   "app.description": "Análisis de resúmenes de tarjeta de crédito",
   "lang.label": "Idioma",
@@ -519,12 +525,12 @@ const es: Dictionary = {
   "nav.overview": "Resumen",
   "nav.trends": "Tendencias",
   "nav.currency": "Moneda",
-  "nav.future": "Futuro",
+  "nav.future": "Próximos pagos",
   "nav.installments": "Cuotas",
-  "nav.float": "Flotación",
+  "nav.float": "Plazos de pago",
   "nav.categories": "Categorías",
   "nav.merchants": "Comercios",
-  "nav.sankey": "Sankey",
+  "nav.sankey": "Flujo de gastos",
   "nav.calendar": "Calendario",
   "nav.habits": "Hábitos",
   "nav.recurring": "Recurrentes",
@@ -535,7 +541,7 @@ const es: Dictionary = {
   "nav.compare": "Comparar",
   "nav.bank": "Banco",
   "nav.pace": "Ritmo",
-  "nav.movers": "Cambios",
+  "nav.movers": "Cambios de gasto",
   "nav.upload": "Cargar",
   "nav.review": "Revisión",
 
