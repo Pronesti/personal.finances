@@ -60,16 +60,16 @@ export function Nav() {
   return (
     <nav
       aria-label={t("nav.aria")}
-      className="app-nav border-b border-line bg-surface lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-b-0"
+      className="app-nav border-b border-line bg-surface lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:flex lg:flex-col lg:overflow-hidden lg:border-r lg:border-b-0"
     >
-      <div className="flex items-center justify-between gap-3 p-4 lg:block lg:px-5 lg:pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 lg:shrink-0 lg:block lg:px-5 lg:pt-6">
         <Link href={qs ? `/?${qs}` : "/"} className="text-lg font-bold tracking-tight">Tarjetas</Link>
         <p className="mt-1 hidden text-xs leading-relaxed text-ink-muted lg:block">{t("nav.subtitle")}</p>
         <button type="button" aria-expanded={open} aria-controls="section-menu" onClick={() => setOpen(!open)} className="min-h-11 rounded-lg border border-line-strong px-3 text-sm lg:hidden">
           {t(activeLabel)} · {t("nav.menu")} <span aria-hidden="true">{open ? "−" : "+"}</span>
         </button>
       </div>
-      <div id="section-menu" className={`${open ? "block" : "hidden"} px-3 pb-4 lg:block`}>
+      <div id="section-menu" className={`${open ? "block" : "hidden"} px-3 pb-4 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto`}>
         {GROUPS.map((group, gi) => (
           <div key={group.heading ?? gi} className="mb-1">
             {group.heading && (
@@ -108,9 +108,9 @@ export function Nav() {
             </div>
           </div>
         ))}
-        <div className="border-t border-line pt-4">
-          <LangToggle />
-        </div>
+      </div>
+      <div className={`${open ? "block" : "hidden"} shrink-0 px-3 pt-2 pb-3 lg:mt-auto lg:block`}>
+        <LangToggle />
       </div>
     </nav>
   );
