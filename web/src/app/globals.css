@@ -133,3 +133,14 @@ button:disabled, input:disabled { cursor: wait; opacity: .65; }
 .page-content main > div:has(.page-guide) { flex-wrap: wrap; gap: 1rem; }
 .page-content main > div:has(.page-guide) > h1 { width: 100%; }
 .page-guide details[open] .guide-chevron { transform: rotate(180deg); }
+
+/* Shared analysis toolbar: in document flow so keyboard focus is never covered. */
+.mode-help summary { list-style: none; }
+.mode-help summary::-webkit-details-marker { display: none; }
+.mode-help-content { position: absolute; right: 0; top: 100%; z-index: 20; width: min(30rem, calc(100vw - 3rem)); }
+@media (max-width: 639px) {
+  .mode-panel label { flex: 1 1 100%; justify-content: space-between; }
+  .mode-panel select { width: 55%; }
+  .mode-help { margin-left: 0; }
+  .mode-help-content { position: static; width: 100%; margin-top: .5rem; }
+}
