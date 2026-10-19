@@ -122,3 +122,42 @@ table {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Shared interaction and reading rhythm across the analysis pages. */
+button, summary, input[type="file"] { cursor: pointer; }
+button:disabled, input:disabled { cursor: wait; opacity: .65; }
+.skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 100; padding: .75rem 1rem; border-radius: .5rem; background: var(--accent); color: var(--accent-ink); }
+.skip-link:focus { top: 1rem; }
+.page-content main > p:last-child { font-size: .875rem; line-height: 1.75; }
+.page-content h1 { text-wrap: balance; }
+@media (max-width: 639px) {
+  .page-content main > .flex { flex-wrap: wrap; gap: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+.page-content main > div:has(.page-guide) { flex-wrap: wrap; gap: 1rem; }
+.page-content main > div:has(.page-guide) > h1 { width: 100%; }
+.page-guide details[open] .guide-chevron { transform: rotate(180deg); }
+
+/* Shared analysis toolbar: in document flow so keyboard focus is never covered. */
+.mode-help summary { list-style: none; }
+.mode-help summary::-webkit-details-marker { display: none; }
+.mode-help-content { position: absolute; right: 0; top: 100%; z-index: 20; width: min(30rem, calc(100vw - 3rem)); }
+@media (max-width: 639px) {
+  .mode-panel label { flex: 1 1 100%; justify-content: space-between; }
+  .mode-panel select { width: 55%; }
+  .mode-help { margin-left: 0; }
+  .mode-help-content { position: static; width: 100%; margin-top: .5rem; }
+}
+
+/* Reserve an arrow lane instead of relying on browser-specific select padding. */
+.mode-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394989f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 1rem;
+}
+@media (forced-colors: active) {
+  .mode-select { appearance: auto; background-image: none; padding-right: .75rem; }
+}

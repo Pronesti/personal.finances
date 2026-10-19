@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { categoryMovers } from "@/lib/queries";
 import { parseModes, parseGranularity, periodWord, valueOpts } from "@/lib/params";
@@ -31,6 +32,9 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("movers.purpose")} detail={tr("movers.footer")} />
+      </div>
       {res == null ? (
         <p className="text-sm text-ink-muted">{tr("movers.empty", { word: periodWord(g, tr.locale) })}</p>
       ) : (
@@ -70,8 +74,6 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
           </StatRail>
         </>
       )}
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("movers.footer")}</p>
     </main>
   );
 }

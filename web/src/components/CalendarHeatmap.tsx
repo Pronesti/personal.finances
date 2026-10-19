@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { fmtMoney } from "@/lib/format";
 import type { DaySpend, ValueMode } from "@/lib/queries";
@@ -10,6 +10,8 @@ import { useT } from "./I18nProvider";
 const CELL = 13, GAP = 2, WEEK = CELL + GAP;
 
 export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: ValueMode }) {
+  const dateId = useId();
+  const [selectedDate, setSelectedDate] = useState(data[0]?.date ?? "");
   const t = useChartTheme();
   const tr = useT();
   const [hover, setHover] = useState<{ date: string; x: number; y: number } | null>(null);
@@ -46,8 +48,9 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
   // The tooltip is a positioned div rather than an SVG <title>: a title cannot hold a list, and
   // the per-category split is the reason to hover at all.
   return (
+    <div>
     <div className="relative">
-      <div className="overflow-x-auto" onMouseLeave={() => setHover(null)}
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={tr("calendar.aria")} onMouseLeave={() => setHover(null)}
         onMouseMove={e => {
           // Tooltip lives outside the scroll box (it would be clipped inside), so its anchor is
           // the pointer measured against the outer wrapper, not the cell's SVG coordinates.
@@ -66,7 +69,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
               fillOpacity={c.amount > 0 ? 0.25 + 0.75 * (c.amount / max) : 1}
               style={{ cursor: byDate.has(c.date) ? "pointer" : "default" }}
               onMouseEnter={() => setHover(h => ({ date: c.date, x: h?.x ?? 0, y: h?.y ?? 0 }))}
-              onClick={() => byDate.has(c.date) && setSelected(s => (s === c.date ? null : c.date))}>
+              onClick={() => { setSelectedDate(c.date); if (byDate.has(c.date)) setSelected(s => (s === c.date ? null : c.date)); }}>
               <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : tr("calendar.noPurchases")}`}</title>
             </rect>
           ))}
@@ -144,6 +147,25 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
       ) : (
         <p className="mt-3 text-xs text-ink-subtle">{tr("calendar.day.hint")}</p>
       )}
+    </div>
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+      <span>{tr("calendar.less")}</span>
+      <svg width="62" height="16" aria-hidden="true">
+        {[0.25, 0.6, 1].map((opacity, i) => <rect key={opacity} x={i * 22} width="16" height="16" rx="2" fill={t.series.primary} fillOpacity={opacity} />)}
+      </svg>
+      <span>{tr("calendar.more")}</span>
+    </div>
+    <div className="mt-4 flex flex-wrap items-end gap-3">
+      <label htmlFor={dateId} className="grid gap-1 text-sm text-ink-muted">
+        {tr("calendar.inspectDate")}
+        <input id={dateId} type="date" value={selectedDate} min={cells[0].date} max={cells[cells.length - 1].date}
+          onChange={e => { setSelectedDate(e.target.value); setSelected(e.target.value); }}
+          className="min-h-11 rounded-lg border border-line bg-surface px-3 text-ink" />
+      </label>
+      <p role="status" className="py-3 text-sm tabular-nums">
+        {selectedDate ? `${selectedDate}: ${byDate.has(selectedDate) ? fmtMoney(byDate.get(selectedDate)!.amount, value) : tr("calendar.noPurchases")}` : tr("calendar.chooseDate")}
+      </p>
+    </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { sankeyFlows, coverage } from "@/lib/queries";
 import { parseModes, parseGranularity, valueOpts, periodsFor, resolvePeriod } from "@/lib/params";
@@ -19,10 +20,11 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("sankey.purpose")} detail={tr("sankey.footer")} />
+      </div>
       <SankeyFlow data={data} value={modes.value} />
       <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("sankey.note")}</p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("sankey.footer")}</p>
     </main>
   );
 }

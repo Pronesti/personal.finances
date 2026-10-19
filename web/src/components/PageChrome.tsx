@@ -25,7 +25,7 @@ function Frame({ children, filters }: { children?: ReactNode; filters?: ReactNod
       {/* One line, always. It scrolls sideways rather than wrapping: a period row is as long as
           the statement history, and a second line would push the whole page down. The height is
           fixed rather than fitted so the focus ring has room and an empty row still holds it. */}
-      <div className="mt-3 flex h-9 items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-3 flex min-h-20 items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {filters}
       </div>
     </header>
@@ -90,6 +90,7 @@ export function PageChrome({ months, latestClosing, baseMonth }: {
         <>
           {chrome.granularities && (
             <Pills
+              groupLabel={t("period.groupBy")}
               options={chrome.granularities}
               current={g}
               href={x => href({ g: x, period: undefined })}
@@ -100,6 +101,7 @@ export function PageChrome({ months, latestClosing, baseMonth }: {
               "all" and nothing else — the granularity pill has said it. */}
           {chrome.period && g !== "all" && (
             <Pills
+              groupLabel={t("period.shown")}
               options={chrome.period === "all-first" ? [ALL_PERIOD, ...periods] : periods}
               current={period}
               href={p => href({ period: p === ALL_PERIOD ? undefined : p })}

@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { merchantConcentration, merchantNames, merchantNovelty, coverage } from "@/lib/queries";
@@ -36,6 +38,9 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("merchants.purpose")} detail={tr("merchants.footer")} />
+      </div>
       <StatRail stats={
         <>
           <Stat
@@ -70,7 +75,8 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
           </div>
 
         <h2 className="mb-3 mt-8 text-lg font-semibold">{tr("merchants.topHeading", { count: TOP_TABLE })}</h2>
-        <table className="w-full text-sm">
+        <TableScroll label={tr("merchants.topHeading", { count: TOP_TABLE })}>
+      <table className="w-full min-w-[48rem] text-sm [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
               <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
@@ -83,7 +89,7 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
             {merchants.slice(0, TOP_TABLE).map(m => (
               <tr key={m.merchant} className="border-t border-line">
                 <td className="py-1 pr-3">
-                  <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="text-accent hover:underline">
+                  <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="inline-flex min-h-11 items-center text-accent hover:underline">
                     {m.merchant}
                   </Link>
                 </td>
@@ -103,11 +109,10 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
             ))}
           </tbody>
         </table>
+      </TableScroll>
         {/* Rendered once for every merge dialog on the page — see MERCHANT_LIST_ID. */}
         <MerchantNameList names={names} />
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
     </main>
   );
 }

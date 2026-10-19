@@ -11,11 +11,11 @@ export function ProposeButton({ pending }: { pending: number }) {
       <button
         type="submit"
         disabled={busy || pending === 0}
-        className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="min-h-11 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {busy ? t("review.propose.busy") : t.plural("review.propose.label", pending)}
       </button>
-      {message && <p className="mt-2 text-sm text-warning">{message}</p>}
+      {message && <p role="status" className="mt-2 text-sm text-warning">{message}</p>}
     </form>
   );
 }

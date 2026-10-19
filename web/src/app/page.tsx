@@ -9,12 +9,13 @@ import { Sparkline } from "@/components/Sparkline";
 
 export const dynamic = "force-dynamic";
 
-function Tile({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {
-  const cls = "block rounded-xl border border-line bg-surface p-4";
+function Tile({ href, label, children, action }: { href?: string; label: string; action: string; children: React.ReactNode }) {
+  const cls = "flex min-w-0 flex-col rounded-2xl border border-line bg-surface p-5 sm:p-6";
   const inner = (
     <>
       <div className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">{label}</div>
-      {children}
+      <div className="flex-1">{children}</div>
+      <div className="mt-5 border-t border-line pt-3 text-sm font-medium text-accent">{action} <span aria-hidden="true">→</span></div>
     </>
   );
   return href
@@ -27,16 +28,23 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const t = eli5(getDb(), valueOpts(modes));
   const tr = await getT();
   const valueLabel = tr(`value.${modes.value}`);
-  const openCount = t.alerts.length + t.openAnomalies.length;
+  const openCount = t.openAlerts.length;
   return (
     <main>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 3xl:grid-cols-6">
-        <Tile href={withModes("/trends", modes)} label={tr("overview.spent", { value: valueLabel })}>
-          <div className="text-2xl font-bold">{fmtMoney(t.spentThisMonth, modes.value)}</div>
+      <p className="mb-6 text-sm text-ink-muted">{tr("overview.intro")}</p>
+      <section className="mb-6 rounded-xl border border-line bg-surface p-4">
+        <h2 className="mb-3 text-sm font-semibold">{tr("overview.next")}</h2>
+        <div className="flex flex-wrap gap-3">
+          {([["/categories", "overview.action.spend"], ["/future", "overview.action.future"], ["/upload", "overview.action.upload"]] as const).map(([href, key]) => <Link key={href} href={withModes(href, modes)} className="inline-flex min-h-11 items-center rounded-lg bg-accent-soft px-4 text-sm font-medium text-accent hover:underline">{tr(key)} <span className="ml-3" aria-hidden="true">→</span></Link>)}
+        </div>
+      </section>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Tile action={tr("overview.explore")} href={withModes("/trends", modes)} label={tr("overview.spent", { value: valueLabel })}>
+          <div className="text-2xl font-semibold tracking-tight tabular-nums">{fmtMoney(t.spentThisMonth, modes.value)}</div>
           <div className="text-sm text-ink-muted">{tr("overview.spent.vsPrev", { pct: fmtPct(t.pctVsPrev) })}</div>
         </Tile>
-        <Tile href={withModes("/future", modes)} label={tr("overview.forecast")}>
-          <div className="text-2xl font-bold">
+        <Tile action={tr("overview.explore")} href={withModes("/future", modes)} label={tr("overview.forecast")}>
+          <div className="text-2xl font-semibold tracking-tight tabular-nums">
             {fmtMoney(t.nextStatementForecast.certain + t.nextStatementForecast.expected + t.nextStatementForecast.estLow, modes.value)}
             {" – "}
             {fmtMoney(t.nextStatementForecast.certain + t.nextStatementForecast.expected + t.nextStatementForecast.estHigh, modes.value)}
@@ -48,7 +56,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             })}
           </div>
         </Tile>
-        <Tile href={withModes("/categories", modes)} label={tr("overview.topCategories")}>
+        <Tile action={tr("overview.explore")} href={withModes("/categories", modes)} label={tr("overview.topCategories")}>
           {t.topCategories.map(c => (
             <div key={c.category} className="flex justify-between text-sm">
               <span className="text-ink-muted">{tr(`category.${c.category}` as MessageKey)}</span>
@@ -56,25 +64,23 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             </div>
           ))}
         </Tile>
-        <Tile href={withModes("/anomalies", modes)} label={tr("overview.alerts")}>
-          <div className={`text-2xl font-bold ${openCount > 0 ? "text-negative" : ""}`}>{openCount}</div>
+        <Tile action={tr("overview.explore")} href={withModes("/anomalies", modes)} label={tr("overview.alerts")}>
+          <div className={`text-2xl font-semibold tracking-tight tabular-nums ${openCount > 0 ? "text-negative" : ""}`}>{openCount}</div>
           {openCount === 0
             ? <div className="text-sm text-ink-muted">{tr("overview.alerts.none")}</div>
             : <>
-                {/* Integrity alerts are stored at ingest in the statement's own words — see i18n.ts. */}
-                {t.alerts.map((a, i) => <div key={`a${i}`} className="text-xs text-negative">{a.message}</div>)}
-                {t.openAnomalies.map((a, i) => (
-                  <div key={`n${i}`} className="text-xs text-negative">
-                    {a.merchant}: {tr(a.messageKey, a.messageParams)}
+                {t.openAlerts.slice(0, 2).map(a => (
+                  <div key={a.key} className="mt-2 text-sm text-ink-muted">
+                    {a.merchant && `${a.merchant}: `}{a.messageKey ? tr(a.messageKey, a.messageParams) : a.message}
                   </div>
                 ))}
               </>}
         </Tile>
-        <Tile href={withModes("/compare", modes)} label={tr("overview.installments")}>
-          <div className="text-2xl font-bold">{fmtMoney(t.installmentTotal, modes.value)}</div>
+        <Tile action={tr("overview.explore")} href={withModes("/installments", modes)} label={tr("overview.installments")}>
+          <div className="text-2xl font-semibold tracking-tight tabular-nums">{fmtMoney(t.installmentTotal, modes.value)}</div>
           <div className="text-sm text-ink-muted">{tr("overview.installments.detail", { months: t.installmentMonths })}</div>
         </Tile>
-        <Tile href={withModes("/trends", modes)} label={tr("overview.trend", { value: valueLabel })}>
+        <Tile action={tr("overview.explore")} href={withModes("/trends", modes)} label={tr("overview.trend", { value: valueLabel })}>
           <Sparkline data={t.sparkline} />
         </Tile>
       </div>

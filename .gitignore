@@ -23,3 +23,11 @@ web/.next/
 data/app.db
 data/app.db-wal
 data/app.db-shm
+
+# Private portable backups and retained restore data
+backups/
+.tarjetas-incoming-*/
+.tarjetas-before-restore-*/
+
+# Local QA reports and captures
+qa-output/

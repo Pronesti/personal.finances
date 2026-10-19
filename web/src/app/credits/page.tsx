@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { moneyBack, type CreditKind } from "@/lib/queries";
 import { parseModes, parseGranularity, valueOpts } from "@/lib/params";
@@ -27,6 +29,9 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
 
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("credits.purpose")} detail={tr("credits.footer")} />
+      </div>
       <StatRail stats={
         <>
           <Stat label={tr("credits.total")} value={fmtMoney(total, modes.value)} detail={tr("credits.total.detail")} />
@@ -48,7 +53,8 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
         <h2 className="mb-3 text-lg font-semibold">{tr("credits.largestHeading")}</h2>
         {top.length === 0
           ? <p className="text-sm text-ink-muted">{tr("credits.none")}</p>
-          : <table className="w-full text-sm">
+          : <TableScroll label={tr("credits.largestHeading")}>
+      <table className="w-full min-w-[40rem] text-sm [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
                   <th className="py-1 pr-3">{tr("credits.table.when")}</th><th className="pr-3">{tr("credits.table.merchant")}</th>
@@ -65,10 +71,9 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
                   </tr>
                 ))}
               </tbody>
-            </table>}
+            </table>
+      </TableScroll>}
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("credits.footer")}</p>
     </main>
   );
 }

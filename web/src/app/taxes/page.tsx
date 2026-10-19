@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { taxBurden } from "@/lib/queries";
 import { parseModes, parseGranularity, periodWord, valueOpts } from "@/lib/params";
@@ -23,6 +24,9 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("taxes.purpose")} detail={tr("taxes.footer")} />
+      </div>
       <StatRail stats={
         <>
           <Stat label={tr("taxes.total")} value={fmtMoney(total, modes.value)} detail={tr("taxes.total.detail")} />
@@ -41,8 +45,6 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
         <TaxBars data={data} value={modes.value} />
         <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("taxes.note")}</p>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("taxes.footer")}</p>
     </main>
   );
 }

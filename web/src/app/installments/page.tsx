@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { installmentBurden, activePlans } from "@/lib/queries";
@@ -24,6 +26,9 @@ export default async function Installments({ searchParams }: { searchParams: Pro
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("installments.purpose")} detail={tr("installments.footer")} />
+      </div>
       <StatRail stats={
         <>
           <Stat
@@ -52,7 +57,7 @@ export default async function Installments({ searchParams }: { searchParams: Pro
         <h2 className="mb-3 text-lg font-semibold">{tr("installments.openPlans")}</h2>
         {plans.length === 0
           ? <p className="text-sm text-ink-muted">{tr("installments.none")}</p>
-          : <table className="w-full text-sm">
+          : <TableScroll label={tr("installments.openPlans")}><table className="w-full min-w-[42rem] text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
                   <th className="py-1 pr-3">{tr("installments.table.merchant")}</th><th className="pr-3">{tr("installments.table.card")}</th>
@@ -76,13 +81,11 @@ export default async function Installments({ searchParams }: { searchParams: Pro
                   </tr>
                 ))}
               </tbody>
-            </table>}
+            </table></TableScroll>}
         {plans.length > 0 && (
           <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("installments.tableNote")}</p>
         )}
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("installments.footer")}</p>
     </main>
   );
 }

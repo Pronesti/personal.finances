@@ -19,27 +19,27 @@ export function LangToggle() {
   }
 
   return (
-    <div
-      className="inline-flex overflow-hidden rounded-md border border-line text-xs"
-      role="group"
-      aria-label={t("lang.label")}
-    >
-      {LOCALES.map((code, i) => (
-        <button
-          key={code}
-          type="button"
-          lang={code}
-          aria-pressed={code === locale}
-          onClick={() => choose(code)}
-          className={`px-2 py-1 transition-colors ${i > 0 ? "border-l border-line" : ""} ${
-            code === locale
-              ? "bg-accent text-accent-ink font-medium"
-              : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-          }`}
-        >
-          {LOCALE_NAMES[code]}
-        </button>
-      ))}
+    <div className="relative inline-flex items-center text-ink-muted">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="pointer-events-none absolute left-3 h-4 w-4">
+        <circle cx="12" cy="12" r="9" />
+        <ellipse cx="12" cy="12" rx="4" ry="9" />
+        <path d="M3 12h18" />
+      </svg>
+      <select
+        aria-label={t("lang.label")}
+        value={locale}
+        onChange={(event) => choose(event.target.value as Locale)}
+        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-8 pl-9 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
+      >
+        {LOCALES.map((code) => (
+          <option key={code} value={code} lang={code} className="bg-surface text-ink">
+            {LOCALE_NAMES[code]}
+          </option>
+        ))}
+      </select>
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="pointer-events-none absolute right-3 h-3 w-3">
+        <path d="m5 6 3 3 3-3" />
+      </svg>
     </div>
   );
 }

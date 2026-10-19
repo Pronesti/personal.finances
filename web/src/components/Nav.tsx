@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import type { MessageKey } from "@/lib/i18n";
 import { useT } from "./I18nProvider";
@@ -49,52 +50,74 @@ const GROUPS: readonly Group[] = [
   },
 ] as const;
 
-/**
- * Left rail on anything wider than a tablet; a horizontally scrolling strip below that, from the
- * same markup — the group headings simply drop out where there is no column to head. The rail is
- * sticky and scrolls on its own so a long page never strands the navigation above the fold.
- */
+/** Grouped sidebar on desktop; explicit section menu on smaller screens. */
 export function Nav() {
   const sp = useSearchParams();
   const pathname = usePathname();
   const t = useT();
   const qs = sp.toString();
+  const [open, setOpen] = useState(false);
+  const activeGroup = GROUPS.find(group => group.heading && group.links.some(([href]) => href === pathname))?.heading;
+  const [expanded, setExpanded] = useState<{ pathname: string; heading?: MessageKey }>({ pathname, heading: activeGroup });
+  if (expanded.pathname !== pathname) {
+    setExpanded({ pathname, heading: activeGroup });
+  }
+  const expandedHeading = expanded.pathname === pathname ? expanded.heading : activeGroup;
+  const activeLabel = GROUPS.flatMap(g => g.links).find(([href]) => href === pathname)?.[1] ?? "nav.overview";
   return (
     <nav
       aria-label={t("nav.aria")}
-      className="border-b border-line bg-surface lg:sticky lg:top-0 lg:h-dvh lg:w-52 lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-b-0"
+      className="app-nav border-b border-line bg-surface lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:flex lg:flex-col lg:overflow-hidden lg:border-r lg:border-b-0"
     >
-      <div className="flex items-center gap-3 overflow-x-auto px-4 py-2 lg:block lg:overflow-x-visible lg:px-3 lg:py-4">
-        <span className="hidden text-sm font-semibold tracking-tight lg:block lg:px-2 lg:pb-3">Tarjetas</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 lg:shrink-0 lg:block lg:px-5 lg:pt-6">
+        <Link href={qs ? `/?${qs}` : "/"} className="text-lg font-bold tracking-tight">Tarjetas</Link>
+        <p className="mt-1 hidden text-xs leading-relaxed text-ink-muted lg:block">{t("nav.subtitle")}</p>
+        <button type="button" aria-expanded={open} aria-controls="section-menu" onClick={() => setOpen(!open)} className="min-h-11 rounded-lg border border-line-strong px-3 text-sm lg:hidden">
+          {t(activeLabel)} · {t("nav.menu")} <span aria-hidden="true">{open ? "−" : "+"}</span>
+        </button>
+      </div>
+      <div id="section-menu" className={`${open ? "block" : "hidden"} px-3 pb-4 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto`}>
         {GROUPS.map((group, gi) => (
-          <div key={group.heading ?? gi} className="flex items-center gap-1 lg:mb-4 lg:block">
+          <div key={group.heading ?? gi} className="mb-1">
             {group.heading && (
-              <div className="hidden px-2 pb-1 text-[0.6875rem] font-medium uppercase tracking-wide text-ink-subtle lg:block">
+              <button
+                type="button"
+                aria-expanded={expandedHeading === group.heading}
+                aria-controls={`nav-group-${gi}`}
+                onClick={() => setExpanded({ pathname, heading: expandedHeading === group.heading ? undefined : group.heading })}
+                className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-surface-2 ${activeGroup === group.heading ? "text-accent" : "text-ink-muted"}`}
+              >
                 {t(group.heading)}
-              </div>
+                <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className={`h-4 w-4 shrink-0 ${expandedHeading === group.heading ? "rotate-180" : ""}`}>
+                  <path d="m4 6 4 4 4-4" />
+                </svg>
+              </button>
             )}
-            {group.links.map(([href, key]) => {
-              const active = pathname === href;
-              return (
-                <Link
-                  key={href}
-                  href={qs ? `${href}?${qs}` : href}
-                  aria-current={active ? "page" : undefined}
-                  className={`whitespace-nowrap rounded-md px-2.5 py-1 text-sm font-medium transition-colors lg:block ${
-                    active
-                      ? "bg-accent-soft text-accent"
-                      : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-                  }`}
-                >
-                  {t(key)}
-                </Link>
-              );
-            })}
+            <div id={`nav-group-${gi}`} hidden={!!group.heading && expandedHeading !== group.heading}>
+              {group.links.map(([href, key]) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={qs ? `${href}?${qs}` : href}
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`block min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-accent-soft text-accent"
+                        : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+                    }`}
+                  >
+                    {t(key)}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ))}
-        <div className="ml-auto lg:ml-0 lg:border-t lg:border-line lg:pt-3">
-          <LangToggle />
-        </div>
+      </div>
+      <div className={`${open ? "block" : "hidden"} shrink-0 px-3 pt-2 pb-3 lg:mt-auto lg:block`}>
+        <LangToggle />
       </div>
     </nav>
   );

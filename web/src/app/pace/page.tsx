@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { cyclePace } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
@@ -32,6 +33,9 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("pace.purpose")} detail={tr("pace.footer")} />
+      </div>
       {latest == null ? (
         <p className="text-sm text-ink-muted">{tr("pace.empty")}</p>
       ) : (
@@ -62,8 +66,6 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
           </StatRail>
         </>
       )}
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("pace.footer")}</p>
     </main>
   );
 }

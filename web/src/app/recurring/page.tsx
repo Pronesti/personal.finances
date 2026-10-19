@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { recurringTable } from "@/lib/queries";
 import { fmtArs, fmtPct } from "@/lib/format";
@@ -24,10 +26,11 @@ function totals(rows: RecurringCharge[], mep: MepTable) {
   return { ars, usd, combined: ars + usdAsArs };
 }
 
-function Table({ rows, mep, lapsed, tr }: { rows: RecurringCharge[]; mep: MepTable; lapsed?: boolean; tr: Translator }) {
+function Table({ rows, mep, lapsed, tr, label }: { label: string; rows: RecurringCharge[]; mep: MepTable; lapsed?: boolean; tr: Translator }) {
   if (rows.length === 0) return <p className="text-sm text-ink-muted">{tr("recurring.none")}</p>;
   return (
-    <table className="w-full text-sm">
+    <TableScroll label={label}>
+    <table className="w-full min-w-[42rem] text-sm">
       <thead><tr className="border-b border-line text-left text-ink-muted">
         <th className="py-1">{tr("recurring.table.merchant")}</th><th>{tr("recurring.table.currency")}</th>
         <th className="text-right">{tr("recurring.table.monthsSeen")}</th>
@@ -72,6 +75,7 @@ function Table({ rows, mep, lapsed, tr }: { rows: RecurringCharge[]; mep: MepTab
       </tbody>
       <Total rows={rows} mep={mep} lapsed={lapsed} tr={tr} />
     </table>
+    </TableScroll>
   );
 }
 
@@ -102,23 +106,24 @@ export default async function Recurring() {
   return (
     <main className="space-y-8">
       <div>
+      <div className="mb-6">
+        <PageGuide summary={tr("recurring.purpose")} detail={tr("recurring.footer")} />
+      </div>
         <p className="text-sm text-ink-muted mb-4">{tr("recurring.intro")}</p>
-        <Table rows={subscriptions} mep={mep} tr={tr} />
+        <Table label={tr("recurring.title")} rows={subscriptions} mep={mep} tr={tr} />
       </div>
 
       <section>
         <h2 className="text-lg font-semibold mb-1">{tr("recurring.variableHeading")}</h2>
         <p className="text-sm text-ink-muted mb-4">{tr("recurring.variableIntro")}</p>
-        <Table rows={variable} mep={mep} tr={tr} />
+        <Table label={tr("recurring.variableHeading")} rows={variable} mep={mep} tr={tr} />
       </section>
 
       <section>
         <h2 className="text-lg font-semibold mb-1">{tr("recurring.lapsedHeading")}</h2>
         <p className="text-sm text-ink-muted mb-4">{tr("recurring.lapsedIntro")}</p>
-        <Table rows={lapsed} mep={mep} lapsed tr={tr} />
+        <Table label={tr("recurring.lapsedHeading")} rows={lapsed} mep={mep} lapsed tr={tr} />
       </section>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("recurring.footer")}</p>
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { spendByCategory } from "@/lib/queries";
 import { parseModes, parseGranularity, valueOpts } from "@/lib/params";
@@ -23,9 +24,10 @@ export default async function Trends({ searchParams }: { searchParams: Promise<{
   }
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("trends.purpose")} detail={tr("trends.footer")} />
+      </div>
       <StackedArea data={[...byPeriod.values()]} categories={categories} value={modes.value} />
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("trends.footer")}</p>
     </main>
   );
 }

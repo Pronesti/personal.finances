@@ -1,7 +1,9 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { weekdayProfile, ticketTrend } from "@/lib/queries";
 import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
 import { getT } from "@/lib/locale";
+import { ALL_PERIOD } from "@/lib/months";
 import type { Granularity } from "@/lib/months";
 import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
@@ -34,6 +36,9 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("habits.purpose")} detail={tr("habits.footer")} />
+      </div>
       <StatRail stats={
         <>
           <Stat
@@ -49,7 +54,7 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           <Stat
             label={tr("habits.median")}
             value={latestTickets ? fmtMoney(latestTickets.medianTicket, modes.value) : "—"}
-            detail={latestTickets ? tr("habits.median.detail", { period: latestTickets.period, count: latestTickets.count }) : tr("habits.median.none")}
+            detail={latestTickets ? tr("habits.median.detail", { period: latestTickets.period === ALL_PERIOD ? tr("granularity.all") : latestTickets.period, count: latestTickets.count }) : tr("habits.median.none")}
           />
         </>
       }>
@@ -63,22 +68,16 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           </section>
           <section>
             <h2 className="mb-3 text-lg font-semibold">{tr("habits.ticketHeading")}</h2>
-            {/* Scoped to this chart, not the page — so it stays here rather than in the chrome,
-                and owns its own spacing the way any section-level control does. */}
-            <div className="mb-4">
-              <Pills
-                options={GRANULARITIES} current={g}
-                href={x => withModes("/habits", modes, { g: x })}
-                label={x => granularityLabel(x as Granularity, tr.locale)}
-              />
-            </div>
+            <Pills groupLabel={tr("period.groupBy")}
+              options={GRANULARITIES} current={g}
+              href={x => withModes("/habits", modes, { g: x })}
+              label={x => granularityLabel(x as Granularity, tr.locale)}
+            />
             <TicketTrendChart data={tickets} value={modes.value} />
             <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("habits.ticketNote")}</p>
           </section>
         </div>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("habits.footer")}</p>
     </main>
   );
 }

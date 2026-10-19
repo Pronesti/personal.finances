@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { categoryDrill, coverage, merchantNames, subcategoryNames } from "@/lib/queries";
@@ -59,6 +60,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return (
     <main>
+        <PageGuide summary={tr("categories.purpose")} detail={tr("categories.footer")} />
       {/* Rendered at every level, drilled or not: this is the page's "you are here", and a row
           that only appeared once you drilled moved everything under it down. It used to sit
           directly beneath the granularity pills, where its root label read as a second, broken
@@ -130,7 +132,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
       <MerchantNameList names={names} />
       <SubcategoryNameLists names={subcategoryNames(db)} />
 
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("categories.footer")}</p>
     </main>
   );
 }

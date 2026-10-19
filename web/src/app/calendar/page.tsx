@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { dailySpend } from "@/lib/queries";
 import { parseModes, valueOpts } from "@/lib/params";
@@ -13,10 +14,11 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+        <PageGuide summary={tr("calendar.purpose")} detail={tr("calendar.footer")} />
+      </div>
       <CalendarHeatmap data={data} value={modes.value} />
       <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("calendar.note")}</p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("calendar.footer")}</p>
     </main>
   );
 }

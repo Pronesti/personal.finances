@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { unknownMerchants, rulePreview, merchantEvidence } from "@/lib/queries";
@@ -20,6 +21,9 @@ export default async function Review() {
   const tr = await getT();
   return (
     <main>
+      <div className="mb-6">
+      <PageGuide summary={tr("review.purpose")} detail={tr("review.footer")} />
+      </div>
       <p className="mb-4 text-sm text-ink-muted">
         {tr("review.summary.rules", { count: data.rules.length })} ·{" "}
         {tr("review.summary.awaiting", { count: data.proposals.length })} ·{" "}
@@ -30,7 +34,10 @@ export default async function Review() {
       <ProposeButton pending={pending.length} />
 
       {data.proposals.length > 0 && (
-        <table className="mt-6 w-full text-sm">
+        <section className="mt-6">
+        <p className="mb-3 text-sm text-ink-muted lg:hidden">{tr("review.scroll")}</p>
+        <div className="max-w-full overflow-x-auto rounded-xl border border-line bg-surface p-4" role="region" aria-label={tr("review.proposals")} tabIndex={0}>
+        <table className="w-full min-w-[52rem] text-sm">
           <thead><tr className="border-b border-line text-left text-ink-muted">
             <th className="py-1">{tr("review.table.merchant")}</th><th>{tr("review.table.rule")}</th>
             <th className="text-right">{tr("review.table.spend")}</th><th className="text-right">{tr("review.table.decide")}</th>
@@ -89,11 +96,20 @@ export default async function Review() {
                   <td>
                     <form action={acceptAction} className="flex flex-wrap items-center gap-2" id={`f-${i}`}>
                       <input type="hidden" name="merchant" value={p.merchant} />
-                      <input name="match" defaultValue={p.merchant} className="w-48 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
-                      <select name="category" defaultValue={p.category} className="rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink">
+                      <label className="grid gap-1 text-xs text-ink-muted">
+                        <span>{tr("review.field.match")}</span>
+                        <input name="match" defaultValue={p.merchant} className="min-h-11 w-48 rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink" />
+                      </label>
+                      <label className="grid gap-1 text-xs text-ink-muted">
+                        <span>{tr("review.field.category")}</span>
+                        <select name="category" defaultValue={p.category} className="min-h-11 rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink">
                         {CATEGORIES.map(c => <option key={c} value={c}>{tr(`category.${c}`)}</option>)}
                       </select>
-                      <input name="subcategory" defaultValue={p.subcategory} className="w-32 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-ink" />
+                      </label>
+                      <label className="grid gap-1 text-xs text-ink-muted">
+                        <span>{tr("review.field.subcategory")}</span>
+                        <input name="subcategory" defaultValue={p.subcategory} className="min-h-11 w-40 rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink" />
+                      </label>
                     </form>
                     {also.length > 0 && (
                       <div className="mt-1 text-xs text-warning">
@@ -104,11 +120,11 @@ export default async function Review() {
                   {/* A USD-only merchant nets 0 ARS; "$ 0" would read as "this cost nothing". */}
                   <td className="text-right">{spend.get(p.merchant) ? fmtArs(spend.get(p.merchant)!) : "—"}</td>
                   <td className="whitespace-nowrap text-right">
-                    <button form={`f-${i}`} type="submit" className="text-accent hover:underline">{tr("review.accept")}</button>
+                    <button form={`f-${i}`} type="submit" className="inline-flex min-h-11 items-center px-2 text-accent hover:underline">{tr("review.accept")}</button>
                     <span className="px-1">·</span>
                     <form action={rejectAction} className="inline">
                       <input type="hidden" name="merchant" value={p.merchant} />
-                      <button type="submit" className="text-ink-muted hover:text-negative hover:underline">{tr("review.reject")}</button>
+                      <button type="submit" className="inline-flex min-h-11 items-center px-2 text-ink-muted hover:text-negative hover:underline">{tr("review.reject")}</button>
                     </form>
                   </td>
                 </tr>
@@ -116,11 +132,11 @@ export default async function Review() {
             })}
           </tbody>
         </table>
+        </div>
+        </section>
       )}
 
       <p className="mt-6 max-w-[80ch] text-xs text-ink-muted">{tr("review.note")}</p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("review.footer")}</p>
     </main>
   );
 }
