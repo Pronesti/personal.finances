@@ -4,6 +4,7 @@ import { latestMonth } from "@/lib/cpi";
 import { weekdayProfile, ticketTrend } from "@/lib/queries";
 import { parseModes, parseGranularity, GRANULARITIES, granularityLabel, valueOpts, withModes } from "@/lib/params";
 import { getT } from "@/lib/locale";
+import { ALL_PERIOD } from "@/lib/months";
 import type { Granularity } from "@/lib/months";
 import type { Category } from "@/lib/categorize";
 import { fmtMoney } from "@/lib/format";
@@ -59,7 +60,7 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           <Stat
             label={tr("habits.median")}
             value={latestTickets ? fmtMoney(latestTickets.medianTicket, modes.value) : "—"}
-            detail={latestTickets ? tr("habits.median.detail", { period: latestTickets.period, count: latestTickets.count }) : tr("habits.median.none")}
+            detail={latestTickets ? tr("habits.median.detail", { period: latestTickets.period === ALL_PERIOD ? tr("granularity.all") : latestTickets.period, count: latestTickets.count }) : tr("habits.median.none")}
           />
         </>
       }>

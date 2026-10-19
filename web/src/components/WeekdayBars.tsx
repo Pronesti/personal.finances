@@ -18,10 +18,11 @@ export function WeekdayBars({ data, categories, value }: {
       <ComposedChart data={data}>
         <CartesianGrid {...gridProps(t)} />
         <XAxis dataKey="day" tickFormatter={(d: string) => tr(`day.${d}` as MessageKey)} {...axisProps(t)} />
-        <YAxis yAxisId="amt" tickFormatter={(v: number) => fmtMoney(v, value)} width={90} {...axisProps(t)} />
+        <YAxis yAxisId="amt" tickFormatter={(v: number) => fmtMoney(v, value)} width={110} {...axisProps(t)} />
         <YAxis yAxisId="n" orientation="right" width={45} {...axisProps(t)} />
         <Tooltip
           {...tooltipProps(t)}
+          labelFormatter={day => tr(`day.${String(day)}` as MessageKey)}
           formatter={(v, name) => (name === purchasesName ? String(v) : fmtMoney(Number(v), value))}
         />
         <Legend {...legendProps(t)} />

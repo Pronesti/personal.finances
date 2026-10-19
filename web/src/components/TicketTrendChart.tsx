@@ -1,5 +1,6 @@
 "use client";
 import { ComposedChart, Bar, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { ALL_PERIOD } from "@/lib/months";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode, TicketPeriod } from "@/lib/queries";
 import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidth } from "./chart";
@@ -9,15 +10,17 @@ export function TicketTrendChart({ data, value }: { data: TicketPeriod[]; value:
   const t = useChartTheme();
   const tr = useT();
   const purchasesName = tr("habits.legend.purchases");
+  const periodLabel = (period: unknown) => period === ALL_PERIOD ? tr("granularity.all") : String(period);
   return (
     <ResponsiveContainer width="100%" height={420}>
-      <ComposedChart data={data}>
+      <ComposedChart key={tr.locale} data={data}>
         <CartesianGrid {...gridProps(t)} />
-        <XAxis dataKey="period" {...axisProps(t)} />
+        <XAxis dataKey="period" tickFormatter={periodLabel} {...axisProps(t)} />
         <YAxis yAxisId="amt" tickFormatter={(v: number) => fmtMoney(v, value)} width={90} {...axisProps(t)} />
         <YAxis yAxisId="n" orientation="right" width={45} {...axisProps(t)} />
         <Tooltip
           {...tooltipProps(t)}
+          labelFormatter={periodLabel}
           formatter={(v, name) => (name === purchasesName ? String(v) : fmtMoney(Number(v), value))}
         />
         <Legend {...legendProps(t)} />
