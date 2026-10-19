@@ -18,11 +18,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale}>
       <body className="bg-canvas text-ink antialiased">
         <I18nProvider locale={locale}>
+          <a className="skip-link" href="#page-content">{translate(locale, "nav.skip")}</a>
           {/* Sidebar beside the content, not above it: on a wide screen the width a top nav bar
               would waste on empty tab row goes to the charts instead. */}
           <div className="lg:flex lg:items-start">
             <Suspense><Nav /></Suspense>
-            <div className="min-w-0 flex-1 px-4 py-6 lg:px-8">
+            <div id="page-content" tabIndex={-1} className="page-content min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
               {/* Capped so the reading column stays sane on an ultrawide monitor, but far wider
                   than a page of prose — charts and tables are what fills it. */}
               <div className="mx-auto w-full max-w-[150rem]">{children}</div>

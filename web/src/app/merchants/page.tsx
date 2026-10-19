@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
@@ -37,12 +39,13 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
   const tr = await getT();
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("merchants.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("merchants.purpose")} detail={tr("merchants.footer")} />
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/merchants", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -50,11 +53,11 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
       {/* At "all" granularity every month is already one bucket, so the scope row would offer
           "all" and nothing else — the granularity pill has said it. */}
       {g !== "all" && (
-        <Pills
+        <Pills groupLabel={tr("period.shown")}
           options={[ALL_PERIOD, ...periods]}
           current={period}
           href={p => withModes("/merchants", modes, p === ALL_PERIOD ? { g } : { g, period: p })}
-          label={p => (p === ALL_PERIOD ? granularityLabel("all", tr.locale) : p)}
+          label={p => (p === ALL_PERIOD ? tr("period.allPeriods") : p)}
         />
       )}
 
@@ -92,7 +95,8 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
           </div>
 
         <h2 className="mb-3 mt-8 text-lg font-semibold">{tr("merchants.topHeading", { count: TOP_TABLE })}</h2>
-        <table className="w-full text-sm">
+        <TableScroll label={tr("merchants.topHeading", { count: TOP_TABLE })}>
+      <table className="w-full min-w-[48rem] text-sm [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
               <th className="py-1 pr-3">{tr("merchants.table.merchant")}</th><th className="pr-3">{tr("merchants.table.category")}</th>
@@ -104,7 +108,7 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
             {merchants.slice(0, TOP_TABLE).map(m => (
               <tr key={m.merchant} className="border-t border-line">
                 <td className="py-1 pr-3">
-                  <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="text-accent hover:underline">
+                  <Link href={withModes("/categories", modes, { merchant: m.merchant })} className="inline-flex min-h-11 items-center text-accent hover:underline">
                     {m.merchant}
                   </Link>
                 </td>
@@ -119,9 +123,8 @@ export default async function Merchants({ searchParams }: { searchParams: Promis
             ))}
           </tbody>
         </table>
+      </TableScroll>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("merchants.footer")}</p>
     </main>
   );
 }

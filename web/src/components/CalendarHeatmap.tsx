@@ -1,4 +1,5 @@
 "use client";
+import { useId, useState } from "react";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode } from "@/lib/queries";
 import { useChartTheme } from "./chart";
@@ -9,6 +10,8 @@ const CELL = 13, GAP = 2, WEEK = CELL + GAP;
 export function CalendarHeatmap({ data, value }: {
   data: { date: string; amount: number }[]; value: ValueMode;
 }) {
+  const dateId = useId();
+  const [selectedDate, setSelectedDate] = useState(data[0]?.date ?? "");
   const t = useChartTheme();
   const tr = useT();
   if (data.length === 0) return <p className="text-sm text-ink-muted">{tr("calendar.empty")}</p>;
@@ -37,7 +40,8 @@ export function CalendarHeatmap({ data, value }: {
   // colour with a hairline border: a low-opacity ink wash (the old treatment) vanishes on a
   // dark canvas, and anything darker than the canvas reads as a *large* value, not a missing one.
   return (
-    <div className="overflow-x-auto">
+    <div>
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={tr("calendar.aria")}>
       <svg width={weeks * WEEK + 8} height={7 * WEEK + 22} role="img" aria-label={tr("calendar.aria")}>
         {labels.map(l => (
           <text key={l.text} x={l.x} y={8} fontSize={8} fill={t.inkMuted}>{l.text}</text>
@@ -46,12 +50,32 @@ export function CalendarHeatmap({ data, value }: {
           <rect key={c.date} x={c.x} y={c.y + 14} width={CELL} height={CELL} rx={2}
             fill={c.amount > 0 ? t.series.primary : t.surface}
             stroke={t.grid}
+            onClick={() => setSelectedDate(c.date)}
             strokeWidth={0.5}
             fillOpacity={c.amount > 0 ? 0.25 + 0.75 * (c.amount / max) : 1}>
             <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : tr("calendar.noPurchases")}`}</title>
           </rect>
         ))}
       </svg>
+    </div>
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+      <span>{tr("calendar.less")}</span>
+      <svg width="62" height="16" aria-hidden="true">
+        {[0.25, 0.6, 1].map((opacity, i) => <rect key={opacity} x={i * 22} width="16" height="16" rx="2" fill={t.series.primary} fillOpacity={opacity} />)}
+      </svg>
+      <span>{tr("calendar.more")}</span>
+    </div>
+    <div className="mt-4 flex flex-wrap items-end gap-3">
+      <label htmlFor={dateId} className="grid gap-1 text-sm text-ink-muted">
+        {tr("calendar.inspectDate")}
+        <input id={dateId} type="date" value={selectedDate} min={cells[0].date} max={cells[cells.length - 1].date}
+          onChange={e => setSelectedDate(e.target.value)}
+          className="min-h-11 rounded-lg border border-line bg-surface px-3 text-ink" />
+      </label>
+      <p role="status" className="py-3 text-sm tabular-nums">
+        {selectedDate ? `${selectedDate}: ${byDate.has(selectedDate) ? fmtMoney(byDate.get(selectedDate)!, value) : tr("calendar.noPurchases")}` : tr("calendar.chooseDate")}
+      </p>
+    </div>
     </div>
   );
 }

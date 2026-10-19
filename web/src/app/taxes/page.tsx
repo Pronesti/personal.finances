@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { taxBurden } from "@/lib/queries";
@@ -27,13 +28,14 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
   const tr = await getT();
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("taxes.title")}</h1>
+        <PageGuide summary={tr("taxes.purpose")} detail={tr("taxes.footer")} />
         {/* tax toggle hidden: this page IS the tax view — "true cost" would double-count */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/taxes", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -57,8 +59,6 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
         <TaxBars data={data} value={modes.value} />
         <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("taxes.note")}</p>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("taxes.footer")}</p>
     </main>
   );
 }

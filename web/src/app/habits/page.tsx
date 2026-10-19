@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { weekdayProfile, ticketTrend } from "@/lib/queries";
@@ -36,10 +37,11 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("habits.title")}</h1>
+        <PageGuide summary={tr("habits.purpose")} detail={tr("habits.footer")} />
         {/* spend toggle hidden: both charts collapse installment series to their purchase day */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
 
       <StatRail stats={
@@ -71,7 +73,7 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           </section>
           <section>
             <h2 className="mb-3 text-lg font-semibold">{tr("habits.ticketHeading")}</h2>
-            <Pills
+            <Pills groupLabel={tr("period.groupBy")}
               options={GRANULARITIES} current={g}
               href={x => withModes("/habits", modes, { g: x })}
               label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -81,8 +83,6 @@ export default async function Habits({ searchParams }: { searchParams: Promise<{
           </section>
         </div>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("habits.footer")}</p>
     </main>
   );
 }

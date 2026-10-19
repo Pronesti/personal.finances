@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { cyclePace } from "@/lib/queries";
@@ -34,11 +35,12 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("pace.title")}</h1>
+        <PageGuide summary={tr("pace.purpose")} detail={tr("pace.footer")} />
         {/* Spend toggle hidden: pace is purchase decisions made inside the cycle window, which
             is the accrual reading by construction. */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
 
       {latest == null ? (
@@ -71,8 +73,6 @@ export default async function Pace({ searchParams }: { searchParams: Promise<{ [
           </StatRail>
         </>
       )}
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("pace.footer")}</p>
     </main>
   );
 }

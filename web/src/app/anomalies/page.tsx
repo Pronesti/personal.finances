@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
@@ -39,9 +41,10 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
   const tr = await getT();
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("anomalies.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("anomalies.purpose")} detail={tr("anomalies.footer")} />
       </div>
       <p className="mb-4 text-sm text-ink-muted">
         {tr("anomalies.summary", { open: open.length, total: alerts.length })}
@@ -49,7 +52,7 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
       </p>
       {/* Granularity moves the timeline only: the table below is a list of alerts, not a
           time series, so grouping it would hide the very rows this page exists to show. */}
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/anomalies", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -59,7 +62,9 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
         flaggedPeriods={open.map(a => periodOf(a.month, g))}
         value={modes.value}
       />
-      <table className="mt-6 w-full text-sm">
+      <p className="mt-6 mb-3 text-sm text-ink-muted">{tr("anomalies.amountBasis")}</p>
+      <TableScroll label={tr("anomalies.title")}>
+      <table className="w-full min-w-[58rem] text-sm [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
         <thead><tr className="border-b border-line text-left text-ink-muted">
           <th className="py-1">{tr("anomalies.table.when")}</th><th>{tr("anomalies.table.kind")}</th>
           <th>{tr("anomalies.table.merchant")}</th>
@@ -73,7 +78,7 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
               <td>{KIND_KEY[a.kind] ? tr(KIND_KEY[a.kind]) : a.kind}</td>
               <td>
                 {a.merchant
-                  ? <Link className="text-accent hover:underline" href={withModes("/categories", modes, { merchant: a.merchant })}>{a.merchant}</Link>
+                  ? <Link className="inline-flex min-h-11 items-center text-accent hover:underline" href={withModes("/categories", modes, { merchant: a.merchant })}>{a.merchant}</Link>
                   : "—"}
               </td>
               <td className="text-right">{a.amount != null ? fmtArs(a.amount) : "—"}</td>
@@ -85,20 +90,20 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
                     <form action={reviewAlert} className="inline">
                       <input type="hidden" name="key" value={a.key} />
                       <input type="hidden" name="state" value="reviewed" />
-                      <button className="text-accent hover:underline" type="submit">{tr("anomalies.action.reviewed")}</button>
+                      <button className="inline-flex min-h-11 items-center text-accent hover:underline" type="submit">{tr("anomalies.action.reviewed")}</button>
                     </form>
                     <span className="px-1">·</span>
                     <form action={reviewAlert} className="inline">
                       <input type="hidden" name="key" value={a.key} />
                       <input type="hidden" name="state" value="dismissed" />
-                      <button className="text-ink-muted hover:text-ink hover:underline" type="submit">{tr("anomalies.action.dismiss")}</button>
+                      <button className="inline-flex min-h-11 items-center text-ink-muted hover:text-ink hover:underline" type="submit">{tr("anomalies.action.dismiss")}</button>
                     </form>
                   </>
                 ) : (
                   <form action={reviewAlert} className="inline">
                     <input type="hidden" name="key" value={a.key} />
                     <input type="hidden" name="state" value="open" />
-                    <button className="text-accent hover:underline" type="submit">{tr("anomalies.action.reopen", { state: tr(STATE_KEY[a.state]) })}</button>
+                    <button className="inline-flex min-h-11 items-center text-accent hover:underline" type="submit">{tr("anomalies.action.reopen", { state: tr(STATE_KEY[a.state]) })}</button>
                   </form>
                 )}
               </td>
@@ -106,9 +111,8 @@ export default async function Anomalies({ searchParams }: { searchParams: Promis
           ))}
         </tbody>
       </table>
+      </TableScroll>
       <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("anomalies.note")}</p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("anomalies.footer")}</p>
     </main>
   );
 }

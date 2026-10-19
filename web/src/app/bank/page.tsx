@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth, loadCpi } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
@@ -58,11 +59,12 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("bank.title")}</h1>
+        <PageGuide summary={tr("bank.purpose")} detail={tr("bank.footer")} />
         {/* Spend/tax toggles hidden: limits, balances and rates are statement-header facts —
             no purchase-level accounting view applies to them. */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       </div>
 
       <StatRail stats={
@@ -112,8 +114,6 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
           </section>
         </div>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("bank.footer")}</p>
     </main>
   );
 }

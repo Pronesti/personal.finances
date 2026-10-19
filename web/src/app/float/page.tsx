@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { loadCpi, latestMonth } from "@/lib/cpi";
 import { loadMep } from "@/lib/mep";
@@ -34,10 +35,11 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
     <main>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("float.title")}</h1>
+        <PageGuide summary={tr("float.purpose")} detail={tr("float.footer")} />
         <span className="text-xs text-ink-subtle">{tr("mode.inPesos", { month: base })}</span>
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g} href={x => `/float?g=${x}`}
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
@@ -65,8 +67,6 @@ export default async function Float({ searchParams }: { searchParams: Promise<{ 
         <FloatChart data={periods} />
         <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("float.note")}</p>
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("float.footer")}</p>
     </main>
   );
 }

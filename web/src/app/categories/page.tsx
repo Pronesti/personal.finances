@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
@@ -52,16 +53,17 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("categories.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("categories.purpose")} detail={tr("categories.footer")} />
       </div>
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g} href={x => granularityHref(x as Granularity)}
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
       {/* One bucket at "all" granularity — a period picker with a single choice is noise. */}
-      {g !== "all" && <Pills options={periods} current={period} href={periodHref} />}
+      {g !== "all" && <Pills groupLabel={tr("period.shown")} options={periods} current={period} href={periodHref} />}
       {/* A one-item breadcrumb has nowhere to go back to, and its root label sat directly under
           the granularity pills where "all" read as a second, broken period row. */}
       {Object.keys(drilled).length > 0 && (
@@ -103,8 +105,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
             )}
           </div>
         )}
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("categories.footer")}</p>
     </main>
   );
 }

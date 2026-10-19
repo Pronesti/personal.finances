@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { moneyBack, type CreditKind } from "@/lib/queries";
@@ -31,13 +33,14 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("credits.title")}</h1>
+        <PageGuide summary={tr("credits.purpose")} detail={tr("credits.footer")} />
         {/* spend toggle hidden: credits are billed lines, cash by nature; tax toggle: a credit is not taxed */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} taxToggle={false} />
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/credits", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -64,7 +67,8 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
         <h2 className="mb-3 text-lg font-semibold">{tr("credits.largestHeading")}</h2>
         {top.length === 0
           ? <p className="text-sm text-ink-muted">{tr("credits.none")}</p>
-          : <table className="w-full text-sm">
+          : <TableScroll label={tr("credits.largestHeading")}>
+      <table className="w-full min-w-[40rem] text-sm [&_th]:px-2 [&_th]:py-2 [&_td]:px-2 [&_td]:py-2">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
                   <th className="py-1 pr-3">{tr("credits.table.when")}</th><th className="pr-3">{tr("credits.table.merchant")}</th>
@@ -81,10 +85,9 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
                   </tr>
                 ))}
               </tbody>
-            </table>}
+            </table>
+      </TableScroll>}
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("credits.footer")}</p>
     </main>
   );
 }

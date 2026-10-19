@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { categoryMovers } from "@/lib/queries";
@@ -35,12 +36,13 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
 
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("movers.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("movers.purpose")} detail={tr("movers.footer")} />
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={MOVER_GRANULARITIES} current={g}
         href={x => withModes("/movers", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -85,8 +87,6 @@ export default async function Movers({ searchParams }: { searchParams: Promise<{
           </StatRail>
         </>
       )}
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("movers.footer")}</p>
     </main>
   );
 }

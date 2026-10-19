@@ -1,3 +1,5 @@
+import { TableScroll } from "@/components/TableScroll";
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
@@ -28,13 +30,14 @@ export default async function Installments({ searchParams }: { searchParams: Pro
   const tr = await getT();
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{tr("installments.title")}</h1>
+        <PageGuide summary={tr("installments.purpose")} detail={tr("installments.footer")} />
         {/* spend toggle hidden: this page is cash by definition — see installmentBurden */}
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} spendToggle={false} />
       </div>
 
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/installments", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
@@ -68,7 +71,7 @@ export default async function Installments({ searchParams }: { searchParams: Pro
         <h2 className="mb-3 text-lg font-semibold">{tr("installments.openPlans")}</h2>
         {plans.length === 0
           ? <p className="text-sm text-ink-muted">{tr("installments.none")}</p>
-          : <table className="w-full text-sm">
+          : <TableScroll label={tr("installments.openPlans")}><table className="w-full min-w-[42rem] text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-subtle">
                   <th className="py-1 pr-3">{tr("installments.table.merchant")}</th><th className="pr-3">{tr("installments.table.card")}</th>
@@ -92,13 +95,11 @@ export default async function Installments({ searchParams }: { searchParams: Pro
                   </tr>
                 ))}
               </tbody>
-            </table>}
+            </table></TableScroll>}
         {plans.length > 0 && (
           <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("installments.tableNote")}</p>
         )}
       </StatRail>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("installments.footer")}</p>
     </main>
   );
 }

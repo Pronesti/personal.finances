@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { loadCpi } from "@/lib/cpi";
 import { personalInflation } from "@/lib/queries";
@@ -14,6 +15,7 @@ export default async function Inflation() {
   return (
     <main>
       <h1 className="text-xl font-semibold mb-2">{tr("inflation.title")}</h1>
+      <PageGuide summary={tr("inflation.purpose")} detail={tr("inflation.footer")} />
       {last && (
         <p className="text-sm mb-4">
           {tr("inflation.lead.since", { month: points[0].month })}{" "}
@@ -32,8 +34,6 @@ export default async function Inflation() {
         })}{" "}
         {tr("inflation.basket", { basket: basket.join(", ") })}
       </p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("inflation.footer")}</p>
     </main>
   );
 }

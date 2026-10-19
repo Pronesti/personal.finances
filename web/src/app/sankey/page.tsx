@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { sankeyFlows, coverage } from "@/lib/queries";
@@ -28,24 +29,23 @@ export default async function SankeyPage({ searchParams }: { searchParams: Promi
   const tr = await getT();
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">
           {tr("sankey.title", { period: period === "all" ? tr("sankey.everything") : period })}
         </h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("sankey.purpose")} detail={tr("sankey.footer")} />
       </div>
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/sankey", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
       {g !== "all" && (
-        <Pills options={periods} current={period} href={p => withModes("/sankey", modes, { g, period: p })} />
+        <Pills groupLabel={tr("period.shown")} options={periods} current={period} href={p => withModes("/sankey", modes, { g, period: p })} />
       )}
       <SankeyFlow data={data} value={modes.value} />
       <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("sankey.note")}</p>
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("sankey.footer")}</p>
     </main>
   );
 }

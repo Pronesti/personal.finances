@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { latestMonth } from "@/lib/cpi";
 import { spendByCategory } from "@/lib/queries";
@@ -27,18 +28,17 @@ export default async function Trends({ searchParams }: { searchParams: Promise<{
   }
   return (
     <main>
+      <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">{tr("trends.title")}</h1>
-        <ModeToggle modes={modes} baseMonth={latestMonth(opts.cpi)} />
+        <PageGuide summary={tr("trends.purpose")} detail={tr("trends.footer")} />
       </div>
-      <Pills
+      <Pills groupLabel={tr("period.groupBy")}
         options={GRANULARITIES} current={g}
         href={x => withModes("/trends", modes, { g: x })}
         label={x => granularityLabel(x as Granularity, tr.locale)}
       />
       <StackedArea data={[...byPeriod.values()]} categories={categories} value={modes.value} />
-
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("trends.footer")}</p>
     </main>
   );
 }

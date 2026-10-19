@@ -18,9 +18,14 @@ export function PdfDrop() {
   const [errors, setErrors] = useState<ApiError[]>([]);
 
   async function send(files: File[]) {
+    if (busy || files.length === 0) return;
     setBusy(true); setErrors([]); setReports([]);
     try {
       for (const file of files) {
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+          setErrors(e => [...e, { code: "type", message: t("upload.error.type", { file: file.name }) }]);
+          continue;
+        }
         const body = new FormData();
         body.append("file", file);
         // Any throw here — a network drop, a non-JSON body — must still clear `busy`, or the
@@ -44,22 +49,23 @@ export function PdfDrop() {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-6" aria-busy={busy}>
       <label
-        onDragOver={e => { e.preventDefault(); setOver(true); }}
+        onDragOver={e => { e.preventDefault(); if (!busy) setOver(true); }}
         onDragLeave={() => setOver(false)}
-        onDrop={e => { e.preventDefault(); setOver(false); void send([...e.dataTransfer.files]); }}
-        className={`flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed text-sm transition-colors focus-within:border-accent focus-within:text-accent ${
+        onDrop={e => { e.preventDefault(); setOver(false); if (!busy) void send([...e.dataTransfer.files]); }}
+        className={`flex min-h-32 p-5 text-center cursor-pointer items-center justify-center rounded-xl border-2 border-dashed text-sm transition-colors focus-within:border-accent focus-within:text-accent ${
           over
             ? "border-accent bg-accent-soft text-accent"
             : "border-line-strong bg-surface text-ink-muted hover:border-accent hover:text-ink"
         }`}
       >
-        <input type="file" accept="application/pdf" multiple className="sr-only"
+        <input type="file" accept="application/pdf" multiple disabled={busy} aria-label={t("upload.drop.idle")} className="sr-only"
           onChange={e => { void send([...(e.target.files ?? [])]); e.target.value = ""; }} />
         {busy ? t("upload.drop.busy") : t("upload.drop.idle")}
       </label>
 
+      <div role="alert">
       {errors.map((err, i) => (
         <div key={i} className="mt-3 rounded-xl border border-negative/40 bg-surface p-3 text-sm">
           <p className="font-medium text-negative">{err.message}</p>
@@ -67,6 +73,9 @@ export function PdfDrop() {
         </div>
       ))}
 
+      </div>
+      <div role="status" aria-live="polite">
+      {busy && <p className="mt-3 text-sm text-ink-muted">{t("upload.drop.busy")}</p>}
       {reports.map(report => (
         <div key={report.file} className="mt-3 rounded-xl border border-line bg-surface p-3 text-sm">
           <p>
@@ -95,6 +104,7 @@ export function PdfDrop() {
           )}
         </div>
       ))}
+      </div>
     </div>
   );
 }
