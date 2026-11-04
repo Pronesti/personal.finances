@@ -4,5 +4,5 @@ domains:
 node_version: "20"
 secured: true
 proxy:
-  command: npm run dev
+  command: ../data/accounting/runtime/start-web.sh
   port: 43179
