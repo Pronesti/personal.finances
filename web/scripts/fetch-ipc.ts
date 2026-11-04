@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import { publishReferenceTable } from "../src/lib/reference-publisher";
 
 const SERIES_ID = "148.3_INIVELNAL_DICI_M_26"; // IPC nivel general, nacional, índice
 const URL = `https://apis.datos.gob.ar/series/api/series/?ids=${SERIES_ID}&limit=5000&format=json&start_date=2024-01-01`;
@@ -13,8 +12,7 @@ async function main() {
     if (value != null) table[date.slice(0, 7)] = value;
   }
   if (Object.keys(table).length === 0) throw new Error("empty series — check SERIES_ID");
-  const out = path.resolve(process.cwd(), "..", "data", "ipc.json");
-  fs.writeFileSync(out, JSON.stringify(table, null, 1));
+  const out = publishReferenceTable("ipc.json", table);
   console.log("wrote", out, Object.keys(table).length, "months, latest:", Object.keys(table).sort().at(-1));
 }
 main().catch(e => { console.error(e); process.exit(1); });
