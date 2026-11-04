@@ -99,6 +99,8 @@ def extract_verified(archive, stage):
                 raise BackupError('Archive contents do not match manifest')
             if len(refs) != len(set(refs)) or any(not r.startswith('objects/') or r not in files for r in refs):
                 raise BackupError('Missing required source object reference')
+            if any(not re.fullmatch(r'objects/[0-9a-f]{64}', r) for r in refs):
+                raise BackupError('Invalid source object identity')
             total = 0
             for entry in entries:
                 mode = entry.external_attr >> 16
@@ -127,6 +129,8 @@ def extract_verified(archive, stage):
                         out.write(chunk)
                 if size != info['size'] or sha.hexdigest() != info['sha256']:
                     raise BackupError('File checksum mismatch')
+                if entry.filename in refs and sha.hexdigest() != PurePosixPath(entry.filename).name:
+                    raise BackupError('Source object identity checksum mismatch')
             return manifest
     except (zipfile.BadZipFile, json.JSONDecodeError, UnicodeError, EOFError):
         raise BackupError('Malformed backup archive') from None

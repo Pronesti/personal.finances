@@ -21,6 +21,8 @@ The existing installation is managed by Lerd at `web.test` / `gastos.test` and p
 43179. Its project startup wrapper starts the private PostgreSQL dependency first;
 use `lerd pause web` / `lerd unpause web` from this directory for coordinated writer
 pauses. Credentials and private runtime files are not committed.
+The tracked `scripts/start-web.sh` delegates to that private launcher when present;
+otherwise it runs `npm run dev` for a separately configured checkout.
 
 For a separate configured development checkout, run the development server:
 
