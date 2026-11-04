@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,7 +8,7 @@ import { ingestFile } from "@/lib/ingest";
 import type { StatementJson } from "@/lib/integrity";
 import type { Rule } from "@/lib/categorize";
 import {
-  ingestReceipt, ingestCorrected, ReceiptRejected, receiptDir, sha256, MAX_RECEIPT_BYTES, type ReceiptDeps,
+  extractReceipt, ingestReceipt, ingestCorrected, ReceiptRejected, receiptDir, sha256, MAX_RECEIPT_BYTES, type ReceiptDeps,
 } from "@/lib/receipts/ingest";
 import { parseRowsText } from "@/lib/receipts/rows";
 import type { Box } from "@/lib/receipts/ocr";
@@ -200,5 +200,43 @@ describe("storeReceipt", () => {
     expect(stored).toMatchObject({ date: "2026-08-07", totalCents: 11537080 });
     expect(db.prepare("SELECT receipt_id, method FROM receipt_charge_links WHERE receipt_id = ?").get(stored.id))
       .toEqual({ receipt_id: stored.id, method: "auto" });
+  });
+});
+
+
+describe("extractReceipt", () => {
+  it("extracts verified evidence without opening SQLite or persisting files", async () => {
+    const dbModule = await import("@/lib/db");
+    const open = vi.spyOn(dbModule, "openDb").mockImplementation(() => { throw new Error("unexpected database"); });
+    try {
+      const d = deps([BROKEN, SMALL_RECEIPT]);
+      const result = await extractReceipt(pdf, d);
+      expect(result.report.ok).toBe(true);
+      expect(result.parsed.footer.totalCents).toBe(2712097);
+      expect(result.rowsText).toContain("6400,00");
+      expect(result.scale).toBe(2);
+      expect(d.scales).toEqual([3, 2]);
+      expect(fs.existsSync(receiptDir())).toBe(false);
+      expect(open).not.toHaveBeenCalled();
+    } finally { open.mockRestore(); }
+  });
+
+  it("retains the best failed attempt without creating pending storage", async () => {
+    const d = deps(["COTO", BROKEN, "COTO"]);
+    await expect(extractReceipt(pdf, d)).rejects.toMatchObject({
+      payload: { sha256: sha256(pdf), scale: 2, rowsText: expect.stringContaining("6490,00"), report: { ok: false } },
+    });
+    expect(d.scales).toEqual([3, 2, 1.5]);
+    expect(fs.existsSync(receiptDir())).toBe(false);
+  });
+
+  it("preserves OCR errors and checks byte limits before rendering", async () => {
+    const d = deps([]);
+    await expect(extractReceipt(Buffer.from("bad"), d)).rejects.toMatchObject({ code: "not_pdf" });
+    await expect(extractReceipt(Buffer.alloc(MAX_RECEIPT_BYTES + 1), d)).rejects.toMatchObject({ code: "too_large" });
+    expect(d.scales).toEqual([]);
+    const unavailable = new Error("OCR unavailable");
+    await expect(extractReceipt(pdf, { ...d, ocr: async () => { throw unavailable; } })).rejects.toBe(unavailable);
+    expect(fs.existsSync(receiptDir())).toBe(false);
   });
 });

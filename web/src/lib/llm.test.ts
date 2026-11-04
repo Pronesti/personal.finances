@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import path from "node:path";
-import Database from "better-sqlite3";
 import type Anthropic from "@anthropic-ai/sdk";
-import { DATA_DIR } from "@/lib/paths";
 import { MAX_BATCH, wireName, buildRequest, classifyMerchants, type LlmClient } from "@/lib/llm";
 import { Failure } from "@/lib/failure";
 
@@ -51,19 +47,18 @@ describe("buildRequest — privacy boundary", () => {
     expect(buildRequest(merchants).model).toBe("claude-opus-5");
   });
 
-  // The boundary's input is user data, so the boundary's test has to be user data too.
-  it("sends no amount from ANY merchant in the real database", () => {
-    const dbPath = path.join(DATA_DIR, "app.db");
-    if (!fs.existsSync(dbPath)) return; // fresh clone: nothing to check
-    const db = new Database(dbPath, { readonly: true });
-    const all = (db.prepare("SELECT DISTINCT merchant FROM transactions").all() as { merchant: string }[])
-      .map(r => r.merchant);
-    db.close();
-    expect(all.length).toBeGreaterThan(100);
-    const wire = JSON.stringify(buildRequest(all));
-    expect(wire).not.toMatch(/\d[\d .]*[.,]\d{2}/); // no money, however it is spaced
-    expect(wire).not.toMatch(/\bTC\d/);             // no applied exchange rate
-    expect(wire).not.toMatch(/\d{6,}/);             // no account, policy or voucher number
+  it("sends only sanitized synthetic merchant names and refuses financial source text", () => {
+    const wire = JSON.stringify(buildRequest([
+      "SYNTHETIC STORE", "POLICY 123456789012", "PURCHASE 18 515,27",
+      "PAYMENT TC1234,56", "TAX 30%", "SUBSCRIPTION 2.50",
+    ]));
+    expect(wire).toContain("SYNTHETIC STORE");
+    expect(wire).toContain("POLICY");
+    for (const sourceText of ["123456789012", "18 515,27", "TC1234,56", "30%", "2.50"])
+      expect(wire).not.toContain(sourceText);
+    expect(wire).not.toMatch(/\d[\d .]*[.,]\d{2}/);
+    expect(wire).not.toMatch(/\bTC\d/);
+    expect(wire).not.toMatch(/\d{6,}/);
   });
 
   it("caps a runaway batch", () => {

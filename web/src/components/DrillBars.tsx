@@ -8,19 +8,20 @@ import type { ValueMode } from "@/lib/queries";
 import { useChartTheme, axisProps, tooltipProps, gridProps } from "./chart";
 import { useT } from "./I18nProvider";
 
-export function DrillBars({ groups, level, value }: {
+export function DrillBars({ groups, level, value, labels, parameter }: {
   groups: { key: string; amount: number }[];
   level: "category" | "subcategory" | "merchant";
   value: ValueMode;
+  labels?:Record<string,string>; parameter?:string;
 }) {
   const t = useChartTheme();
   const tr = useT();
   const router = useRouter();
   const sp = useSearchParams();
-  const groupLabel = (key: string) => level === "category" ? tr(`category.${key as Category}`) : key;
+  const groupLabel = (key: string) => labels?.[key] ?? (level === "category" ? tr(`category.${key as Category}`) : key);
   const groupHref = (key: string) => {
     const next = new URLSearchParams(sp.toString());
-    next.set(level, key);
+    next.set(parameter ?? level, key);
     return `/categories?${next.toString()}`;
   };
   const onClick = (key: string) => {
@@ -42,7 +43,7 @@ export function DrillBars({ groups, level, value }: {
         {/* Recharts' onClick payload typings are unusable; single narrow cast, blame recharts */}
         <Bar dataKey="amount" onClick={(d) => onClick((d as { key: string }).key)} cursor={level === "merchant" ? "default" : "pointer"}>
           {groups.map(g => (
-            <Cell key={g.key} fill={t.category[g.key as Category] ?? t.series.primary} />
+            <Cell key={g.key} fill={labels ? Object.values(t.category)[[...g.key].reduce((n,ch)=>n+ch.charCodeAt(0),0)%Object.values(t.category).length] : Object.entries(t.category).find(([key])=>key===g.key)?.[1] ?? t.series.primary} />
           ))}
         </Bar>
       </BarChart>

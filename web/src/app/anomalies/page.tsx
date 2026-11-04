@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
@@ -25,18 +27,23 @@ const STATE_KEY: Record<string, MessageKey> = {
 };
 
 export default async function Anomalies({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/anomalies");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/anomalies", sp);
   const g = parseGranularity(sp);
-  const db = getDb();
+  const db = accounting ? null : getDb();
   const opts = valueOpts(modes);
-  const alerts = reviewableAlerts(db, opts.cpi);
-  const cleared = staleReviews(db, alerts);
-  const totals = periodTotals(db, opts, g);
+  const alerts = accounting?.alerts ?? reviewableAlerts(db!, opts.cpi);
+  const cleared = accounting?.cleared ?? staleReviews(db!, alerts);
+  const totals = accounting?.totals ?? periodTotals(db!, opts, g);
   const open = alerts.filter(a => a.state === "open");
   const tr = await getT();
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("anomalies.purpose")} detail={tr("anomalies.footer")} />
       </div>

@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { Fragment } from "react";
 import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
@@ -14,6 +16,11 @@ import { MergeMerchantButton, MerchantNameList } from "@/components/MergeMerchan
 export const dynamic = "force-dynamic";
 
 export default async function Categories({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/categories");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/categories", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

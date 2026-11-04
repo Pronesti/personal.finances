@@ -1,3 +1,8 @@
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { historicalSourceLineId } from "@/lib/accounting/receipt-ui";
+import { accountingReconciliation } from "@/lib/accounting/receipt-ui";
+import { postgresPageGate } from "@/components/accounting-gate";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { reconciliation, type ChargeRef } from "@/lib/receipts/charges";
@@ -25,9 +30,13 @@ function ChargeLine({ c, tr }: { c: ChargeRef; tr: Translator }) {
 }
 
 export default async function SuperCharges() {
+  const accountingGate = await postgresPageGate("/super/charges");
+  if (accountingGate) return accountingGate;
+
   const tr = await getT();
-  const r = reconciliation(getDb());
-  if (r.receipts.length === 0 && r.charges.length === 0)
+  const r = selectedBackend()==="postgres" ? await withAccounting(({ledger})=>accountingReconciliation(ledger)) : reconciliation(getDb());
+  const pendingSourceRows="pendingSourceRows" in r?r.pendingSourceRows:[];
+  if (r.receipts.length === 0 && r.charges.length === 0 && pendingSourceRows.length===0)
     return <main><p className="text-sm text-ink-muted">{tr("super.charges.empty")}</p></main>;
   const s = r.summary;
   const coverage = s.chargedCents === 0 ? 0 : s.matchedCents * 100 / s.chargedCents;
@@ -35,6 +44,7 @@ export default async function SuperCharges() {
   const th = "py-1 text-left text-ink-muted";
   return (
     <main className="space-y-8">
+      {selectedBackend()==="postgres"&&<p className="text-sm text-ink-muted">{receiptText(tr.locale,"accounting.receipts.historicalLinks")}</p>}
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label={tr("super.charges.stat.charged")} value={fmtArsCents(s.chargedCents)} detail={tr("super.charges.stat.chargedDetail", { count: r.charges.length })} />
         <Stat label={tr("super.charges.stat.analyzed")} value={fmtArsCents(s.matchedCents)} detail={tr("super.charges.stat.analyzedDetail", { pct: `${coverage.toFixed(0)}%` })} />
@@ -62,6 +72,8 @@ export default async function SuperCharges() {
                     <form action={unlinkChargeAction} className="flex flex-wrap items-center gap-2">
                       <ChargeLine c={x.charge} tr={tr} />
                       <input type="hidden" name="receipt" value={x.id} />
+                      {"historicalAssociationId" in x&&<input type="hidden" name="historicalPreviousDecisionId" value={String(x.historicalAssociationId??"")}/>}
+                      {"historical" in x&&x.historical&&<input type="hidden" name="historical" value="yes"/>}
                       <button type="submit" className={quiet}>{tr("super.charges.unlink")}</button>
                     </form>
                   )}
@@ -69,6 +81,8 @@ export default async function SuperCharges() {
                     <form key={c.fingerprint} action={linkChargeAction} className="flex flex-wrap items-center gap-2">
                       <ChargeLine c={c} tr={tr} />
                       <input type="hidden" name="receipt" value={x.id} />
+                      {"historicalAssociationId" in x&&<input type="hidden" name="historicalPreviousDecisionId" value={String(x.historicalAssociationId??"")}/>}
+                      {"historical" in x&&x.historical&&<input type="hidden" name="historical" value="yes"/>}
                       <input type="hidden" name="fingerprint" value={c.fingerprint} />
                       <button type="submit" className={button}>{tr("super.charges.link")}</button>
                     </form>
@@ -96,7 +110,7 @@ export default async function SuperCharges() {
               <tr key={c.fingerprint} className="border-t border-line align-top">
                 <td className="py-1 whitespace-nowrap">{c.date}</td>
                 <td>{c.brand}</td>
-                <td>{c.description}</td>
+                <td>{c.description}{historicalSourceLineId(c.fingerprint)&&<Link className="ml-2 text-accent underline" href={`/accounting/evidence/${encodeURIComponent(historicalSourceLineId(c.fingerprint)!)}`}>{receiptText(tr.locale,"accounting.receipts.source")}</Link>}</td>
                 <td className="text-right font-mono">{fmtArsCents(c.purchaseCents)}</td>
                 <td className="text-xs text-ink-muted">
                   {c.installment_count && c.installment_count > 1
@@ -113,7 +127,7 @@ export default async function SuperCharges() {
                     <form action={linkChargeAction} className="flex items-center gap-2">
                       <input type="hidden" name="fingerprint" value={c.fingerprint} />
                       <select name="receipt" className="rounded-md border border-line-strong bg-surface px-2 py-0.5 text-xs text-ink" aria-label={tr("super.charges.linkTo")}>
-                        {unlinkedReceipts.map(x => <option key={x.id} value={x.id}>{x.date} · {fmtArsCents(x.totalCents)}</option>)}
+                        {unlinkedReceipts.map(x => <option key={x.id} value={historicalSourceLineId(c.fingerprint)?`${x.id}|${"historicalAssociationId" in x?x.historicalAssociationId??"":""}`:x.id}>{x.date} · {fmtArsCents(x.totalCents)}</option>)}
                       </select>
                       <button type="submit" className={quiet}>{tr("super.charges.link")}</button>
                     </form>
@@ -125,6 +139,8 @@ export default async function SuperCharges() {
         </table>
       </section>
 
+      {pendingSourceRows.length>0&&<section className="space-y-3"><h2 className="text-sm font-semibold">{receiptText(tr.locale,"accounting.receipts.pending")}</h2><ul className="space-y-2 text-sm">{pendingSourceRows.map(row=><li key={row.id}><span>{row.cardId} · {row.date} · {row.description} · {row.ars!==null?fmtArs(row.ars):`US$ ${row.usd?.toFixed(2)}`} · {String(row.installment??"—")}/{String(row.installmentCount??"—")}</span> <Link href={`/accounting/evidence/${encodeURIComponent(row.id)}`} className="text-accent underline">{receiptText(tr.locale,"accounting.receipts.source")}</Link></li>)}</ul></section>}
+      {"historicalAssociations" in r&&r.historicalAssociations.length>0&&<details className="text-sm"><summary className="cursor-pointer font-semibold">{receiptText(tr.locale,"accounting.receipts.associationHistory")}</summary><ul className="mt-3 space-y-2">{r.historicalAssociations.map(row=><li key={row.id}><Link className="text-accent underline" href={`/accounting/evidence/${encodeURIComponent(row.sourceLineId)}`}>{row.recordedAt}</Link> · {tr(row.action==="link"?"super.charges.link":"super.charges.unlink")} · {tr(`super.charges.method.${row.method}`)}</li>)}</ul></details>}
       <p className="max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("super.charges.footer")}</p>
     </main>
   );

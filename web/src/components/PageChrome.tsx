@@ -1,7 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CHROME } from "@/lib/chrome";
+import { chromeForPath } from "@/lib/chrome";
 import { ALL_PERIOD, type Granularity } from "@/lib/months";
 import { granularityLabel, parseGranularity, parseModes, periodsFor, resolvePeriod } from "@/lib/scope";
 import { useT } from "./I18nProvider";
@@ -61,7 +61,7 @@ export function PageChrome({ months, latestClosing, baseMonth }: {
   const pathname = usePathname();
   const sp = useSearchParams();
   const t = useT();
-  const chrome = CHROME[pathname];
+  const chrome = chromeForPath(pathname);
   // A route with no row gets no header rather than a crash. chrome.test.ts makes sure no page
   // ends up here by accident.
   if (!chrome) return null;

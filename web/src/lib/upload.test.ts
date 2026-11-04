@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { openDb } from "@/lib/db";
 import {
-  MAX_PDF_BYTES, REPO_ROOT, safePdfName, ingestUpload, pdfDir, jsonDir, resolvePython, runPipeline,
+  parseStatementUpload, MAX_PDF_BYTES, REPO_ROOT, safePdfName, ingestUpload, pdfDir, jsonDir, resolvePython, runPipeline,
 } from "@/lib/upload";
 import { Failure } from "@/lib/failure";
 
@@ -254,5 +254,69 @@ describe("ingestUpload", () => {
     const db = openDb(":memory:");
     // data/ipc.json ends at 2026-07 today, so a 2026-07 statement is covered.
     expect((await ingestUpload(db, pdfBytes, "s.pdf")).cpi_stale).toBe(false);
+  });
+});
+
+
+describe("parseStatementUpload", () => {
+  it("returns exact parser bytes and original filename without writing statement storage or opening SQLite", async () => {
+    useStub(STATEMENT_STUB);
+    const dbModule = await import("@/lib/db");
+    const open = vi.spyOn(dbModule, "openDb").mockImplementation(() => { throw new Error("unexpected database"); });
+    try {
+      const result = await parseStatementUpload(pdfBytes, "mp_2026_07.pdf");
+      expect(result.pdf).toEqual(pdfBytes);
+      expect(result.json.file).toBe("mp_2026_07.pdf");
+      expect(JSON.parse(result.rawJson.toString()).file).toBe("mp_2026_07.pdf");
+      expect(result.json.transactions).toHaveLength(1);
+      expect(fs.readdirSync(pdfDir())).toEqual([]);
+      expect(fs.readdirSync(jsonDir())).toEqual([]);
+      expect(open).not.toHaveBeenCalled();
+    } finally { open.mockRestore(); }
+  });
+
+  it("routes the actual Python CLI to the private output directory without changing filename years", async () => {
+    // Exercise the real CLI/storage boundary with a synthetic converter; no personal PDF or
+    // pdfplumber is needed, and the default JSON directory must remain untouched.
+    useStub(`
+import importlib.util, sys, types, pathlib
+sys.modules["pdfplumber"] = types.ModuleType("pdfplumber")
+spec = importlib.util.spec_from_file_location("pdf_to_json", ${JSON.stringify(path.join(REPO_ROOT, "scripts", "pdf_to_json.py"))})
+module = importlib.util.module_from_spec(spec)
+sys.modules["pdf_to_json"] = module
+spec.loader.exec_module(module)
+module.JSON_DIR = pathlib.Path(${JSON.stringify(path.join(sandbox, "default-output"))})
+module.convert = lambda pdf: {"file": pdf.name, "transactions": []}
+sys.exit(module.main(sys.argv[1:]))
+`);
+    const result = await parseStatementUpload(pdfBytes, "mercadopago_2026_07.pdf");
+    expect(result.json.file).toBe("mercadopago_2026_07.pdf");
+    expect(fs.existsSync(path.join(sandbox, "default-output"))).toBe(false);
+    expect(fs.readdirSync(jsonDir())).toEqual([]);
+  });
+
+  it("preserves validation and layout failures in the independent seam", async () => {
+    useStub(LAYOUT_ERROR);
+    await expect(parseStatementUpload(pdfBytes, "../-rf.pdf")).rejects.toMatchObject({ code: "bad_name" });
+    await expect(parseStatementUpload(Buffer.from("bad"), "ok.pdf")).rejects.toMatchObject({ code: "not_pdf" });
+    await expect(parseStatementUpload(Buffer.alloc(MAX_PDF_BYTES + 1), "ok.pdf")).rejects.toMatchObject({ code: "too_large" });
+    await expect(parseStatementUpload(pdfBytes, "ok.pdf")).rejects.toMatchObject({ code: "parse_failed" });
+    expect(fs.readdirSync(pdfDir())).toEqual([]);
+    expect(fs.readdirSync(jsonDir())).toEqual([]);
+  });
+
+  it("cleans up the private workspace on success and malformed JSON", async () => {
+    const marker = path.join(sandbox, "workspace.txt");
+    useStub(STATEMENT_STUB + `\npathlib.Path(${JSON.stringify(marker)}).write_text(str(pathlib.Path(sys.argv[1]).parent))`);
+    await parseStatementUpload(pdfBytes, "s.pdf");
+    expect(fs.existsSync(fs.readFileSync(marker, "utf8"))).toBe(false);
+    useStub(`
+import sys, pathlib, os
+p = pathlib.Path(sys.argv[1])
+pathlib.Path(${JSON.stringify(marker)}).write_text(str(p.parent))
+(pathlib.Path(os.environ["TARJETAS_JSON_DIR"]) / (p.stem + ".json")).write_text("invalid")
+`);
+    await expect(parseStatementUpload(pdfBytes, "s.pdf")).rejects.toMatchObject({ code: "parse_failed" });
+    expect(fs.existsSync(fs.readFileSync(marker, "utf8"))).toBe(false);
   });
 });

@@ -9,7 +9,7 @@ import { useT } from "./I18nProvider";
 // below inflation means inflation pays that card's interest. Brand hues match BankChart via
 // nthSeries; the inflation line takes the dashed-ink treatment the other chart gives the
 // utilization ratio, so "context series" reads the same way on both.
-export function RateChart({ data, brands }: { data: BankMonth[]; brands: string[] }) {
+export function RateChart({ data, brands, labels = {} }: { data: BankMonth[]; brands: string[]; labels?: Record<string,string> }) {
   const t = useChartTheme();
   const tr = useT();
   const rows = data.map(m => ({
@@ -25,7 +25,7 @@ export function RateChart({ data, brands }: { data: BankMonth[]; brands: string[
         <Tooltip {...tooltipProps(t)} formatter={v => `${Number(v).toFixed(2).replace(".", ",")}%`} />
         <Legend {...legendProps(t)} />
         {brands.map((b, i) => (
-          <Line key={b} dataKey={`tem_${b}`} name={tr("bank.legend.temBrand", { brand: b })}
+          <Line key={b} dataKey={`tem_${b}`} name={tr("bank.legend.temBrand", { brand: labels[b] ?? b })}
             stroke={nthSeries(t, i)} strokeWidth={2} dot={false} />
         ))}
         <Line dataKey="inflationPct" name={tr("bank.legend.inflation")} stroke={t.ink} strokeWidth={2} strokeDasharray="5 4" dot={false} />

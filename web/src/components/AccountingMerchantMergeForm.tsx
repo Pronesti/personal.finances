@@ -1,0 +1,8 @@
+"use client";
+import {useActionState} from "react";
+import {accountingMergeAction} from "@/app/categories/actions";
+import {useT} from "./I18nProvider";
+export function AccountingMerchantMergeForm({commandKey,merchantId,merchant,affected}:{commandKey:string;merchantId:string;merchant:string;affected:{id:string;merchant:string}[]}){
+ const t=useT(),[state,action,pending]=useActionState(accountingMergeAction,null);
+ return <details><summary className="cursor-pointer text-accent">{t("accounting.reports.merge")}</summary><form action={action} className="mt-2 space-y-3 rounded border border-line p-3 text-left"><input name="key" type="hidden" value={commandKey}/><input name="merchantId" type="hidden" value={merchantId}/><input name="confirmedPurchaseIds" type="hidden" value={JSON.stringify(affected.map(a=>a.id))}/><p>{merchant}</p><label className="block">{t("accounting.reports.target")}<input name="targetName" required className="mt-1 block w-full rounded border border-line bg-surface p-2"/></label><p>{t("accounting.reports.confirm")}</p><ul className="max-h-40 overflow-auto text-xs">{affected.map(a=><li key={a.id}>{a.merchant} · {a.id}</li>)}</ul><label className="flex items-start gap-2"><input key={affected.map(a=>a.id).sort().join("|")} required type="checkbox" name="confirmHistory" value="yes"/>{t("accounting.reports.confirm")}</label><button disabled={pending} className="rounded border border-line px-3 py-2 text-accent disabled:opacity-50">{t("accounting.reports.save")}</button>{state&&<p role="status" className={state.ok?"text-ink-muted":"text-warning"}>{state.messageKey?t(state.messageKey):state.message}</p>}</form></details>;
+}

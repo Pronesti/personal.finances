@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
-import { CHROME } from "@/lib/chrome";
+import { CHROME, chromeForPath } from "@/lib/chrome";
 import { DICTIONARIES, DEFAULT_LOCALE } from "@/lib/i18n";
 
 const APP = path.resolve(__dirname, "../app");
@@ -20,6 +20,12 @@ const PAGES = pageFiles(APP).map(file => {
 });
 
 describe("route chrome", () => {
+  it("resolves titles for actual detail URLs", () => {
+    expect(chromeForPath("/receipts/12")?.title).toBe("receipts.detail.title");
+    expect(chromeForPath("/accounting/evidence/source%3A1")?.title).toBe("accounting.source.title");
+    expect(chromeForPath("/accounting/settings")?.title).toBe("accounting.catalog.title");
+    expect(chromeForPath("/unrelated/route")).toBeUndefined();
+  });
   it("finds the routes", () => {
     expect(PAGES.length).toBeGreaterThanOrEqual(20);
   });

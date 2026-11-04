@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { weekdayProfile, ticketTrend } from "@/lib/queries";
@@ -17,6 +19,11 @@ export const dynamic = "force-dynamic";
 const pct = (n: number) => `${n.toFixed(1).replace(".", ",")}%`;
 
 export default async function Habits({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/habits");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/habits", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

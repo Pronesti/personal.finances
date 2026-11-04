@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
@@ -17,11 +19,15 @@ const KIND_KEY: Record<CreditKind, MessageKey> = {
 };
 
 export default async function Credits({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/credits");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/credits", sp);
   const g = parseGranularity(sp);
   const opts = valueOpts(modes);
-  const { periods, top } = moneyBack(getDb(), opts, g);
+  const { periods, top } = accounting?.credits ?? moneyBack(getDb(), opts, g);
   const total = periods.reduce((s, p) => s + p.total, 0);
   const rated = periods.filter(p => p.pctOfSpend != null) as (typeof periods[number] & { pctOfSpend: number })[];
   const avgRate = rated.length ? rated.reduce((s, p) => s + p.pctOfSpend, 0) / rated.length : null;
@@ -29,6 +35,7 @@ export default async function Credits({ searchParams }: { searchParams: Promise<
 
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("credits.purpose")} detail={tr("credits.footer")} />
       </div>

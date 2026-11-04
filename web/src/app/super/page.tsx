@@ -1,3 +1,6 @@
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { getDb } from "@/lib/db";
 import { loadFacts } from "@/lib/receipts/facts";
 import { valueFacts } from "@/lib/receipts/value";
@@ -17,10 +20,13 @@ export const dynamic = "force-dynamic";
 const label = (date: string) => date.slice(5);
 
 export default async function SuperOverview({ searchParams }: { searchParams: Promise<SP> }) {
+  const accountingGate = await postgresPageGate("/super");
+  if (accountingGate) return accountingGate;
+
   const tr = await getT();
   const modes = parseModes(await searchParams);
-  const { receipts, items } = valueFacts(loadFacts(getDb()), valueOpts(modes));
-  const a = buildAnalytics(receipts, items);
+  const { receipts, items, rawItems } = valueFacts(selectedBackend()==="postgres" ? await withAccounting(({reader})=>reader.receiptFacts()) : loadFacts(getDb()), valueOpts(modes));
+  const a = buildAnalytics(receipts, items, rawItems);
   if (!a.kpis) return <main><p className="text-sm text-ink-muted">{tr("super.empty")}</p></main>;
   const k = a.kpis;
   const gross = a.periods.reduce((s, p) => s + p.grossCents, 0);
@@ -53,6 +59,7 @@ export default async function SuperOverview({ searchParams }: { searchParams: Pr
           </div>
         </section>
       </StatRail>
+      {selectedBackend()==="postgres"&&<p className="mt-6 text-xs text-ink-muted">{receiptText(tr.locale,"accounting.receipts.pendingProducts")}</p>}
       <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("super.footer")}</p>
     </main>
   );

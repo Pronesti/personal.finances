@@ -43,3 +43,10 @@ describe("valueFacts", () => {
     expect(usd.items[1]).toEqual({ ...items[1], grossCents: 40, discountCents: 0 });
   });
 });
+
+ it("restates raw unreviewed promotion amounts by their receipt month without adding a product identity",()=>{
+  const rawItems=[{sourceLineId:"raw:1",receiptId:receipts[0].id,qtyMilli:1000,grossCents:120000,discountCents:-20000,hasM:true,hasA:false}];
+  const result=valueFacts({receipts,items:[],rawItems},opts("usd"));
+  expect(result.rawItems?.[0]).toEqual({...rawItems[0],grossCents:120,discountCents:-20});
+  expect(result.items).toEqual([]);
+ });

@@ -1,3 +1,6 @@
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { getDb } from "@/lib/db";
 import { loadFacts } from "@/lib/receipts/facts";
 import { valueFacts } from "@/lib/receipts/value";
@@ -28,10 +31,13 @@ function Habit({ title, products, tr }: { title: string; products: ProductStat[]
 }
 
 export default async function SuperProducts({ searchParams }: { searchParams: Promise<SP> }) {
+  const accountingGate = await postgresPageGate("/super/products");
+  if (accountingGate) return accountingGate;
+
   const tr = await getT();
   const modes = parseModes(await searchParams);
-  const { receipts, items } = valueFacts(loadFacts(getDb()), valueOpts(modes));
-  const a = buildAnalytics(receipts, items);
+  const { receipts, items, rawItems } = valueFacts(selectedBackend()==="postgres" ? await withAccounting(({reader})=>reader.receiptFacts()) : loadFacts(getDb()), valueOpts(modes));
+  const a = buildAnalytics(receipts, items, rawItems);
   if (!a.kpis) return <main><p className="text-sm text-ink-muted">{tr("super.empty")}</p></main>;
   const repeated = a.products.filter(p => p.lastChange !== null)
     .sort((x, y) => Math.abs(y.lastChange!.grossPct) - Math.abs(x.lastChange!.grossPct));
@@ -117,6 +123,7 @@ export default async function SuperProducts({ searchParams }: { searchParams: Pr
         </div>
       </section>
 
+      {selectedBackend()==="postgres"&&<p className="text-xs text-ink-muted">{receiptText(tr.locale,"accounting.receipts.pendingProducts")}</p>}
       <p className="max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("super.products.footer")}</p>
     </main>
   );

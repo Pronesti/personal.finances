@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
@@ -95,7 +97,11 @@ function Total({ rows, mep, lapsed, tr }: { rows: RecurringCharge[]; mep: MepTab
 }
 
 export default async function Recurring() {
-  const rows = recurringTable(getDb(), loadCpi());
+  const accountingGate = await postgresPageGate("/recurring");
+  if (accountingGate) return accountingGate;
+
+  const accounting = await loadAccountingCommitments("/recurring");
+  const rows = accounting?.recurring ?? recurringTable(getDb(), loadCpi());
   const mep = loadMep();
   const active = rows.filter(r => r.status === "active");
   const subscriptions = active.filter(r => r.confidence === "high");
@@ -105,6 +111,7 @@ export default async function Recurring() {
 
   return (
     <main className="space-y-8">
+      <AccountingCommitmentCoverage data={accounting} />
       <div>
       <div className="mb-6">
         <PageGuide summary={tr("recurring.purpose")} detail={tr("recurring.footer")} />

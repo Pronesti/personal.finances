@@ -7,8 +7,8 @@ import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps } from "
 import { useT } from "./I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
 
-export function WeekdayBars({ data, categories, value }: {
-  data: Record<string, number | string>[]; categories: Category[]; value: ValueMode;
+export function WeekdayBars({ data, categories, value, labels }: {
+  data: Record<string, number | string>[]; categories: string[]; value: ValueMode; labels?: Record<string,string>;
 }) {
   const t = useChartTheme();
   const tr = useT();
@@ -27,7 +27,7 @@ export function WeekdayBars({ data, categories, value }: {
         />
         <Legend {...legendProps(t)} />
         {categories.map((c, i) => (
-          <Bar key={c} yAxisId="amt" dataKey={c} name={tr(`category.${c}`)} stackId="1" fill={t.category[c]}
+          <Bar key={c} yAxisId="amt" dataKey={c} name={labels?.[c] ?? tr(`category.${c as Category}`)} stackId="1" fill={(labels ? Object.values(t.category)[[...c].reduce((n,ch)=>n+ch.charCodeAt(0),0) % Object.values(t.category).length] : Object.entries(t.category).find(([key])=>key===c)?.[1] ?? t.series.primary)}
             radius={i === categories.length - 1 ? [3, 3, 0, 0] : undefined} />
         ))}
         <Line yAxisId="n" dataKey="count" name={purchasesName} stroke={t.ink} strokeWidth={2} strokeDasharray="5 4" dot />

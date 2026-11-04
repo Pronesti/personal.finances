@@ -26,9 +26,10 @@ export class Failure extends Error {
     return this.hintKey ? translate(DEFAULT_LOCALE, this.hintKey) : undefined;
   }
 
-  localized(locale: Locale): { message: string; hint?: string } {
+  localized(locale: Locale): { message: string; hint?: string; messageKey: MessageKey; messageParams: Vars; hintKey?: MessageKey } {
     return {
       message: translate(locale, this.messageKey, this.messageParams),
+      messageKey: this.messageKey, messageParams: this.messageParams, hintKey: this.hintKey,
       hint: this.hintKey ? translate(locale, this.hintKey) : undefined,
     };
   }

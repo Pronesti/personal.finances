@@ -1,3 +1,7 @@
+import { selectedBackend } from "@/lib/backend";
+import { AccountingMerchantReview } from "./accounting-review";
+import type { SP } from "@/lib/params";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
@@ -11,7 +15,11 @@ import { acceptAction, rejectAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function Review() {
+export default async function Review({searchParams}:{searchParams:Promise<SP>}) {
+  const accountingGate = await postgresPageGate("/review");
+  if (accountingGate) return accountingGate;
+
+  if(selectedBackend()==="postgres")return <AccountingMerchantReview searchParams={await searchParams}/>;
   const db = getDb();
   const data = loadCategoryData(db);
   const unknown = unknownMerchants(db);

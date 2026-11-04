@@ -1,5 +1,5 @@
 import type { ProductCategory } from "./categories";
-import type { ReceiptFact, ItemFact } from "./facts";
+import type { ReceiptFact, ItemFact, RawReceiptItemFact } from "./facts";
 
 export type PromoType = "mp" | "coto" | "mixed";
 export type Period = {
@@ -55,14 +55,14 @@ const sortReceipts = (a: ReceiptFact, b: ReceiptFact) =>
  * Every analysis of spec §8, from two flat arrays, in receipt order. Pure: the pages call it on
  * every request and the tests feed it by hand. A "period" is one receipt (decision 6).
  */
-export function buildAnalytics(receiptsIn: ReceiptFact[], items: ItemFact[]): Analytics {
+export function buildAnalytics(receiptsIn: ReceiptFact[], items: ItemFact[], rawItems?: RawReceiptItemFact[]): Analytics {
   const receipts = [...receiptsIn].sort(sortReceipts);
   const indexOf = new Map(receipts.map((r, i) => [r.id, i + 1]));
   const n = receipts.length;
 
   // ── periods ──
   const periods: Period[] = receipts.map((r, i) => {
-    const mine = items.filter(it => it.receiptId === r.id);
+    const mine = (rawItems ?? items).filter(it => it.receiptId === r.id);
     const split = { mp: 0, coto: 0, mixed: 0 };
     for (const it of mine) {
       const t = promoType(it.hasM, it.hasA);
