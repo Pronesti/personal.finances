@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DATA_DIR } from "@/lib/paths";
+import { referenceDir } from "@/lib/paths";
 import { monthsBetween } from "@/lib/months";
 
 export type CpiTable = Record<string, number>;
@@ -28,12 +28,10 @@ export function latestMonth(table: CpiTable): string {
   return months[months.length - 1];
 }
 
-let _cpi: CpiTable | undefined;
 export function loadCpi(): CpiTable {
-  if (_cpi) return _cpi;
-  const p = path.join(DATA_DIR, "ipc.json");
+  const p = path.join(referenceDir(), "ipc.json");
   if (!fs.existsSync(p)) throw new Error("data/ipc.json missing — run npm run fetch-ipc");
-  return (_cpi = JSON.parse(fs.readFileSync(p, "utf8")) as CpiTable);
+  return JSON.parse(fs.readFileSync(p, "utf8")) as CpiTable;
 }
 
 // Geometric mean monthly inflation over the trailing window — the rate projections grow by.

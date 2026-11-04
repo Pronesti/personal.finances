@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { proposeCategories } from "@/app/review/actions";
+import { uploadFeedback } from "@/lib/upload-feedback";
 import { useT } from "./I18nProvider";
 
 export function ProposeButton({ pending }: { pending: number }) {
@@ -15,7 +16,7 @@ export function ProposeButton({ pending }: { pending: number }) {
       >
         {busy ? t("review.propose.busy") : t.plural("review.propose.label", pending)}
       </button>
-      {message && <p role="status" className="mt-2 text-sm text-warning">{message}</p>}
+      {message && <p role="status" className="mt-2 text-sm text-warning">{uploadFeedback(t,message).message}{uploadFeedback(t,message).hint && <> {uploadFeedback(t,message).hint}</>}</p>}
     </form>
   );
 }

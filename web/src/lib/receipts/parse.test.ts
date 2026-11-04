@@ -700,3 +700,20 @@ describe("mergePages", () => {
     });
   });
 });
+
+describe('packaged mass versus weighed sales',()=>{
+ it.each([
+  ['ARROZ DOBLE CAROLINA GALLO CJA 1 KGM','un'],
+  ['HARINA DE TRIGO 0000 PUREZAPAQ 1 KGM','un'],
+  ['ARROZ GALLO CJA1KGM','un'],
+  ['PESCADO FILET A LA ROMANA COTO X KG','kg'],
+  ['PAPA A GRANEL KGM','kg'],
+ ])('interprets %s as %s', (description,unit)=>{
+  const parsed=parseRows(parseRowsText(`${description}\n0000568491 07790070431578\t100,00\n`));
+  expect(parsed.items[0]).toMatchObject({unit,qtyMilli:1000,lineTotalCents:10000});
+ });
+ it('keeps fractional quantities weighed even when OCR includes a package label',()=>{
+  const parsed=parseRows(parseRowsText('0,500 x 200,00\nARROZ CJA 1 KGM\n0000568491 07790070431578\t100,00\n'));
+  expect(parsed.items[0]).toMatchObject({unit:'kg',qtyMilli:500,lineTotalCents:10000});
+ });
+});

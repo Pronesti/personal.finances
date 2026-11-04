@@ -1,8 +1,8 @@
 import { toMode, type ValueOpts } from "@/lib/queries";
 import { latestMonth } from "@/lib/cpi";
-import type { ReceiptFact, ItemFact } from "./facts";
+import type { ReceiptFact, ItemFact, RawReceiptItemFact } from "./facts";
 
-export type Facts = { receipts: ReceiptFact[]; items: ItemFact[] };
+export type Facts = { receipts: ReceiptFact[]; items: ItemFact[]; rawItems?: RawReceiptItemFact[] };
 
 /**
  * Cents printed at the receipt's month, restated in the page's value basis: pesos of the latest
@@ -25,6 +25,10 @@ export function valueFacts(facts: Facts, opts: ValueOpts): Facts {
     receipts: facts.receipts.map(r => {
       const m = r.date.slice(0, 7);
       return { ...r, subtotalCents: conv(r.subtotalCents, m), discountsCents: conv(r.discountsCents, m), totalCents: conv(r.totalCents, m) };
+    }),
+    rawItems: facts.rawItems?.map(i => {
+      const m = monthOf.get(i.receiptId);
+      return m ? { ...i, grossCents: conv(i.grossCents, m), discountCents: conv(i.discountCents, m) } : i;
     }),
     items: facts.items.map(i => {
       const m = monthOf.get(i.receiptId);

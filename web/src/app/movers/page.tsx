@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { categoryMovers } from "@/lib/queries";
@@ -12,6 +14,11 @@ import { Stat, StatRail } from "@/components/Stat";
 export const dynamic = "force-dynamic";
 
 export default async function Movers({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/movers");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/movers", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   // "all" collapses history into one bucket — there is no previous period to move against, so

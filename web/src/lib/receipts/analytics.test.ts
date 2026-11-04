@@ -126,3 +126,13 @@ describe("buildAnalytics", () => {
     }
   });
 });
+
+it("preserves raw promotion evidence without inventing canonical products", () => {
+  const receipt = {id: 7, date: "2026-01-15", time: null, subtotalCents: 10000, discountsCents: -2000, totalCents: 8000};
+  const raw = [{sourceLineId: "raw:1", receiptId: 7, qtyMilli: 1000, grossCents: 10000, discountCents: -2000, hasM: true, hasA: false}];
+  const result = buildAnalytics([receipt], [], raw);
+  expect(result.periods[0]).toMatchObject({nItems: 1, mpCents: -2000, totalCents: 8000});
+  expect(result.kpis?.accumulatedSavingsCents).toBe(2000);
+  expect(result.products).toEqual([]);
+  expect(result.index[0].nProducts).toBe(0);
+});

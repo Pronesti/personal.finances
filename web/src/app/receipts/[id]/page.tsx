@@ -1,3 +1,8 @@
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { accountingReceiptDetail } from "@/lib/accounting/receipt-ui";
+import { AccountingReceiptControls } from "@/components/accounting-receipts";
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { receiptDetail } from "@/lib/receipts/queries";
@@ -6,7 +11,7 @@ import { ReceiptReport } from "@/components/ReceiptReport";
 import { Stat } from "@/components/Stat";
 import { getT } from "@/lib/locale";
 import { receiptSide } from "@/lib/receipts/charges";
-import { fmtArs } from "@/lib/format";
+import { sourceAmountMinor } from "@/lib/accounting/evidence";
 import { linkChargeAction, unlinkChargeAction } from "@/app/super/charges/actions";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +21,17 @@ function qty(milli: number, unit: "un" | "kg"): string {
 }
 
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
+  const accountingGate = await postgresPageGate("/receipts/[id]");
+  if (accountingGate) return accountingGate;
+
   const { id } = await params;
   const n = Number(id);
   if (!Number.isInteger(n)) notFound();
-  const d = receiptDetail(getDb(), n);
+  const pgMode=selectedBackend()==="postgres";
+  const pg=pgMode?await withAccounting(async context=>{const data=await accountingReceiptDetail(context,n);return data?{...data,cards:(await context.reader.inspection()).cards}:null;}):null;
+  const d = pgMode?pg?.detail:receiptDetail(getDb(), n);
   if (!d) notFound();
-  const side = receiptSide(getDb(), n)!;
+  const side = pgMode?pg!.side:receiptSide(getDb(), n)!;
   const tr = await getT();
   const { receipt, items, report, header, transcript } = d;
   const saved = receipt.subtotal_cents === 0 ? 0 : -receipt.discounts_cents * 100 / receipt.subtotal_cents;
@@ -37,7 +47,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
 
       <section>
         <h2 className="mb-2 text-sm font-semibold">{tr("receipts.detail.facts")}</h2>
-        <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
+        <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
           <dt className="text-ink-muted">{tr("receipts.detail.fiscal")}</dt><dd className="font-mono">{receipt.fiscal_number}</dd>
           <dt className="text-ink-muted">{tr("receipts.detail.register")}</dt><dd>{receipt.register ?? "—"}</dd>
           <dt className="text-ink-muted">{tr("receipts.detail.terminal")}</dt><dd>{receipt.terminal ?? "—"}</dd>
@@ -46,7 +56,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <dd>{receipt.payment_method ? `${receipt.payment_method} ${receipt.payment_ref ?? ""}` : "—"}</dd>
           <dt className="text-ink-muted">{tr("receipts.detail.cae")}</dt>
           <dd className="font-mono">{receipt.cae ? `${receipt.cae} (${receipt.cae_due ?? "—"})` : "—"}</dd>
-          <dt className="text-ink-muted">{tr("receipts.detail.file")}</dt><dd className="font-mono text-xs">{receipt.file_sha256}</dd>
+          <dt className="text-ink-muted">{tr("receipts.detail.file")}</dt><dd className="min-w-0 break-all font-mono text-xs">{receipt.file_sha256}</dd>
           <dt className="text-ink-muted">{tr("receipts.detail.scale")}</dt>
           <dd>{receipt.transcript_source === "corrected" ? tr("receipts.source.corrected") : `${receipt.ocr_scale}×`}</dd>
         </dl>
@@ -60,12 +70,14 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               <span className="font-medium">{side.charge.brand}</span> · {side.charge.date} · {side.charge.description} ·{" "}
               <span className="font-mono">{fmtArsCents(side.charge.purchaseCents)}</span>
               {side.charge.installment_count && side.charge.installment_count > 1 && (
-                <span className="text-ink-muted"> · {side.charge.installment_count} × {fmtArs(side.charge.ars)}</span>
+                <span className="text-ink-muted"> · {side.charge.installment_count} × {fmtArsCents(sourceAmountMinor(side.charge.ars))}</span>
               )}
               <span className="text-ink-muted"> · {tr("receipts.detail.charge.cycle", { month: side.charge.cycle_month })}</span>
               <span className="text-xs text-ink-muted"> · {tr(`super.charges.method.${side.method!}`)}</span>
             </span>
             <input type="hidden" name="receipt" value={receipt.id} />
+            {pg&&<input type="hidden" name="historicalPreviousDecisionId" value={pg.side.historicalAssociationId??""}/>}
+            {pg?.side.historical&&<input type="hidden" name="historical" value="yes"/>}
             <button type="submit" className="rounded-lg px-2.5 py-1 text-xs text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink">{tr("super.charges.unlink")}</button>
           </form>
         )}
@@ -77,6 +89,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               <form key={c.fingerprint} action={linkChargeAction} className="flex flex-wrap items-center gap-3">
                 <span>{c.brand} · {c.date} · {c.description} · <span className="font-mono">{fmtArsCents(c.purchaseCents)}</span></span>
                 <input type="hidden" name="receipt" value={receipt.id} />
+            {pg&&<input type="hidden" name="historicalPreviousDecisionId" value={pg.side.historicalAssociationId??""}/>}
+            {pg?.side.historical&&<input type="hidden" name="historical" value="yes"/>}
                 <input type="hidden" name="fingerprint" value={c.fingerprint} />
                 <button type="submit" className="rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-accent-ink transition-opacity hover:opacity-90">{tr("super.charges.link")}</button>
               </form>
@@ -85,6 +99,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         )}
       </section>
 
+      {pg && <AccountingReceiptControls data={pg} cards={pg.cards} locale={tr.locale}/>}
       <section>
         <h2 className="mb-2 text-sm font-semibold">{tr("receipts.detail.verification")}</h2>
         <ReceiptReport report={report} t={tr} />
@@ -131,6 +146,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         <ul className="list-disc pl-5 text-xs text-ink-muted">{header.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
       )}
 
+      {pg?.facts.correctedRowsObject && <details><summary className="cursor-pointer text-sm font-semibold">{receiptText(tr.locale,"accounting.receipts.originalTranscript")}</summary><pre className="mt-2 max-h-[40rem] overflow-auto rounded-md border border-line bg-surface p-2 font-mono text-xs">{pg.originalTranscript}</pre></details>}
       <details>
         <summary className="cursor-pointer text-sm font-semibold">{tr("receipts.detail.transcript")}</summary>
         <pre className="mt-2 max-h-[40rem] overflow-auto rounded-md border border-line bg-surface p-2 font-mono text-xs">{transcript}</pre>

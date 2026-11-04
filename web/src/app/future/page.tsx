@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
@@ -11,14 +13,20 @@ import { ProjectionChart } from "@/components/ProjectionChart";
 export const dynamic = "force-dynamic";
 
 export default async function Future({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
-  const modes = parseModes(await searchParams);
+  const accountingGate = await postgresPageGate("/future");
+  if (accountingGate) return accountingGate;
+
+  const sp = await searchParams;
+  const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/future", sp);
   const opts = valueOpts(modes);
-  const data = installmentProjection(getDb(), opts);
+  const data = accounting?.forecast ?? installmentProjection(getDb(), opts);
   const fmt = (n: number) => fmtMoney(n, modes.value);
   const rate = (trailingMonthlyInflation(opts.cpi) * 100).toFixed(1);
   const tr = await getT();
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("future.purpose")} detail={tr("future.footer")} />
       </div>

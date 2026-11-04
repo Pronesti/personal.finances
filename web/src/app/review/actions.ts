@@ -1,4 +1,6 @@
 "use server";
+import { selectedBackend } from "@/lib/backend";
+import { proposeAccountingMerchantCategories, acceptAccountingProposalAction, rejectAccountingProposalAction } from "./accounting-actions";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { unknownMerchants, recategorize } from "@/lib/queries";
@@ -8,17 +10,19 @@ import {
 } from "@/lib/categorize";
 import { loadCategoryData, saveCategoryData } from "@/lib/rules";
 import { Failure } from "@/lib/failure";
+import type { UploadFeedback } from "@/lib/upload-feedback";
 import { getT } from "@/lib/locale";
 
-// Returns a message for the UI, or null on silent success. `prev` is useActionState's previous
+// Returns structured feedback for the current UI locale, or null on silent success. `prev` is useActionState's previous
 // state and is ignored — each run starts from what is stored, not from the last render.
-export async function proposeCategories(_prev: string | null): Promise<string | null> {
+export async function proposeCategories(_prev: UploadFeedback | null): Promise<UploadFeedback | null> {
   const t = await getT();
   try {
+    if(selectedBackend()==="postgres"){const count=await proposeAccountingMerchantCategories();revalidatePath("/review");return count===0?{code:"nothing_pending",message:t("review.action.nothing"),messageKey:"review.action.nothing"}:null;}
     const db = getDb();
     const data = loadCategoryData(db);
     const todo = pendingMerchants(data, unknownMerchants(db).map(m => m.merchant));
-    if (todo.length === 0) return t("review.action.nothing");
+    if (todo.length === 0) return {code:"nothing_pending",message:t("review.action.nothing"),messageKey:"review.action.nothing"};
     const batch = todo.slice(0, MAX_BATCH);
     const proposals = await classifyMerchants(batch);
     // Dedup by merchant: re-proposing one that is already pending must not grow the list.
@@ -26,18 +30,19 @@ export async function proposeCategories(_prev: string | null): Promise<string | 
     saveCategoryData(db, { ...data, proposals: [...kept, ...proposals] });
     revalidatePath("/review");
     return todo.length > batch.length
-      ? t("review.action.partial", { done: proposals.length, total: todo.length })
+      ? {code:"partial_batch",message:t("review.action.partial", { done: proposals.length, total: todo.length }),messageKey:"review.action.partial",messageParams:{done:proposals.length,total:todo.length}}
       : null;
   } catch (e) {
     if (e instanceof Failure) {
-      const { message, hint } = e.localized(t.locale);
-      return hint ? `${message} ${hint}` : message;
+      return {code:e.code,...e.localized(t.locale)};
     }
+    if (selectedBackend() === "postgres") return {code:"proposal_failed",message:t("accounting.receipts.error"),messageKey:"accounting.receipts.error"};
     throw e;
   }
 }
 
 export async function acceptAction(formData: FormData): Promise<void> {
+  if(selectedBackend()==="postgres")return acceptAccountingProposalAction(formData);
   const merchant = String(formData.get("merchant") ?? "");
   const match = String(formData.get("match") ?? "").trim().toUpperCase();
   const category = String(formData.get("category") ?? "");
@@ -58,6 +63,7 @@ export async function acceptAction(formData: FormData): Promise<void> {
 }
 
 export async function rejectAction(formData: FormData): Promise<void> {
+  if(selectedBackend()==="postgres")return rejectAccountingProposalAction(formData);
   const merchant = String(formData.get("merchant") ?? "");
   if (!merchant) return;
   const db = getDb();

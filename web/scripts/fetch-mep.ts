@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import { publishReferenceTable } from "../src/lib/reference-publisher";
 
 const URL = "https://api.argentinadatos.com/v1/cotizaciones/dolares/bolsa";
 
@@ -21,8 +20,7 @@ async function main() {
   if (sums.size === 0) throw new Error("empty MEP series — check the endpoint payload shape");
   const table: Record<string, number> = {};
   for (const [m, { total, n }] of [...sums].sort()) table[m] = Math.round((total / n) * 100) / 100;
-  const out = path.resolve(process.cwd(), "..", "data", "mep.json");
-  fs.writeFileSync(out, JSON.stringify(table, null, 1));
+  const out = publishReferenceTable("mep.json", table);
   console.log("wrote", out, Object.keys(table).length, "months, latest:", Object.keys(table).sort().at(-1));
 }
 main().catch(e => { console.error(e); process.exit(1); });

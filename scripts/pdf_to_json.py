@@ -22,6 +22,7 @@ purpose. Everything else - identifiers, messages and the JSON keys - is English.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -570,14 +571,19 @@ def convert(pdf_path: Path) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    force = "--force" in argv
-    args = [a for a in argv if not a.startswith("--")]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--output-dir", type=Path, default=JSON_DIR)
+    parser.add_argument("pdfs", nargs="*")
+    options = parser.parse_args(argv)
+    force, args = options.force, options.pdfs
     pdfs = [Path(a).resolve() for a in args] if args else sorted(PDF_DIR.glob("*.pdf"))
 
-    JSON_DIR.mkdir(exist_ok=True)
+    output_dir = options.output_dir
+    output_dir.mkdir(exist_ok=True)
     converted = skipped = 0
     for pdf_path in pdfs:
-        target = JSON_DIR / (pdf_path.stem + ".json")
+        target = output_dir / (pdf_path.stem + ".json")
         if target.exists() and not force and not args:
             skipped += 1
             continue

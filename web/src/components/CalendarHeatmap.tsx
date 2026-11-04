@@ -9,7 +9,7 @@ import { useT } from "./I18nProvider";
 
 const CELL = 13, GAP = 2, WEEK = CELL + GAP;
 
-export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: ValueMode }) {
+export function CalendarHeatmap({ data, value, labels, cards, sourceBaseHref }: { data: DaySpend[]; value: ValueMode; labels?:Record<string,string>; cards?:Record<string,string>; sourceBaseHref?:string }) {
   const dateId = useId();
   const [selectedDate, setSelectedDate] = useState(data[0]?.date ?? "");
   const t = useChartTheme();
@@ -25,7 +25,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
   const weeks = Math.ceil((end.getTime() - start.getTime()) / (7 * 86400_000)) + 1;
 
   const cells: { x: number; y: number; date: string; amount: number }[] = [];
-  const labels: { x: number; text: string }[] = [];
+  const monthLabels: { x: number; text: string }[] = [];
   let lastMonth = "";
   for (let w = 0; w < weeks; w++) {
     for (let d = 0; d < 7; d++) {
@@ -34,13 +34,13 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
       cells.push({ x: w * WEEK, y: d * WEEK, date: iso, amount: byDate.get(iso)?.amount ?? 0 });
       if (d === 0) {
         const m = iso.slice(0, 7);
-        if (m !== lastMonth) { labels.push({ x: w * WEEK, text: m }); lastMonth = m; }
+        if (m !== lastMonth) { monthLabels.push({ x: w * WEEK, text: m }); lastMonth = m; }
       }
     }
   }
   const hovered = hover ? byDate.get(hover.date) : undefined;
   const day = selected ? byDate.get(selected) : undefined;
-  const catLabel = (c: string) => tr(`category.${c}` as MessageKey);
+  const catLabel = (c: string) => labels?.[c] ?? tr(`category.${c}` as MessageKey);
 
   // An empty day is drawn, not omitted, so the grid stays a grid. It takes the flat surface
   // colour with a hairline border: a low-opacity ink wash (the old treatment) vanishes on a
@@ -58,7 +58,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
           setHover(h => h && { ...h, x: e.clientX - box.left, y: e.clientY - box.top });
         }}>
         <svg width={weeks * WEEK + 8} height={7 * WEEK + 22} role="img" aria-label={tr("calendar.aria")}>
-          {labels.map(l => (
+          {monthLabels.map(l => (
             <text key={l.text} x={l.x} y={8} fontSize={8} fill={t.inkMuted}>{l.text}</text>
           ))}
           {cells.map(c => (
@@ -70,7 +70,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
               style={{ cursor: byDate.has(c.date) ? "pointer" : "default" }}
               onMouseEnter={() => setHover(h => ({ date: c.date, x: h?.x ?? 0, y: h?.y ?? 0 }))}
               onClick={() => { setSelectedDate(c.date); if (byDate.has(c.date)) setSelected(s => (s === c.date ? null : c.date)); }}>
-              <title>{`${c.date}: ${c.amount > 0 ? fmtMoney(c.amount, value) : tr("calendar.noPurchases")}`}</title>
+              <title>{`${c.date}: ${(labels ? byDate.has(c.date) : c.amount > 0) ? fmtMoney(c.amount, value) : tr("calendar.noPurchases")}`}</title>
             </rect>
           ))}
         </svg>
@@ -96,6 +96,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
         <section className="mt-4 rounded border border-line p-3 text-sm">
           <div className="flex items-baseline justify-between">
             <h2 className="font-medium">{day.date}</h2>
+            {sourceBaseHref&&<Link className="text-xs text-accent underline" href={`${sourceBaseHref}&date=${encodeURIComponent(day.date)}`}>{tr("accounting.reports.source")}</Link>}
             <button type="button" onClick={() => setSelected(null)} className="text-xs text-accent hover:underline">
               {tr("calendar.day.close")}
             </button>
@@ -135,7 +136,7 @@ export function CalendarHeatmap({ data, value }: { data: DaySpend[]; value: Valu
                     )}
                   </td>
                   <td className="whitespace-nowrap">{catLabel(r.category)}{r.subcategory ? ` / ${r.subcategory}` : ""}</td>
-                  <td className="whitespace-nowrap">{r.brand}</td>
+                  <td className="whitespace-nowrap">{cards?.[r.brand]??r.brand}</td>
                   <td className="whitespace-nowrap">{r.month}</td>
                   <td className="text-right">{r.amount != null ? fmtMoney(r.amount, value) : "—"}</td>
                   <td className="text-right">{r.usd ?? "—"}</td>

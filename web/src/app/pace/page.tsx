@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { cyclePace } from "@/lib/queries";
@@ -10,6 +12,11 @@ import { Stat, StatRail } from "@/components/Stat";
 export const dynamic = "force-dynamic";
 
 export default async function Pace({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/pace");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/pace", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const opts = valueOpts(modes);

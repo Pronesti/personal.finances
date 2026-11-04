@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { currencySplit } from "@/lib/queries";
@@ -8,6 +10,11 @@ import { CurrencyBars } from "@/components/CurrencyBars";
 export const dynamic = "force-dynamic";
 
 export default async function Currency({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/currency");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/currency", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

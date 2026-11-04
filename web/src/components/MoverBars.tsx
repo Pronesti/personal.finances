@@ -9,10 +9,10 @@ import { useT } from "./I18nProvider";
 // Diverging bars, one per category, sorted by how hard each pushed the total. Red right of
 // zero is a category that grew, blue left of zero is one that shrank — neither is moralized,
 // the tooltip carries the actual before/after pair.
-export function MoverBars({ data, value }: { data: Mover[]; value: ValueMode }) {
+export function MoverBars({ data, value, labels }: { data: Mover[]; value: ValueMode; labels?:Record<string,string> }) {
   const t = useChartTheme();
   const tr = useT();
-  const rows = data.map(m => ({ ...m, label: tr(`category.${m.category}` as MessageKey) }));
+  const rows = data.map(m => ({ ...m, label: labels?.[m.category] ?? tr(`category.${m.category}` as MessageKey) }));
   return (
     <ResponsiveContainer width="100%" height={Math.max(180, rows.length * 40 + 60)}>
       <BarChart data={rows} layout="vertical" margin={{ left: 24 }}>

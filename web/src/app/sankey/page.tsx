@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { sankeyFlows, coverage } from "@/lib/queries";
@@ -8,6 +10,11 @@ import { SankeyFlow } from "@/components/SankeyFlow";
 export const dynamic = "force-dynamic";
 
 export default async function SankeyPage({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/sankey");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/sankey", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const db = getDb();
