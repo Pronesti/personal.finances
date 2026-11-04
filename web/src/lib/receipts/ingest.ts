@@ -12,10 +12,8 @@ import { verify, type VerificationReport } from "./verify";
 import { matchReceipt } from "./match";
 import { autoLink } from "./charges";
 
-// The largest receipt scanned so far is 17.7 MB (three tall page images).
-export const MAX_RECEIPT_BYTES = 40 * 1024 * 1024;
-// Vision reads the 3× upscale best; the smaller scales are the retries when it does not reconcile.
-export const OCR_SCALES: readonly number[] = [3, 2, 1.5];
+import { MAX_RECEIPT_BYTES, OCR_SCALES } from "./limits";
+export { MAX_RECEIPT_BYTES, OCR_SCALES } from "./limits";
 
 /** The two stages that touch the world, injectable so the orchestration tests need neither. */
 export type ReceiptDeps = {
@@ -51,40 +49,61 @@ function failing(report: VerificationReport): number {
   return report.errors.length + report.checks.filter(c => !c.ok).length;
 }
 
-/**
- * Bytes in, stored receipt out — or ReceiptRejected with the best attempt for the user to fix.
- * The name of the upload is not a parameter on purpose: nothing about a receipt is in its name.
- */
-export async function ingestReceipt(
-  db: Database.Database, bytes: Buffer, deps: ReceiptDeps = realDeps,
-): Promise<ReceiptStored> {
+export function validateReceiptBytes(bytes: Buffer): void {
   if (bytes.byteLength > MAX_RECEIPT_BYTES)
     throw new Failure("too_large", "failure.too_large", {
       name: "The receipt", size: (bytes.byteLength / 1024 / 1024).toFixed(1), limit: MAX_RECEIPT_BYTES / 1024 / 1024,
     });
   if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-")
     throw new Failure("not_pdf", "failure.not_pdf.magic", { name: "The upload" });
-  const sha = sha256(bytes);
-  const seen = db.prepare("SELECT id, date FROM receipts WHERE file_sha256 = ?").get(sha) as
-    { id: number; date: string } | undefined;
-  if (seen) throw new Failure("duplicate_receipt", "failure.duplicate_receipt.file", { id: seen.id, date: seen.date });
+}
 
+export type ReceiptExtraction = {
+  parsed: ParsedReceipt; rowsText: string; report: VerificationReport; scale: number;
+};
+
+/** Extract and verify without opening a database or persisting source/pending files. */
+export async function extractReceipt(bytes: Buffer, deps: ReceiptDeps): Promise<ReceiptExtraction> {
+  validateReceiptBytes(bytes);
   let best: Attempt | null = null;
   for (const scale of OCR_SCALES) {
     const rows = boxesToRows(await deps.ocr(deps.renderPages(bytes, scale)));
     const parsed = parseRows(rows);
     const report = verify(parsed);
     if (report.ok)
-      return storeReceipt(db, { parsed, report, sha, bytes, scale, transcripts: { ocr: serializeRows(rows) } });
+      return { parsed, report, scale, rowsText: serializeRows(rows) };
     if (best === null || failing(report) < failing(best.report)) best = { rows, parsed, report, scale };
   }
   const attempt = best!;
   const rowsText = serializeRows(attempt.rows);
-  fs.mkdirSync(pendingDir(), { recursive: true });
-  fs.writeFileSync(path.join(pendingDir(), `${sha}.pdf`), bytes);
-  fs.writeFileSync(path.join(pendingDir(), `${sha}.rows.txt`), rowsText);
-  fs.writeFileSync(path.join(pendingDir(), `${sha}.meta.json`), JSON.stringify({ scale: attempt.scale }));
-  throw new ReceiptRejected({ report: attempt.report, rowsText, sha256: sha, scale: attempt.scale });
+  throw new ReceiptRejected({ report: attempt.report, rowsText, sha256: sha256(bytes), scale: attempt.scale });
+}
+
+/** Legacy SQLite admission retains duplicate checks and editable pending evidence. */
+export async function ingestReceipt(
+  db: Database.Database, bytes: Buffer, deps: ReceiptDeps = realDeps,
+): Promise<ReceiptStored> {
+  validateReceiptBytes(bytes);
+  const sha = sha256(bytes);
+  const seen = db.prepare("SELECT id, date FROM receipts WHERE file_sha256 = ?").get(sha) as
+    { id: number; date: string } | undefined;
+  if (seen) throw new Failure("duplicate_receipt", "failure.duplicate_receipt.file", { id: seen.id, date: seen.date });
+
+  let extraction: ReceiptExtraction;
+  try {
+    extraction = await extractReceipt(bytes, deps);
+  } catch (e) {
+    if (e instanceof ReceiptRejected) {
+      fs.mkdirSync(pendingDir(), { recursive: true });
+      fs.writeFileSync(path.join(pendingDir(), `${sha}.pdf`), bytes);
+      fs.writeFileSync(path.join(pendingDir(), `${sha}.rows.txt`), e.payload.rowsText);
+      fs.writeFileSync(path.join(pendingDir(), `${sha}.meta.json`), JSON.stringify({ scale: e.payload.scale }));
+    }
+    throw e;
+  }
+  return storeReceipt(db, {
+    ...extraction, sha, bytes, transcripts: { ocr: extraction.rowsText },
+  });
 }
 
 const SHA_RE = /^[0-9a-f]{64}$/;

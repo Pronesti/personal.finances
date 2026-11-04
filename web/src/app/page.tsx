@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { eli5 } from "@/lib/queries";
@@ -24,13 +26,19 @@ function Tile({ href, label, children, action }: { href?: string; label: string;
 }
 
 export default async function Overview({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
-  const modes = parseModes(await searchParams);
-  const t = eli5(getDb(), valueOpts(modes));
+  const accountingGate = await postgresPageGate("/");
+  if (accountingGate) return accountingGate;
+
+  const sp = await searchParams;
+  const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/", sp);
+  const t = accounting?.overview ?? eli5(getDb(), valueOpts(modes));
   const tr = await getT();
   const valueLabel = tr(`value.${modes.value}`);
   const openCount = t.openAlerts.length;
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <p className="mb-6 text-sm text-ink-muted">{tr("overview.intro")}</p>
       <section className="mb-6 rounded-xl border border-line bg-surface p-4">
         <h2 className="mb-3 text-sm font-semibold">{tr("overview.next")}</h2>
@@ -59,7 +67,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         <Tile action={tr("overview.explore")} href={withModes("/categories", modes)} label={tr("overview.topCategories")}>
           {t.topCategories.map(c => (
             <div key={c.category} className="flex justify-between text-sm">
-              <span className="text-ink-muted">{tr(`category.${c.category}` as MessageKey)}</span>
+              <span className="text-ink-muted">{accounting?.accountLabels[c.category] ?? tr(`category.${c.category}` as MessageKey)}</span>
               <span>{fmtMoney(c.amount, modes.value)}</span>
             </div>
           ))}

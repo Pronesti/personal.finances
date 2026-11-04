@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useT } from "./I18nProvider";
 import { ReceiptReport } from "./ReceiptReport";
+import { receiptText } from "@/lib/accounting/receipt-messages";
 import { fmtArsCents } from "@/lib/receipts/money";
+import { uploadFeedback, type UploadFeedback } from "@/lib/upload-feedback";
 import type { VerificationReport } from "@/lib/receipts/verify";
 
-type Stored = { id: number; date: string; totalCents: number; items: number; report: VerificationReport };
-type Rejected = { message: string; report: VerificationReport; rowsText: string; sha256: string; scale: number };
-type ApiError = { code: string; message: string; hint?: string };
+type Stored = { reviews?:{code:string}[]; sourceRevisionId?:string; id: number; date: string; totalCents: number; items: number; report: VerificationReport };
+type Rejected = { sourceRevisionId?: string; message: string; report: VerificationReport; rowsText: string; sha256: string; scale: number };
+type ApiError = UploadFeedback;
 type Outcome =
   | { kind: "stored"; stored: Stored }
   | { kind: "rejected"; rejected: Rejected }
@@ -57,7 +59,7 @@ export function ReceiptDrop() {
       router.refresh();
     } catch {
       // A network drop or a non-JSON body must still clear `busy`.
-      setOutcome({ kind: "error", error: { code: "unknown", message: t("receipts.error.unreadable") } });
+      setOutcome({ kind: "error", error: { code: "unknown", message: t("receipts.error.unreadable"), messageKey: "receipts.error.unreadable" } });
     } finally {
       setBusy(false);
     }
@@ -106,8 +108,8 @@ export function ReceiptDrop() {
 
       {outcome?.kind === "error" && (
         <div className="mt-3 rounded-xl border border-negative/40 bg-surface p-3 text-sm">
-          <p className="font-medium text-negative">{outcome.error.message}</p>
-          {outcome.error.hint && <p className="mt-1 text-ink-muted">{outcome.error.hint}</p>}
+          <p className="font-medium text-negative">{uploadFeedback(t, outcome.error).message}</p>
+          {uploadFeedback(t, outcome.error).hint && <p className="mt-1 text-ink-muted">{uploadFeedback(t, outcome.error).hint}</p>}
         </div>
       )}
 
@@ -119,6 +121,8 @@ export function ReceiptDrop() {
             })}{" "}
             <Link href={`/receipts/${outcome.stored.id}`} className="text-accent underline">{t("receipts.open")}</Link>
           </p>
+          {Boolean(outcome.stored.reviews?.length) && <p className="mt-2 text-warning">{receiptText(t.locale,"accounting.receipts.pending")}</p>}
+          {outcome.stored.sourceRevisionId && <Link className="mt-1 block text-accent underline" href={`/accounting/evidence/${encodeURIComponent(outcome.stored.sourceRevisionId)}`}>{receiptText(t.locale,"accounting.receipts.source")}</Link>}
           {outcome.stored.report.warnings.length > 0 && (
             <ul className="mt-2 list-disc pl-5 text-ink-muted">
               {outcome.stored.report.warnings.map((w, i) => <li key={i}>{w}</li>)}
@@ -129,7 +133,7 @@ export function ReceiptDrop() {
 
       {outcome?.kind === "rejected" && (
         <div className="mt-3 space-y-3 rounded-xl border border-negative/40 bg-surface p-3 text-sm">
-          <p className="font-medium text-negative">{outcome.rejected.message}</p>
+          <p className="font-medium text-negative">{outcome.rejected.sourceRevisionId ? receiptText(t.locale,"accounting.receipts.verificationFailed") : t("receipts.rejected")}</p>
           <ReceiptReport report={outcome.rejected.report} t={t} />
           <p className="text-xs text-ink-muted">{t("receipts.textareaHint")}</p>
           <textarea

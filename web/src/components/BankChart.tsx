@@ -11,8 +11,8 @@ import { useT } from "./I18nProvider";
 // One limit line PER BRAND: the cards no longer share a number (BBVA 20M vs Mercado Pago ~5M),
 // so any single line would jump with the coverage set rather than with a bank's decision.
 // Brand names render verbatim — they are data, not copy.
-export function BankChart({ data, brands, value }: {
-  data: BankMonth[]; brands: string[]; value: ValueMode;
+export function BankChart({ data, brands, value, labels = {} }: {
+  data: BankMonth[]; brands: string[]; value: ValueMode; labels?: Record<string,string>;
 }) {
   const t = useChartTheme();
   const tr = useT();
@@ -35,7 +35,7 @@ export function BankChart({ data, brands, value }: {
         <Legend {...legendProps(t)} />
         <Bar yAxisId="amt" dataKey="balance" name={tr("bank.legend.balance")} fill={t.series.primary} radius={[3, 3, 0, 0]} {...barWidth(rows.length)} />
         {brands.map((b, i) => (
-          <Line key={b} yAxisId="amt" dataKey={`lim_${b}`} name={tr("bank.legend.limitBrand", { brand: b })}
+          <Line key={b} yAxisId="amt" dataKey={`lim_${b}`} name={tr("bank.legend.limitBrand", { brand: labels[b] ?? b })}
             stroke={nthSeries(t, i)} strokeWidth={2} dot={false} />
         ))}
         <Line yAxisId="pct" dataKey="utilizationPct" name={utilName} stroke={t.ink} strokeWidth={2} strokeDasharray="5 4" dot={false} />

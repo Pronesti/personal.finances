@@ -1,0 +1,10 @@
+import {beforeEach,expect,it,vi} from "vitest";
+const state=vi.hoisted(()=>({backend:"postgres",ready:new Set<string>(),getDb:vi.fn(),withAccounting:vi.fn()}));
+vi.mock("@/lib/backend",()=>({selectedBackend:()=>state.backend,POSTGRES_READY_PAGES:state.ready,withAccounting:state.withAccounting}));
+vi.mock("@/lib/db",()=>({getDb:state.getDb}));
+vi.mock("@/lib/locale",async()=>{const {translator}=await import("@/lib/i18n");return {getT:async()=>translator("en")};});
+vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
+import {recategorizeAction,mergeMerchantAction,accountingClassifyAction,accountingMergeAction} from "@/app/categories/actions";
+beforeEach(()=>{state.backend="postgres";state.ready.clear();state.getDb.mockReset();state.withAccounting.mockReset();state.getDb.mockImplementation(()=>{throw Error("SQLite access forbidden in this test");});});
+it("stale legacy category/merchant forms cannot write SQLite after PostgreSQL selection",async()=>{const form=new FormData();form.set("match","SHOP");form.set("category","food");form.set("alias","TARGET");await recategorizeAction(form);await mergeMerchantAction(form);expect(state.getDb).not.toHaveBeenCalled();expect(state.withAccounting).not.toHaveBeenCalled();});
+it("unready PostgreSQL correction and merge forms return localized refusal before any writer",async()=>{const form=new FormData();expect(await accountingClassifyAction(null,form)).toMatchObject({ok:false,message:"This view is not ready for the selected data source. Your existing records are retained."});expect((await accountingMergeAction(null,form)).ok).toBe(false);expect(state.getDb).not.toHaveBeenCalled();expect(state.withAccounting).not.toHaveBeenCalled();});

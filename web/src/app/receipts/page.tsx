@@ -1,3 +1,7 @@
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { accountingReceiptList } from "@/lib/accounting/receipt-ui";
+import { postgresPageGate } from "@/components/accounting-gate";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { receiptList } from "@/lib/receipts/queries";
@@ -13,7 +17,11 @@ function savedPct(discounts: number, subtotal: number): string {
 }
 
 export default async function Receipts() {
-  const rows = receiptList(getDb());
+  const accountingGate = await postgresPageGate("/receipts");
+  if (accountingGate) return accountingGate;
+
+  const pg=selectedBackend()==="postgres";
+  const rows = pg ? await withAccounting(({ledger})=>accountingReceiptList(ledger)) : receiptList(getDb());
   const tr = await getT();
   return (
     <main>
@@ -21,6 +29,7 @@ export default async function Receipts() {
       {rows.length === 0 ? (
         <p className="text-sm text-ink-muted">{tr("receipts.empty")}</p>
       ) : (
+        <div className="max-w-full overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-line text-left text-ink-muted">
             <th className="py-1">{tr("receipts.table.date")}</th><th>{tr("receipts.table.time")}</th>
@@ -48,9 +57,10 @@ export default async function Receipts() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
-      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("receipts.note")}</p>
-      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("receipts.footer")}</p>
+      <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{pg?receiptText(tr.locale,"accounting.receipts.retention"):tr("receipts.note")}</p>
+      <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{pg?receiptText(tr.locale,"accounting.receipts.openDetail"):tr("receipts.footer")}</p>
     </main>
   );
 }

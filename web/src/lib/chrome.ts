@@ -22,6 +22,9 @@ export type RouteChrome = {
 };
 
 export const CHROME: Record<string, RouteChrome> = {
+  "/accounting": { title: "accounting.title" },
+  "/accounting/evidence/[id]": { title: "accounting.source.title" },
+  "/accounting/settings": { title: "accounting.catalog.title" },
   "/": {
     title: "overview.title",
     titleVars: ({ latestClosing }) => ({ date: latestClosing ?? "—" }),
@@ -123,3 +126,10 @@ export const CHROME: Record<string, RouteChrome> = {
   "/trends": { title: "trends.title", toggles: {}, granularities: GRANULARITIES },
   "/upload": { title: "upload.title" },
 };
+
+export function chromeForPath(pathname: string): RouteChrome | undefined {
+  if (CHROME[pathname]) return CHROME[pathname];
+  if (/^\/receipts\/[^/]+$/.test(pathname)) return CHROME["/receipts/[id]"];
+  if (/^\/accounting\/evidence\/[^/]+$/.test(pathname)) return CHROME["/accounting/evidence/[id]"];
+  return undefined;
+}

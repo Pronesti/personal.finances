@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { loadCpi } from "@/lib/cpi";
@@ -14,22 +16,27 @@ export const dynamic = "force-dynamic";
 // No mode toggles: the float gain is a real-terms quantity by construction (see paymentFloat),
 // so the whole page speaks constant base-month pesos.
 export default async function Float({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/float");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const g = parseGranularity(sp);
+  const accounting = await loadAccountingCommitments("/float", {...sp,value:"real"});
   const cpi = loadCpi();
-  const db = getDb();
-  const periods = paymentFloat(db, cpi, g);
+  const db = accounting ? null : getDb();
+  const periods = accounting?.float ?? paymentFloat(db!, cpi, g);
   const totalGain = periods.reduce((s, m) => s + m.gain, 0);
   const installmentGain = periods.reduce((s, m) => s + m.gainInstallment, 0);
   // Plain mean over buckets, not over rows: this reads "what a typical bucket looked like".
   const avgDays = periods.length ? periods.reduce((s, m) => s + m.avgDays, 0) / periods.length : null;
   // What the float cost, for the same window: the card's own financing interest, in real terms.
-  const interest = taxBurden(db, { spend: "cash", value: "real", tax: "excl", cpi, mep: loadMep() })
+  const interest = (accounting?.taxes ?? taxBurden(db!, { spend: "cash", value: "real", tax: "excl", cpi, mep: loadMep() }))
     .reduce((s, m) => s + m.interest, 0);
   const tr = await getT();
 
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("float.purpose")} detail={tr("float.footer")} />
       </div>

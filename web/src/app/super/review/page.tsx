@@ -1,28 +1,38 @@
+import { ProductEditForm } from "@/components/ProductEditForm";
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { accountingProductReview } from "@/lib/accounting/receipt-ui";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { getDb } from "@/lib/db";
 import { reviewQueue, allProducts } from "@/lib/receipts/products";
 import { PRODUCT_CATEGORIES } from "@/lib/receipts/categories";
 import { fmtArsCents } from "@/lib/receipts/money";
 import { getT } from "@/lib/locale";
-import { saveProductAction, mergeProductAction, rematchAllAction } from "./actions";
+import { saveProductAction, mergeProductAction, rematchAllAction, moveCodeAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuperReview() {
+  const accountingGate = await postgresPageGate("/super/review");
+  if (accountingGate) return accountingGate;
+
   const tr = await getT();
-  const db = getDb();
-  const queue = reviewQueue(db);
-  const options = allProducts(db);
+  const pg=selectedBackend()==="postgres" ? await withAccounting(({ledger})=>accountingProductReview(ledger)) : null;
+  const queue = pg ? pg.queue : reviewQueue(getDb());
+  const options = pg ? pg.options : allProducts(getDb());
   const field = "mt-0.5 w-full rounded-md border border-line-strong bg-surface px-2 py-1 text-sm text-ink";
   const button = "rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90";
+  const pendingCount = pg ? pg.queue.filter(p=>!p.reviewed).length : queue.length;
   return (
     <main>
       <p className="mb-4 text-sm text-ink-muted">
-        {queue.length === 0 ? tr("super.review.none") : tr("super.review.summary", { count: queue.length })}
+        {pendingCount === 0 ? (pg?receiptText(tr.locale,"accounting.receipts.canonicalQueueEmpty"):tr("super.review.none")) : tr("super.review.summary", { count: pendingCount })}
       </p>
       <form action={rematchAllAction} className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-4">
         <button type="submit" className={button}>{tr("super.review.rematch")}</button>
         <p className="text-xs text-ink-muted">{tr("super.review.rematchNote")}</p>
       </form>
+      {pg&&<h2 className="mb-4 font-semibold">{receiptText(tr.locale,"accounting.receipts.productCatalog")}</h2>}
       <div className="space-y-4">
         {queue.map(p => (
           <div key={p.id} className="rounded-xl border border-line bg-surface p-4">
@@ -34,7 +44,7 @@ export default async function SuperReview() {
               <dt>{tr("super.review.seen")}</dt><dd className="font-mono">{p.descriptions.join(" · ")}</dd>
               <dt>{tr("super.review.codes")}</dt><dd className="font-mono">{p.codes.join(" · ") || "—"}</dd>
             </dl>
-            <form action={saveProductAction} className="mt-3 grid gap-3 sm:grid-cols-[1fr_12rem_6rem_auto] sm:items-end">
+            <ProductEditForm action={saveProductAction} className="mt-3 grid gap-3 sm:grid-cols-[1fr_12rem_6rem_auto] sm:items-end">
               <input type="hidden" name="id" value={p.id} />
               <label className="text-xs text-ink-muted">{tr("super.review.name")}
                 <input name="name" defaultValue={p.name} required className={field} />
@@ -51,7 +61,7 @@ export default async function SuperReview() {
                 </select>
               </label>
               <button type="submit" className={button}>{tr("super.review.save")}</button>
-            </form>
+            </ProductEditForm>
             <form action={mergeProductAction} className="mt-2 flex flex-wrap items-end gap-3">
               <input type="hidden" name="source" value={p.id} />
               <label className="min-w-64 text-xs text-ink-muted">{tr("super.review.mergeInto")}
@@ -63,9 +73,11 @@ export default async function SuperReview() {
                 {tr("super.review.merge")}
               </button>
             </form>
+            {pg&&p.codes.map(sku=><form key={sku} action={moveCodeAction} className="mt-3 flex flex-wrap items-end gap-3"><input type="hidden" name="sku" value={sku}/><label className="text-xs text-ink-muted">{receiptText(tr.locale,"accounting.receipts.moveCode")} · <span className="font-mono">{sku}</span><select name="target" required className={field} defaultValue=""><option value="">—</option>{options.filter(o=>o.id!==p.id).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></label><button className={button}>{receiptText(tr.locale,"accounting.receipts.moveCode")}</button></form>)}
           </div>
         ))}
       </div>
+      {selectedBackend()==="postgres"&&<p className="mt-6 text-xs text-ink-muted">{receiptText(tr.locale,"accounting.receipts.pendingProducts")}</p>}
       <p className="mt-8 max-w-[80ch] border-t border-line pt-4 text-xs leading-relaxed text-ink-muted">{tr("super.review.footer")}</p>
     </main>
   );

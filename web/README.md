@@ -1,14 +1,30 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Current features and accounting architecture
+
+See the [current-state guide](../docs/current-state/README.md) for the complete feature
+inventory, workflows and calculations, data relationships, preservation scenarios,
+and accepted decisions behind the implemented double-entry accounting architecture.
+See the [implementation status](../docs/accounting/implementation-status.md) for the
+completed acceptance and live local cutover record.
+
 ## Backups and restoring data
 
-See [the backup guide](../BACKUP.md) for complete SQLite/document backups, local
-restore, and importing into another Tarjetas deployment with persistent storage.
-From the repository root, run `python3 scripts/backup.py create`.
+This local installation now selects PostgreSQL in private `.env.local`. Use the
+[accounting backup runbook](../docs/accounting/backup-runbook.md) for the live database,
+immutable documents and references. The [legacy backup guide](../BACKUP.md) retains
+SQLite instructions for old snapshots; that tool is not the live PostgreSQL backup.
 
 ## Getting Started
 
-First, run the development server:
+The existing installation is managed by Lerd at `web.test` / `gastos.test` and port
+43179. Its project startup wrapper starts the private PostgreSQL dependency first;
+use `lerd pause web` / `lerd unpause web` from this directory for coordinated writer
+pauses. Credentials and private runtime files are not committed.
+The tracked `scripts/start-web.sh` delegates to that private launcher when present;
+otherwise it runs `npm run dev` for a separately configured checkout.
+
+For a separate configured development checkout, run the development server:
 
 ```bash
 npm run dev

@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
@@ -21,6 +23,11 @@ const TOP_TABLE = 15;
 const pct = (n: number) => `${n.toFixed(1).replace(".", ",")}%`;
 
 export default async function Merchants({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/merchants");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/merchants", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

@@ -2,7 +2,6 @@
 import { ComposedChart, Bar, Cell, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { fmtMoney } from "@/lib/format";
 import type { ValueMode, MerchantTotal } from "@/lib/queries";
-import type { Category } from "@/lib/categorize";
 import { useChartTheme, axisProps, tooltipProps, gridProps } from "./chart";
 import { useT } from "./I18nProvider";
 
@@ -27,7 +26,7 @@ export function ParetoBars({ data, value }: { data: MerchantTotal[]; value: Valu
         />
         <Bar yAxisId="amt" dataKey="total" name={tr("merchants.legend.total")}>
           {data.map(d => (
-            <Cell key={d.merchant} fill={t.category[d.category as Category] ?? t.series.neutral} />
+            <Cell key={d.merchant} fill={Object.entries(t.category).find(([key])=>key===d.category)?.[1] ?? t.series.neutral} />
           ))}
         </Bar>
         <Line yAxisId="pct" dataKey="cumShare" name={cumulativeName} stroke={t.series.neutral} strokeWidth={2} strokeDasharray="5 4" dot={false} />

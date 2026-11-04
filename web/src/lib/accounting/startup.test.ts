@@ -1,0 +1,12 @@
+import { afterEach, expect, it, vi } from "vitest";
+const mocks=vi.hoisted(()=>({validate:vi.fn(()=>({ok:true,errors:[] as string[]})),python:vi.fn(()=>"/configured/.venv/bin/python3")}));
+vi.mock("./runtime",()=>({validateRuntime:mocks.validate}));
+vi.mock("../upload",()=>({resolvePython:mocks.python,REPO_ROOT:"/configured"}));
+import { assertAccountingStartup } from "./startup";
+afterEach(()=>{vi.unstubAllEnvs();vi.clearAllMocks();mocks.validate.mockReturnValue({ok:true,errors:[]});});
+function configured(){vi.stubEnv("TARJETAS_BACKEND","postgres");vi.stubEnv("TARJETAS_DATABASE_URL","postgresql://private:SECRET@localhost/isolated");vi.stubEnv("TARJETAS_DOCUMENT_ROOT","/private/documents");vi.stubEnv("TARJETAS_REFERENCE_DIR","/private/references");}
+it("leaves default SQLite startup and builds free of runtime probes",async()=>{vi.stubEnv("TARJETAS_BACKEND",undefined);await assertAccountingStartup();expect(mocks.validate).not.toHaveBeenCalled();expect(mocks.python).not.toHaveBeenCalled();});
+it("requires explicit private document/reference configuration before probes",async()=>{configured();vi.stubEnv("TARJETAS_REFERENCE_DIR",undefined);await expect(assertAccountingStartup()).rejects.toThrow("reference_root_unconfigured");expect(mocks.validate).not.toHaveBeenCalled();vi.stubEnv("TARJETAS_REFERENCE_DIR","relative");await expect(assertAccountingStartup()).rejects.toThrow("reference_root_unconfigured");});
+it("composes the configured executable and scripts with the persistent reference root",async()=>{configured();vi.stubEnv("TARJETAS_OCR_SCRIPT","/configured/custom.py");await assertAccountingStartup();expect(mocks.validate).toHaveBeenCalledWith(expect.objectContaining({backend:"postgres",documentRoot:"/private/documents",referenceRoot:"/private/references",parserExecutable:"/configured/.venv/bin/python3",ocrExecutable:"/configured/.venv/bin/python3",ocrScript:"/configured/custom.py"}));});
+it("fails startup using stable codes without exposing database credentials",async()=>{configured();mocks.validate.mockReturnValue({ok:false,errors:["database_unreachable"]});await expect(assertAccountingStartup()).rejects.toThrow(/^accounting_runtime_unavailable:database_unreachable$/);});
+it("rejects invalid backend and relative document roots",async()=>{vi.stubEnv("TARJETAS_BACKEND","invalid");await expect(assertAccountingStartup()).rejects.toThrow("backend_invalid");configured();vi.stubEnv("TARJETAS_DOCUMENT_ROOT","relative");await expect(assertAccountingStartup()).rejects.toThrow("document_root_unconfigured");});

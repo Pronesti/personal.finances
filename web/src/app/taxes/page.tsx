@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { taxBurden } from "@/lib/queries";
@@ -12,11 +14,15 @@ export const dynamic = "force-dynamic";
 const pct = (n: number) => `${n.toFixed(1).replace(".", ",")}%`;
 
 export default async function Taxes({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/taxes");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/taxes", sp);
   const g = parseGranularity(sp);
   const opts = valueOpts(modes);
-  const data = taxBurden(getDb(), opts, g);
+  const data = accounting?.taxes ?? taxBurden(getDb(), opts, g);
   const total = data.reduce((s, m) => s + m.total, 0);
   const rates = data.filter(m => m.ratePct != null) as (typeof data[number] & { ratePct: number })[];
   const avgRate = rates.length ? rates.reduce((s, m) => s + m.ratePct, 0) / rates.length : null;
@@ -24,6 +30,7 @@ export default async function Taxes({ searchParams }: { searchParams: Promise<{ 
   const tr = await getT();
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("taxes.purpose")} detail={tr("taxes.footer")} />
       </div>

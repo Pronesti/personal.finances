@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { dailySpend } from "@/lib/queries";
@@ -8,6 +10,11 @@ import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 export const dynamic = "force-dynamic";
 
 export default async function Calendar({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/calendar");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/calendar", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const modes = parseModes(await searchParams);
   const opts = valueOpts(modes);
   const data = dailySpend(getDb(), opts);

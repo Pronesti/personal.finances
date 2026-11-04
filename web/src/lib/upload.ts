@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { promisify } from "node:util";
 import type Database from "better-sqlite3";
 import { DATA_DIR } from "@/lib/paths";
@@ -47,13 +48,13 @@ function tail(s: string, n = 3): string {
 
 // execFile, not exec: argv array, no shell, so a filename can never become a command. The child
 // gets an explicit env — process.env would hand ANTHROPIC_API_KEY to Python for no reason.
-export async function runPipeline(pdfPath: string): Promise<string> {
-  const target = path.join(jsonDir(), path.basename(pdfPath).replace(/\.pdf$/i, ".json"));
+export async function runPipeline(pdfPath: string, outputDir?: string): Promise<string> {
+  const target = path.join(outputDir ?? jsonDir(), path.basename(pdfPath).replace(/\.pdf$/i, ".json"));
   // Resolved OUTSIDE the try: its "no venv" Failure already says exactly what to do, and being
   // caught below would reclassify it as parse_failed and drop the hint.
   const python = resolvePython();
   try {
-    await execFileP(python, [script(), pdfPath], {
+    await execFileP(python, [script(), pdfPath, ...(outputDir ? ["--output-dir", outputDir] : [])], {
       cwd: REPO_ROOT,
       timeout: TIMEOUT_MS,
       maxBuffer: 4 * 1024 * 1024,
@@ -65,7 +66,7 @@ export async function runPipeline(pdfPath: string): Promise<string> {
         HOME: process.env.HOME ?? "",
         LC_ALL: "C.UTF-8",
         // The stub tests read this; the real script derives its own paths from __file__.
-        TARJETAS_JSON_DIR: process.env.TARJETAS_JSON_DIR ?? "",
+        TARJETAS_JSON_DIR: outputDir ?? process.env.TARJETAS_JSON_DIR ?? "",
       },
     });
   } catch (e) {
@@ -114,9 +115,7 @@ export function safePdfName(raw: string): string {
   return base;
 }
 
-export async function ingestUpload(
-  db: Database.Database, bytes: Buffer, rawName: string
-): Promise<UploadReport> {
+function validateStatementUpload(bytes: Buffer, rawName: string): string {
   const name = safePdfName(rawName);
   if (bytes.byteLength > MAX_PDF_BYTES)
     throw new Failure("too_large", "failure.too_large", {
@@ -124,6 +123,39 @@ export async function ingestUpload(
     });
   if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-")
     throw new Failure("not_pdf", "failure.not_pdf.magic", { name });
+
+  return name;
+}
+
+/** Run the checked issuer parser in a private temporary workspace, without storage admission. */
+export async function parseStatementUpload(
+  bytes: Buffer, filename: string,
+): Promise<{ json: StatementJson; rawJson: Buffer; pdf: Buffer }> {
+  const name = validateStatementUpload(bytes, filename);
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "statement-extraction-"));
+  try {
+    const pdfPath = path.join(workspace, name);
+    fs.writeFileSync(pdfPath, bytes);
+    const producedJson = await runPipeline(pdfPath, workspace);
+    const rawJson = fs.readFileSync(producedJson);
+    let json: StatementJson;
+    try {
+      json = JSON.parse(rawJson.toString("utf8")) as StatementJson;
+    } catch (e) {
+      throw new Failure("parse_failed", "failure.parse_failed.badJson", {
+        file: path.basename(producedJson), detail: (e as Error).message,
+      });
+    }
+    return { json: { ...json, file: name }, rawJson, pdf: bytes };
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+export async function ingestUpload(
+  db: Database.Database, bytes: Buffer, rawName: string
+): Promise<UploadReport> {
+  const name = validateStatementUpload(bytes, rawName);
 
   fs.mkdirSync(pdfDir(), { recursive: true });
   fs.mkdirSync(jsonDir(), { recursive: true });

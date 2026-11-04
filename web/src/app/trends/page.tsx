@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { spendByCategory } from "@/lib/queries";
@@ -9,6 +11,11 @@ import { StackedArea } from "@/components/StackedArea";
 export const dynamic = "force-dynamic";
 
 export default async function Trends({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/trends");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/trends", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

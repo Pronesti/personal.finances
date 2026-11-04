@@ -46,24 +46,25 @@ const GROUPS: readonly Group[] = [
   },
   {
     heading: "nav.group.data",
-    links: [["/upload", "nav.upload"], ["/review", "nav.review"]],
+    links: [["/upload", "nav.upload"], ["/review", "nav.review"], ["/accounting", "accounting.nav"]],
   },
 ] as const;
 
 /** Grouped sidebar on desktop; explicit section menu on smaller screens. */
-export function Nav() {
+export function Nav({ accountingEnabled = false }: { accountingEnabled?: boolean } = {}) {
+  const groups = GROUPS.map(group => ({ ...group, links: group.links.filter(([href]) => href !== "/accounting" || accountingEnabled) }));
   const sp = useSearchParams();
   const pathname = usePathname();
   const t = useT();
   const qs = sp.toString();
   const [open, setOpen] = useState(false);
-  const activeGroup = GROUPS.find(group => group.heading && group.links.some(([href]) => href === pathname))?.heading;
+  const activeGroup = groups.find(group => group.heading && group.links.some(([href]) => href === pathname))?.heading;
   const [expanded, setExpanded] = useState<{ pathname: string; heading?: MessageKey }>({ pathname, heading: activeGroup });
   if (expanded.pathname !== pathname) {
     setExpanded({ pathname, heading: activeGroup });
   }
   const expandedHeading = expanded.pathname === pathname ? expanded.heading : activeGroup;
-  const activeLabel = GROUPS.flatMap(g => g.links).find(([href]) => href === pathname)?.[1] ?? "nav.overview";
+  const activeLabel = groups.flatMap(g => g.links).find(([href]) => href === pathname)?.[1] ?? "nav.overview";
   return (
     <nav
       aria-label={t("nav.aria")}
@@ -77,7 +78,7 @@ export function Nav() {
         </button>
       </div>
       <div id="section-menu" className={`${open ? "block" : "hidden"} px-3 pb-4 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto`}>
-        {GROUPS.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className="mb-1">
             {group.heading && (
               <button

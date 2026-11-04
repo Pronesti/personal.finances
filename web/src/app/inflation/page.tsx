@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { loadCpi } from "@/lib/cpi";
@@ -8,12 +10,17 @@ import { getT } from "@/lib/locale";
 export const dynamic = "force-dynamic";
 
 export default async function Inflation() {
-  const { points, basket } = personalInflation(getDb(), loadCpi());
+  const accountingGate = await postgresPageGate("/inflation");
+  if (accountingGate) return accountingGate;
+
+  const accounting = await loadAccountingCommitments("/inflation");
+  const { points, basket } = accounting?.inflation ?? personalInflation(getDb(), loadCpi());
   const last = points.at(-1);
   const gap = last ? last.personal - last.official : 0;
   const tr = await getT();
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
       <PageGuide summary={tr("inflation.purpose")} detail={tr("inflation.footer")} />
       </div>

@@ -1,3 +1,6 @@
+import { accountingEnglish, accountingSpanish } from "./accounting/messages";
+import { receiptEnglish, receiptSpanish } from "./accounting/receipt-messages";
+import { commitmentEnglish, commitmentSpanish } from "./accounting/commitment-messages";
 // Every string the UI renders lives here, keyed once and written in both locales. English is the
 // default and the fallback: a key missing from `es` falls back to it rather than showing the key.
 //
@@ -21,6 +24,9 @@ export function isLocale(value: unknown): value is Locale {
 }
 
 const en = {
+  ...accountingEnglish,
+  ...receiptEnglish,
+  ...commitmentEnglish,
   "anomalies.amountBasis": "Table amounts are the original billed ARS. Display settings change the timeline, not these statement amounts.",
   "table.scrollHint": "Scroll the table horizontally to see every column.",
   "categories.values": "View chart values and details",
@@ -804,6 +810,9 @@ export type MessageKey = keyof typeof en;
 type Dictionary = Record<MessageKey, string>;
 
 const es: Dictionary = {
+  ...accountingSpanish,
+  ...receiptSpanish,
+  ...commitmentSpanish,
   "anomalies.amountBasis": "Los importes de la tabla son los ARS originales facturados. Las opciones de visualización cambian el gráfico, no estos importes del resumen.",
   "table.scrollHint": "Desplazá la tabla horizontalmente para ver todas las columnas.",
   "categories.values": "Ver valores y detalles del gráfico",

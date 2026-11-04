@@ -5,6 +5,9 @@ export type ReceiptFact = {
   id: number; date: string; time: string | null;
   subtotalCents: number; discountsCents: number; totalCents: number;
 };
+export type RawReceiptItemFact = {
+  sourceLineId: string; receiptId: number; qtyMilli: number; grossCents: number; discountCents: number; hasM: boolean; hasA: boolean;
+};
 export type ItemFact = {
   receiptId: number; productId: number; productName: string; category: ProductCategory; unit: "un" | "kg";
   qtyMilli: number; grossCents: number; discountCents: number; hasM: boolean; hasA: boolean;

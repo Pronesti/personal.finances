@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
@@ -14,18 +16,23 @@ export const dynamic = "force-dynamic";
 const pct = (n: number) => `${n.toFixed(1).replace(".", ",")}%`;
 
 export default async function Installments({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/installments");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/installments", sp);
   const g = parseGranularity(sp);
   const opts = valueOpts(modes);
-  const db = getDb();
-  const burden = installmentBurden(db, opts, g);
-  const plans = activePlans(db, opts);
+  const db = accounting ? null : getDb();
+  const burden = accounting?.installments.burden ?? installmentBurden(db!, opts, g);
+  const plans = accounting?.installments.plans ?? activePlans(db!, opts);
   const latest = burden.at(-1);
   const committed = plans.reduce((s, p) => s + p.remainingTotal, 0);
   const tr = await getT();
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("installments.purpose")} detail={tr("installments.footer")} />
       </div>
@@ -73,7 +80,7 @@ export default async function Installments({ searchParams }: { searchParams: Pro
                         {p.merchant}
                       </Link>
                     </td>
-                    <td className="pr-3 text-ink-muted">{p.brand}</td>
+                    <td className="pr-3 text-ink-muted">{accounting?.cardLabels[p.brand] ?? p.brand}</td>
                     <td className="pr-3 text-right">{p.paid}/{p.total}</td>
                     <td className="pr-3 text-right">{fmtMoney(p.monthly, modes.value)}</td>
                     <td className="pr-3 text-right">{p.remainingMonths}</td>

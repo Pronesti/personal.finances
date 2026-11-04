@@ -1,3 +1,5 @@
+import { loadAccountingCommitments, AccountingCommitmentCoverage } from "@/components/accounting-commitments";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { PageGuide } from "@/components/PageGuide";
 import { getDb } from "@/lib/db";
 import { loadCpi } from "@/lib/cpi";
@@ -15,11 +17,15 @@ export const dynamic = "force-dynamic";
 const REAL_WINDOW = 12; // months the "limit in real terms" tile looks back
 
 export default async function Bank({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/bank");
+  if (accountingGate) return accountingGate;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
+  const accounting = await loadAccountingCommitments("/bank", sp);
   const opts = valueOpts(modes);
-  const db = getDb();
-  const months = bankTerms(db, opts);
+  const db = accounting ? null : getDb();
+  const months = accounting?.bank ?? bankTerms(db!, opts);
   const brands = bankBrands(months);
   // Utilization means "of everything the cards allow", so the tile reads the last month with
   // every card's statement on file — the newest cycle often has only one card in yet.
@@ -33,7 +39,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
   // frozen for a year IS the story, and only constant pesos can say so. It tracks the LARGEST
   // card's own limit: cards from different issuers no longer share a number, and a cross-brand
   // MAX would fake a collapse on any month where only the small card's statement is in.
-  const real = bankTerms(db, { spend: "cash", value: "real", tax: "excl", cpi: loadCpi(), mep: loadMep() });
+  const real = accounting?.realBank ?? bankTerms(db!, { spend: "cash", value: "real", tax: "excl", cpi: loadCpi(), mep: loadMep() });
   // Ties on the latest limit (the two BBVA cards share it) go to the longer history: the tile
   // wants the erosion of a standing limit, and the spottier card's series starts at its own
   // introduction, which reads as a raise instead.
@@ -58,6 +64,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <main>
+      <AccountingCommitmentCoverage data={accounting} />
       <div className="mb-6">
         <PageGuide summary={tr("bank.purpose")} detail={tr("bank.footer")} />
       </div>
@@ -78,7 +85,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
             label={tr("bank.tile.limitReal")}
             value={fmtPct(realLimitPct)}
             detail={windowMonths && bigBrand
-              ? tr("bank.tile.limitReal.detail", { brand: bigBrand, months: windowMonths })
+              ? tr("bank.tile.limitReal.detail", { brand: accounting?.cardLabels[bigBrand] ?? bigBrand, months: windowMonths })
               : tr("bank.tile.none")}
           />
           <Stat
@@ -87,7 +94,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
             detail={latestRated?.temPct != null && latestRated?.inflationPct != null
               ? tr("bank.tile.realTem.detail", {
                   tem: latestRated.temPct.toFixed(2).replace(".", ","),
-                  brand: latestRated.temBrand ?? "",
+                  brand: accounting?.cardLabels[latestRated.temBrand ?? ""] ?? latestRated.temBrand ?? "",
                   infl: latestRated.inflationPct.toFixed(2).replace(".", ","),
                 })
               : tr("bank.tile.realTem.stale")}
@@ -98,12 +105,12 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ [
         <div className="grid gap-8 3xl:grid-cols-2">
           <section>
             <h2 className="mb-3 text-lg font-semibold">{tr("bank.headroomHeading")}</h2>
-            <BankChart data={months} brands={brands} value={modes.value} />
+            <BankChart data={months} brands={brands} value={modes.value} labels={accounting?.cardLabels} />
             <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("bank.headroomNote")}</p>
           </section>
           <section>
             <h2 className="mb-3 text-lg font-semibold">{tr("bank.ratesHeading")}</h2>
-            <RateChart data={months} brands={brands} />
+            <RateChart data={months} brands={brands} labels={accounting?.cardLabels} />
             <p className="mt-3 max-w-[80ch] text-xs text-ink-muted">{tr("bank.ratesNote")}</p>
           </section>
         </div>

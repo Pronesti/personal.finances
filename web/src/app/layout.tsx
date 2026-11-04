@@ -9,6 +9,7 @@ import { chromeData } from "@/lib/queries";
 import { I18nProvider } from "@/components/I18nProvider";
 import { Nav } from "@/components/Nav";
 import { PageChrome, PageChromeFallback } from "@/components/PageChrome";
+import { accountingChrome, selectedBackend } from "@/lib/backend";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -21,7 +22,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // The three facts the header needs before it knows which page it is. Cheap, and the same for
   // every route — which is the reason the header can live up here at all. `cookies()` in
   // getLocale already makes this layout dynamic, so these are read per request.
-  const { months, latestClosing } = chromeData(getDb());
+  const accountingEnabled = selectedBackend() === "postgres";
+  const { months, latestClosing } = accountingEnabled ? await accountingChrome() : chromeData(getDb());
   const baseMonth = latestMonth(loadCpi());
   return (
     <html lang={locale}>
@@ -31,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Sidebar beside the content, not above it: on a wide screen the width a top nav bar
               would waste on empty tab row goes to the charts instead. */}
           <div className="lg:flex lg:items-start">
-            <Suspense><Nav /></Suspense>
+            <Suspense><Nav accountingEnabled={accountingEnabled} /></Suspense>
             <div id="page-content" tabIndex={-1} className="page-content min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
               {/* Capped so the reading column stays sane on an ultrawide monitor, but far wider
                   than a page of prose — charts and tables are what fills it. */}

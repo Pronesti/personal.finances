@@ -1,3 +1,8 @@
+import { ReceiptAccountMatrix } from "@/components/accounting-receipts";
+import { receiptAccountMatrix } from "@/lib/accounting/receipt-account-matrix";
+import { receiptText } from "@/lib/accounting/receipt-messages";
+import { selectedBackend, withAccounting } from "@/lib/backend";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { getDb } from "@/lib/db";
 import { loadFacts } from "@/lib/receipts/facts";
 import { valueFacts } from "@/lib/receipts/value";
@@ -10,15 +15,22 @@ import { parseModes, valueOpts, type SP } from "@/lib/params";
 export const dynamic = "force-dynamic";
 
 export default async function SuperCategories({ searchParams }: { searchParams: Promise<SP> }) {
+  const accountingGate = await postgresPageGate("/super/categories");
+  if (accountingGate) return accountingGate;
+
   const tr = await getT();
   const modes = parseModes(await searchParams);
-  const { receipts, items } = valueFacts(loadFacts(getDb()), valueOpts(modes));
-  const a = buildAnalytics(receipts, items);
+  const pg=selectedBackend()==="postgres"?await withAccounting(async({reader})=>({facts:await reader.receiptFacts(),allocations:await reader.receiptAllocations(),accounts:(await reader.inspection()).accounts})):null;
+  const { receipts, items, rawItems } = valueFacts(pg?pg.facts:loadFacts(getDb()), valueOpts(modes));
+  const matrix=pg?receiptAccountMatrix(pg.facts.receipts,pg.allocations,valueOpts(modes)):null;
+  const a = buildAnalytics(receipts, items, rawItems);
   if (!a.kpis) return <main><p className="text-sm text-ink-muted">{tr("super.empty")}</p></main>;
   const max = Math.max(1, ...a.categories.flatMap(c => c.perPeriod));
   const th = "py-1 text-ink-muted";
   return (
     <main>
+      {pg && matrix && <ReceiptAccountMatrix rows={matrix} receipts={pg.facts.receipts} accounts={pg.accounts} locale={tr.locale} value={modes.value}/>}
+      {pg && <h2 className="mb-3 text-sm font-semibold">{receiptText(tr.locale,"accounting.receipts.productCategories")}</h2>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-line">

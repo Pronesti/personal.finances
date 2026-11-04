@@ -1,3 +1,5 @@
+import {accountingSpendingPage} from "@/components/accounting-spending";
+import { postgresPageGate } from "@/components/accounting-gate";
 import { TableScroll } from "@/components/TableScroll";
 import { fmtMoney, fmtPct } from "@/lib/format";
 import { PageGuide } from "@/components/PageGuide";
@@ -10,6 +12,11 @@ import { CompareBars } from "@/components/CompareBars";
 export const dynamic = "force-dynamic";
 
 export default async function Compare({ searchParams }: { searchParams: Promise<{ [k: string]: string | string[] | undefined }> }) {
+  const accountingGate = await postgresPageGate("/compare");
+  if (accountingGate) return accountingGate;
+  const accountingPage = await accountingSpendingPage("/compare", await searchParams);
+  if (accountingPage) return accountingPage;
+
   const sp = await searchParams;
   const modes = parseModes(sp);
   const g = parseGranularity(sp);

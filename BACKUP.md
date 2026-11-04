@@ -1,5 +1,16 @@
 # Back up and restore Tarjetas
 
+**Current local installation: PostgreSQL.** Use the accounting runbook linked below
+for live backups; the SQLite commands on this page apply to retained legacy copies.
+
+Choose the tool for the configured backend: the commands below use the SQLite
+`tarjetas-backup` format. PostgreSQL accounting uses the separate
+[`accounting_backup.py` runbook](docs/accounting/backup-runbook.md) and
+`tarjetas-accounting-backup` format; neither restore tool accepts the other format.
+For PostgreSQL, use the runbook's separately recorded archive SHA-256 and read-only
+full-schema recovery checker before selecting a restored target. A verified ZIP
+alone does not prove ledger or evidence recovery.
+
 Run these commands from the repository root with Python 3.9 or newer. They use only
 the standard library; no app server, API key, or extra Python packages are needed.
 

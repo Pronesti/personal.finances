@@ -1,0 +1,20 @@
+import {expect,it} from "vitest";
+import {spendingUiModel,accountingDrill,timingUiModel,currencyUiModel} from "./spending-ui-model";
+import {baseCatalog} from "./catalog";
+import type {ReportFact,ReportScope,AccountingInspection} from "./read-model";
+const inspection:AccountingInspection={accounts:baseCatalog(),cards:[{id:"same-brand-a",displayName:"Same name"},{id:"same-brand-b",displayName:"Same name"}],journals:[]};
+const scope:ReportScope={basis:"purchase",value:"nominal",tax:"excl",granularity:"month",period:null},rates={cpi:{"2026-01":100,"2026-02":200},mep:{"2026-01":1000,"2026-02":2000}};
+const fact=(id:string,over:Partial<ReportFact>={}):ReportFact=>({id,purchaseId:id,cardId:"same-brand-a",kind:"purchase",merchant:"SHOP",accountId:"expense:food:groceries:dairy",purposeId:"food",currency:"ARS",minor:60000,effectiveDate:"2026-01-15",cycleMonth:"2026-02",sourceLineId:`source:${id}`,statementId:"statement",coverage:"complete",...over});
+it("keeps purchase recognition separate from billed burden and native debt/payment facts",()=>{const facts=[fact("p"),fact("bill",{purchaseId:"p",kind:"billing",minor:10000}),fact("pay",{kind:"payment",minor:10000}),fact("opening",{kind:"opening",minor:90000})];expect(spendingUiModel(facts,inspection,scope,rates).compare).toEqual([{period:"2026-01",amount:600,pctVsPrev:null}]);expect(spendingUiModel(facts,inspection,{...scope,basis:"billed"},rates).compare).toEqual([{period:"2026-02",amount:100,pctVsPrev:null}]);});
+it("drills real account hierarchy and keeps nativeUSD source rows even outside peso totals",()=>{const facts=[fact("ars"),fact("usd",{currency:"USD",minor:5000})];const drill=accountingDrill(facts,inspection.accounts,scope,rates,{account:"expense:food",merchant:null});expect(drill.groups).toEqual([{key:"expense:food:groceries",amount:600}]);expect(drill.rows.map(r=>r.sourceLineId)).toEqual(["source:ars","source:usd"]);expect(drill.values.reduce((s,r)=>s+r.amount,0)).toBe(600);});
+it("does not merge duplicate labels or equal purchases from different cards",()=>{const facts=[fact("p1"),fact("p2",{cardId:"same-brand-b"})];expect(spendingUiModel(facts,inspection,scope,rates).spending.purchaseCount).toBe(2);expect(accountingDrill(facts,inspection.accounts,scope,rates,{account:null,merchant:"SHOP"}).rows.map(r=>r.cardId)).toEqual(["same-brand-a","same-brand-b"]);});
+it("daily and ticket models count a split purchase once in its effective date",()=>{const facts=[fact("part1",{purchaseId:"p",minor:10000}),fact("part2",{purchaseId:"p",minor:20000,accountId:"expense:home:cleaning",purposeId:"home"}),fact("bill",{purchaseId:"p",kind:"billing",minor:10000})];const data=timingUiModel(facts,{...scope,basis:"billed"},rates);expect(data.calendar).toMatchObject([{date:"2026-01-15",amount:300,count:1}]);expect(data.tickets).toMatchObject([{period:"2026-01",count:1,total:300,avgTicket:300,medianTicket:300}]);});
+it("currency origin nets refunds, converts constituent months and never changes native facts",()=>{const facts=[fact("a",{minor:100000}),fact("u",{currency:"USD",minor:1000}),fact("refund",{currency:"USD",kind:"credit",minor:-500,effectiveDate:"2026-02-01"})],copy=structuredClone(facts);expect(currencyUiModel(facts,{...scope,granularity:"quarter",value:"usd"},rates)).toEqual([{period:"2026-Q1",arsBilled:1,usdBilled:5}]);expect(currencyUiModel(facts,{...scope,granularity:"quarter"},rates)).toEqual([{period:"2026-Q1",arsBilled:1000,usdBilled:0}]);expect(facts).toEqual(copy);});
+
+it("allocates issuer tax before account and merchant drill filtering",()=>{
+ const rows=[fact("bill",{kind:"billing",minor:10000}),fact("other",{kind:"billing",minor:10000,merchant:"OTHER",accountId:"expense:home:cleaning"}),fact("tax",{kind:"cost",minor:2000,accountId:null,purposeId:null})];
+ const selected={...scope,basis:"billed" as const,tax:"incl" as const};
+ const result=accountingDrill(rows,inspection.accounts,selected,rates,{account:"expense:food",merchant:"SHOP"});
+ expect(result.values.reduce((sum,row)=>sum+row.amount,0)).toBeCloseTo(110);
+ expect(result.groups.reduce((sum,row)=>sum+row.amount,0)).toBeCloseTo(110);
+});

@@ -24,6 +24,9 @@ data/app.db
 data/app.db-wal
 data/app.db-shm
 
+# Private live accounting database, documents, references and runtime configuration
+/data/accounting/
+
 # Private portable backups and retained restore data
 backups/
 .tarjetas-incoming-*/

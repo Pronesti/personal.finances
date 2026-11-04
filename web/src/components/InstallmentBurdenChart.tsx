@@ -6,7 +6,7 @@ import { useChartTheme, axisProps, tooltipProps, legendProps, gridProps, barWidt
 import { useT } from "./I18nProvider";
 
 export function InstallmentBurdenChart({ data, value }: {
-  data: { period: string; installment: number; oneOff: number; plans: number; sharePct: number }[];
+  data: { period: string; installment: number; oneOff: number; plans: number | null; sharePct: number }[];
   value: ValueMode;
 }) {
   const t = useChartTheme();
