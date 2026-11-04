@@ -55,6 +55,15 @@ const CUIT_RE = /CUIT\s*:?\s*(\d{2}-\d{8}-\d)/i;
 const CAE_RE = /C\.?A\.?E\.?\s*N\S*\s*:?\s*(\d{14}).*?V\S*\s*:?\s*(\d{4})(\d{2})(\d{2})/i;
 const PAYMENT_RE = /^(MERCADO PAG\w*)\s+(\d{6,})$/i;
 const KG_RE = /X\s?KG\b|XKG|\bKGM\b/;
+const PACKAGED_MASS_RE = /(?:PAQ|CJA)\s*\d+(?:[.,]\d+)?\s*KGM?\b/i;
+export function hasPackagedMass(description: string): boolean {
+  return PACKAGED_MASS_RE.test(description);
+}
+export function receiptItemUnit(description: string, qtyMilli: number): "un" | "kg" {
+  // A package's printed mass is not the unit of sale. Keep explicit per-kg and
+  // fractional sales weighed, including when the description also names a pack.
+  return qtyMilli % 1000 !== 0 || KG_RE.test(description.replace(PACKAGED_MASS_RE, "")) ? "kg" : "un";
+}
 
 function norm(s: string): string {
   return s.replace(/\s+/g, " ").trim();
@@ -720,7 +729,7 @@ function reconcileArithmetic(items: ParsedItem[], garbledQty: Map<ParsedItem, st
       const qs = qtyCandidates(pattern, it.unitPriceCents, it.lineTotalCents);
       if (qs.length === 1) {
         it.qtyMilli = qs[0];
-        it.unit = qs[0] % 1000 !== 0 || KG_RE.test(it.descPrinted) ? "kg" : "un";
+        it.unit = receiptItemUnit(it.descPrinted, qs[0]);
         notes.push(`item ${it.position} (${it.descPrinted}): quantity read as "${pattern}"; the line total settles it as ${(qs[0] / 1000).toFixed(3).replace(".", ",")}`);
       } else {
         it.unitPriceCents = null;
@@ -742,7 +751,7 @@ function reconcileArithmetic(items: ParsedItem[], garbledQty: Map<ParsedItem, st
     if (qs.length === 1) {
       notes.push(`item ${it.position} (${it.descPrinted}): quantity read as ${qtyText}; the line total settles it as ${(qs[0] / 1000).toFixed(3).replace(".", ",")}`);
       it.qtyMilli = qs[0];
-      it.unit = qs[0] % 1000 !== 0 || KG_RE.test(it.descPrinted) ? "kg" : "un";
+      it.unit = receiptItemUnit(it.descPrinted, qs[0]);
     }
   }
 }
@@ -873,7 +882,7 @@ export function parseRows(input: Row[]): ParsedReceipt {
       current = {
         position: items.length + 1,
         descPrinted, noPromo: marker, sku: code[1], ean: code[2], qtyMilli,
-        unit: qtyMilli % 1000 !== 0 || KG_RE.test(descPrinted) ? "kg" : "un",
+        unit: receiptItemUnit(descPrinted, qtyMilli),
         unitPriceCents: pending?.unitPriceCents ?? null,
         lineTotalCents: amount !== null && amount >= 0 ? amount : fromCandidate,
         discounts: [],
