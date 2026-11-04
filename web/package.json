@@ -4,20 +4,23 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "test:receipts": "RECEIPT_ACCEPTANCE=1 vitest run src/lib/receipts/acceptance.test.ts",
     "ingest": "tsx scripts/ingest.ts",
     "fetch-ipc": "tsx scripts/fetch-ipc.ts",
     "fetch-mep": "tsx scripts/fetch-mep.ts",
-    "build-products-seed": "tsx scripts/build-products-seed.ts"
+    "build-products-seed": "tsx scripts/build-products-seed.ts",
+    "accounting": "tsx scripts/accounting.ts",
+    "test:accounting:pg": "ACCOUNTING_PG_TESTS=1 vitest run src/lib/accounting"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
     "better-sqlite3": "^11.10.0",
     "mupdf": "^1.28.0",
     "next": "16.3.3",
+    "pg": "^8.23.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1"
@@ -26,8 +29,10 @@
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "0.28.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5",
