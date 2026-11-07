@@ -58,3 +58,40 @@ test('native recurring money, group expansion, period changes and journal drill 
  await page.goto('/upload');await expect(page.getByText('CPI/MEP references are stale:',{exact:false})).toBeVisible();
  await page.goto('/sankey?value=nominal&g=all');await expect(page.locator('#main h1')).toHaveText(dictionary.en['sankey.title'].replace('{period}',dictionary.en['sankey.everything']));await expect(page.locator('figcaption')).toHaveText(dictionary.en['sankey.title'].replace('{period}',dictionary.en['sankey.everything']));await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();await expect(page.locator('#main h1')).toHaveText(dictionary.es['sankey.title'].replace('{period}',dictionary.es['sankey.everything']));
 });
+
+test('report filters retain keyboard focus through refresh and advance to the next control in both languages',async({page})=>{
+ await login(page);
+ for(const locale of ['en','es'] as const){
+  if(locale==='es')await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();
+  const words=dictionary[locale];await page.goto('/trends?value=real');
+  const unit=page.getByLabel(words['mode.value.label'],{exact:true});await expect(unit).toHaveValue('real');
+  await unit.focus();await unit.selectOption('nominal');await expect(unit).toHaveValue('nominal');
+  await expect(page.getByText(locale==='es'?'Cargando informe…':'Loading report…',{exact:true})).toHaveCount(0);
+  await expect(unit).toBeFocused();await page.keyboard.press('Tab');
+  const spending=page.getByLabel(words['mode.spend.label'],{exact:true});await expect(spending).toBeFocused();
+  await spending.selectOption('cash');await expect(spending).toHaveValue('cash');
+  await expect(page.getByText(locale==='es'?'Cargando informe…':'Loading report…',{exact:true})).toHaveCount(0);
+  await expect(spending).toBeFocused();await page.keyboard.press('Tab');
+  const taxes=page.getByLabel(words['mode.tax.label'],{exact:true});await expect(taxes).toBeFocused();
+  await taxes.selectOption('incl');await expect(taxes).toHaveValue('incl');
+  await expect(page.getByText(locale==='es'?'Cargando informe…':'Loading report…',{exact:true})).toHaveCount(0);
+  await expect(taxes).toBeFocused();
+  const quarter=page.getByRole('button',{name:words['granularity.quarter'],exact:true});await quarter.focus();await page.keyboard.press('Enter');
+  await expect(quarter).toHaveAttribute('aria-pressed','true');await expect(quarter).toBeFocused();
+  await page.keyboard.press('Tab');await expect(page.getByRole('button',{name:words['granularity.year'],exact:true})).toBeFocused();
+  await page.screenshot({path:`../qa-output/manual-qa-fixes-20261107/keyboard-${locale}.png`,fullPage:true});
+ }
+});
+
+test('Unallocated purpose labels are translated on categories and accounting in both languages',async({page})=>{
+ await login(page);
+ for(const locale of ['en','es'] as const){
+  if(locale==='es')await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();
+  const label=locale==='es'?'Compras sin asignar':'Unallocated purchases';
+  for(const path of ['/categories','/accounting']){
+   await page.goto(path);await expect(page.getByRole('rowheader',{name:label,exact:true}).first()).toBeVisible();
+   await expect(page.getByText('accounting.group.unallocated',{exact:true})).toHaveCount(0);
+   await page.screenshot({path:`../qa-output/manual-qa-fixes-20261107/${path.slice(1)}-${locale}.png`,fullPage:true});
+  }
+ }
+});
