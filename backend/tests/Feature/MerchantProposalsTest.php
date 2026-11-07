@@ -57,10 +57,11 @@ class MerchantProposalsTest extends PostgresTestCase
 
     public function test_invalid_provider_output_and_failure_are_atomic_and_money_shaped_names_never_cross_boundary(): void
     {
-        foreach (['STORE 123,45', 'STORE 12.345,67', 'STORE 10%', 'STORE TC12'] as $name) {
+        foreach (['STORE 123,45', 'STORE 12.345,67', 'STORE 10%', 'STORE TC12', 'STORE 1234567,89', 'STORE USD 500', 'SU PAGO EN PESOS', 'STORE 2026-01-15', 'STORE 15/01/2026', 'TC 1500'] as $name) {
             $this->assertNull(MerchantProposals::wireName($name));
         }
         $this->assertSame('STORE', MerchantProposals::wireName('STORE 123456789'));
+        $this->assertSame('CARREFOUR 24', MerchantProposals::wireName('CARREFOUR 24'));
         $owner = Ledger::factory()->create();
         $r = new LedgerRepository($owner);
         app(CatalogBootstrap::class)->initialize($r, [['id' => 'merchant-card', 'displayName' => 'Synthetic']]);

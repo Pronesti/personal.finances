@@ -13,9 +13,13 @@ class MerchantProposals
 
     public static function wireName(string $name): ?string
     {
+        $notMerchant = '/\d[\d .]*[.,]\d{2}|\bTC\s*\d|%|[$€]|\b(?:ARS|USD|EUR)\s*\d|\b(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b|^(?:SU PAGO|PAGO (?:DE|DEL|RECIBIDO|EN)|TIPO DE CAMBIO)\b/iu';
+        if (preg_match($notMerchant, trim($name))) {
+            return null;
+        }
         $name = trim(preg_replace('/\s+/u', ' ', preg_replace('/\d{6,}/u', '', $name)));
 
-        return $name === '' || mb_strlen($name) > 300 || preg_match('/\d[\d .]*[.,]\d{2}|\bTC\d|%/iu', $name) ? null : $name;
+        return $name === '' || mb_strlen($name) > 300 || preg_match($notMerchant, $name) ? null : $name;
     }
 
     public function read(): array
