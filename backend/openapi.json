@@ -3455,7 +3455,7 @@
     "/api/v1/merchant-review": {
       "get": {
         "operationId": "merchantReviewQueue",
-        "description": "Caller-owned current merchant families, supported purchases with complete current native versions, ordered rules and latest 100 decisions. Source labels remain literal. No mutation.",
+        "description": "Caller-owned current merchant families, supported purchases with complete current native versions, ordered rules and latest 100 decisions. Source labels remain literal. No mutation. Historical acquisition observations include only eligible retained pre-opening sources and their latest classification decision; they are distinct from native purchases.",
         "responses": {
           "200": {
             "description": "Success",
@@ -3791,6 +3791,152 @@
           },
           "404": {
             "description": "Unavailable owner card"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-review/source-preview": {
+      "post": {
+        "operationId": "previewHistoricalSourceClassification",
+        "description": "Owned historical source-only classification. Changes acquisition report labels without posting purchases, changing opening debt or rewriting evidence. Matching history requires exact current source IDs, explicit confirmation and preview fingerprint. Future rules leave history intact.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceLineId",
+                  "match"
+                ],
+                "properties": {
+                  "sourceLineId": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "match": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Owned preview rows/fingerprint or immutable decision/affectedSourceLineIds/ruleId/duplicate"
+          },
+          "400": {
+            "description": "Required confirmation or domain refusal"
+          },
+          "404": {
+            "description": "Unavailable eligible owned source"
+          },
+          "409": {
+            "description": "Stale decision or idempotency conflict"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-review/source-classification": {
+      "post": {
+        "operationId": "classifyHistoricalSource",
+        "description": "Owned historical source-only classification. Changes acquisition report labels without posting purchases, changing opening debt or rewriting evidence. Matching history requires exact current source IDs, explicit confirmation and preview fingerprint. Future rules leave history intact.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceLineId",
+                  "accountId",
+                  "purposeId",
+                  "scope",
+                  "match",
+                  "expectedPreviousDecisionId"
+                ],
+                "properties": {
+                  "sourceLineId": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "accountId": {
+                    "type": "string"
+                  },
+                  "purposeId": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "enum": [
+                      "selected",
+                      "future_rule",
+                      "matching_history"
+                    ]
+                  },
+                  "match": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "expectedPreviousDecisionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "confirmedSourceLineIds": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "maxItems": 500,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "confirmHistory": {
+                    "type": "boolean"
+                  },
+                  "expectedFingerprint": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Owned preview rows/fingerprint or immutable decision/affectedSourceLineIds/ruleId/duplicate"
+          },
+          "400": {
+            "description": "Required confirmation or domain refusal"
+          },
+          "404": {
+            "description": "Unavailable eligible owned source"
+          },
+          "409": {
+            "description": "Stale decision or idempotency conflict"
+          },
+          "422": {
+            "description": "Invalid fields"
           }
         }
       }

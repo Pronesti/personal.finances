@@ -19,6 +19,8 @@ Route::get('health', fn () => response()->json([
 ]))->withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->name('api.v1.health');
 
 Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
+    Route::post('merchant-review/source-preview', [MerchantReviewController::class, 'sourcePreview']);
+    Route::post('merchant-review/source-classification', [MerchantReviewController::class, 'sourceClassification']);
     Route::get('merchant-review', [MerchantReviewController::class, 'index']);
     Route::post('merchant-review/preview', [MerchantReviewController::class, 'preview']);
     Route::post('merchant-review', [MerchantReviewController::class, 'command']);

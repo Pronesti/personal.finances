@@ -118,7 +118,7 @@ class MerchantReviews
         return ['purchases' => $rows, 'versions' => $versions, 'fingerprint' => FinancialCommands::digest(['cardId' => $card, 'match' => $match, 'versions' => $versions])];
     }
 
-    private function target(string $id, string $purpose): void
+    public function target(string $id, string $purpose): void
     {
         $account = $this->repository->query('accounts')->where('id', $id)->first();
         abort_if($account === null, 404);
@@ -129,6 +129,23 @@ class MerchantReviews
         if (! in_array($purpose, ['unallocated', ...$purposes], true) || ($account->primary_purpose_id !== null && $account->primary_purpose_id !== $purpose)) {
             throw new AccountingError('invalid_primary_purpose');
         }
+    }
+
+    public function futureRule(string $match, string $account, string $purpose): string
+    {
+        $rules = $this->current('merchant_rule_revisions');
+        $owned = array_values(array_filter($rules, fn ($row) => $row['match'] === $match))[0] ?? null;
+        $ruleId = $owned['id'] ?? Str::uuid()->toString();
+        $position = 1;
+        usort($rules, fn ($a, $b) => ($a['position'] <=> $b['position']) ?: strcmp($a['id'], $b['id']));
+        foreach ($rules as $rule) {
+            if ($rule['id'] !== $ruleId) {
+                $this->append('merchant_rule_revisions', [...$rule, 'position' => $position++], ['account_id' => $rule['accountId']]);
+            }
+        }
+        $this->append('merchant_rule_revisions', ['id' => $ruleId, 'match' => $match, 'accountId' => $account, 'purposeId' => $purpose, 'position' => 0, 'enabled' => true], ['account_id' => $account]);
+
+        return $ruleId;
     }
 
     public function decide(array $input): array
@@ -168,17 +185,7 @@ class MerchantReviews
                     }
                 }
                 if ($input['scope'] !== 'selected') {
-                    $rules = $this->current('merchant_rule_revisions');
-                    $owned = array_values(array_filter($rules, fn ($row) => $row['match'] === $match))[0] ?? null;
-                    $ruleId = $owned['id'] ?? Str::uuid()->toString();
-                    $position = 1;
-                    usort($rules, fn ($a, $b) => ($a['position'] <=> $b['position']) ?: strcmp($a['id'], $b['id']));
-                    foreach ($rules as $rule) {
-                        if ($rule['id'] !== $ruleId) {
-                            $this->append('merchant_rule_revisions', [...$rule, 'position' => $position++], ['account_id' => $rule['accountId']]);
-                        }
-                    }
-                    $this->append('merchant_rule_revisions', ['id' => $ruleId, 'match' => $match, 'accountId' => $input['accountId'], 'purposeId' => $input['purposeId'], 'position' => 0, 'enabled' => true], ['account_id' => $input['accountId']]);
+                    $ruleId = $this->futureRule($match, $input['accountId'], $input['purposeId']);
                 }
                 foreach ($ids as $id) {
                     $current = $this->repository->purchase($id);
