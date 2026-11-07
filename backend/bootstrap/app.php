@@ -1,12 +1,15 @@
 <?php
 
+use App\Domain\Ledger\AccountingError;
 use App\Http\Middleware\RequireApprovedTestTarget;
 use App\Http\Middleware\ResolveLedger;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -32,5 +35,27 @@ return Application::configure(basePath: dirname(__DIR__))
             if (isset($codes[$e->getStatusCode()])) {
                 return response()->json(['error' => ['code' => $codes[$e->getStatusCode()], 'message_key' => 'errors.'.$codes[$e->getStatusCode()], 'params' => (object) []]], $e->getStatusCode(), $e->getHeaders());
             }
+        });
+        $exceptions->render(function (AccountingError $exception) {
+            $status = match ($exception->errorCode) {
+                'deadline_metadata_invalid', 'python_missing', 'ocr_unavailable' => 503,
+                'processing_timeout', 'non_ocr_budget_exceeded', 'ocr_attempt_timeout' => 504,
+                'command_conflict', 'stale_purchase_version' => 409,
+                'verification_failed' => 422,
+                default => 400,
+            };
+
+            return response()->json(['error' => ['code' => $exception->errorCode, 'message_key' => 'errors.'.$exception->errorCode, 'params' => (object) $exception->parameters]], $status);
+        });
+        $exceptions->render(function (QueryException $exception) {
+            return response()->json(['error' => ['code' => 'database_unavailable', 'message_key' => 'errors.database_unavailable', 'params' => (object) []]], 503);
+        });
+        $exceptions->render(function (Throwable $exception) {
+            if ($exception instanceof ValidationException) {
+                return null;
+            }
+            $status = $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 500;
+
+            return response()->json(['error' => ['code' => 'server_error', 'message_key' => 'errors.server_error', 'params' => (object) []]], $status);
         });
     })->create();

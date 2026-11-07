@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Domain\Evidence\DocumentStore;
+use App\Domain\Ledger\CatalogBootstrap;
+use App\Domain\Ledger\LedgerRepository;
 use App\Models\Ledger;
 use App\Models\User;
 use App\Support\TestTargetGuard;
@@ -26,6 +28,9 @@ class SyntheticAcceptanceSeeder extends Seeder
                 if ($user->ledger()->first()->id !== $identity['ledger_id']) {
                     throw new \RuntimeException('synthetic_owner_mapping_conflict');
                 }
+            }
+            foreach ($fixture['identities'] as $identity) {
+                app(CatalogBootstrap::class)->initialize(new LedgerRepository(Ledger::findOrFail($identity['ledger_id'])), json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/cards.json')), true));
             }
             foreach ($fixture['references'] as $reference) {
                 $ledger = Ledger::findOrFail($reference['ledger_id']);

@@ -95,3 +95,23 @@ test('preflight is public and never grants an untrusted origin', async ({ reques
   const untrusted = await request.get(`${api}/api/v1/health`, { headers: { Origin: 'https://untrusted.test' } });
   expect(untrusted.headers()['access-control-allow-origin']).not.toBe('https://untrusted.test');
 });
+
+test('native accounting empty state, deep link, language and responsive appearance', async ({ page }) => {
+  await signIn(page, 'b');
+  await page.goto('/accounting');
+  await expect(page.getByRole('heading', { name: 'Accounts and financial history' })).toBeVisible();
+  await expect(page.getByText('No financial entries have been posted yet.')).toBeVisible();
+  for (const width of [390,1280,1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const colorScheme of ['light','dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+  }
+  await page.getByRole('button', { name: 'Cambiar a español' }).click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await page.goto('/accounting/evidence/missing-source');
+  await expect(page.getByRole('alert')).toHaveText('Evidencia no disponible.');
+});

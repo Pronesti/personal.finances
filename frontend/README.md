@@ -8,4 +8,4 @@ Run `npm ci`, set `VITE_API_BASE_URL` from `.env.example`, then `npm run dev`. H
 
 Session state exists in memory and Secure cookies. No auth token is written to browser storage. The client requests the CSRF cookie at the API origin and explicitly enables credentialed, cross-origin XSRF transport. 401 clears private state; 419 retains entered values and does not automatically replay mutations. Logout failures remain visible so the user can retry. Original documents are fetched by the authenticated client and opened through a reserved blob viewer, with blocked-popup fallback and cleanup on logout/unmount/viewer closure.
 
-The current milestone is the authenticated foundation and retained document viewer. The financial screens and report model are still pending; the shell does not claim acceptance of those destinations.
+Current screens include authentication, retained document viewing, native accounting balances/journal inspection and source-evidence detail. The financial overview, settings/review actions and analytical destinations remain pending. These screens do not establish full acceptance of the 32-destination rebuild.

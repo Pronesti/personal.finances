@@ -9,3 +9,5 @@ Start with [Continuing the rebuild on another computer](docs/rebuild/START-HERE.
 This handoff prepares implementation. The Laravel backend and React frontend have not been scaffolded. Registration and account provisioning remain outside scope.
 
 Historical reference-app documentation is in [CONTEXT.md](CONTEXT.md) and [BACKUP.md](BACKUP.md). The rebuild specifications take precedence for target architecture, ownership and recovery.
+
+Rebuild implementation status and executed evidence: [implementation progress](docs/rebuild-implementation-progress.md). The rebuild is in progress; the new applications are not a complete financial release.

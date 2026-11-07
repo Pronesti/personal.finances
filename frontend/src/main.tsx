@@ -5,5 +5,6 @@ import App from './App';
 import { SessionProvider } from './auth/SessionProvider';
 import { LocaleProvider } from './i18n/LocaleProvider';
 import './style.css';
+import './theme.css';
 
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><LocaleProvider><SessionProvider><App /></SessionProvider></LocaleProvider></BrowserRouter></StrictMode>);

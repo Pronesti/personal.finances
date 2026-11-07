@@ -10,13 +10,26 @@ use Illuminate\Support\Str;
 /** Every SQL read, write and lock carries the explicitly resolved owner. */
 class LedgerRepository
 {
-    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence'];
+    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence', 'source_documents', 'object_references', 'source_revisions', 'source_lines', 'source_import_commands', 'source_purchase_identities', 'review_events', 'statement_cycles', 'statement_terms', 'issuer_schedules'];
 
     public function __construct(public readonly Ledger $ledger)
     {
         if (! $ledger->exists || ! Str::isUuid($ledger->id)) {
             throw new AccountingError('missing_ledger_context');
         }
+    }
+
+    public function readSnapshot(callable $work): mixed
+    {
+        if (DB::transactionLevel() > 0) {
+            return $work();
+        }
+
+        return DB::transaction(function () use ($work) {
+            DB::statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+
+            return $work();
+        });
     }
 
     public function transaction(callable $work): mixed

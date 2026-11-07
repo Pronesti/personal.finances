@@ -1,3 +1,4 @@
+import localization from './localization.json';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 const messages = {
   en: {
@@ -22,7 +23,7 @@ const messages = {
   },
 };
 type Locale = keyof typeof messages;
-const Context = createContext<{ locale: Locale; setLocale: (locale: Locale) => void; t: typeof messages.en } | null>(null);
+const Context = createContext<{ locale: Locale; setLocale: (locale: Locale) => void; t: typeof messages.en; tr: (key: string) => string } | null>(null);
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(() => document.cookie.split('; ').find(row => row.startsWith('lang='))?.split('=')[1] === 'es' ? 'es' : 'en');
   useEffect(() => { document.documentElement.lang = locale; }, [locale]);
@@ -30,6 +31,6 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     setLocale(next);
     document.cookie = `lang=${next}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
   }
-  return <Context value={{ locale, setLocale: choose, t: messages[locale] }}>{children}</Context>;
+  return <Context value={{ locale, setLocale: choose, t: messages[locale], tr: (key: string) => (localization.dictionaries[locale] as Record<string, string>)[key] ?? key }}>{children}</Context>;
 }
 export function useLocale() { const value = useContext(Context); if (!value) throw new Error('LocaleProvider required'); return value; }
