@@ -76,7 +76,7 @@ export function createIngress(config) {
       if (envelope) return cancel(envelope.status, envelope.code);
       const clean = Object.fromEntries(Object.entries(request.headers).filter(([name]) => {
         const normalized=name.replaceAll('_','-');
-        return !normalized.startsWith('x-tarjetas-')&&!normalized.startsWith('tarjetas-ingress-')&&!['connection','transfer-encoding','host','forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto'].includes(normalized);
+        return !normalized.startsWith('x-tarjetas-')&&!normalized.startsWith('tarjetas-ingress-')&&!normalized.startsWith('x-forwarded-')&&!['connection','transfer-encoding','host','forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto'].includes(normalized);
       }));
       Object.assign(clean, { host: new URL(config.origin).host, connection: 'close', 'content-length': length, 'x-forwarded-proto': 'https', 'x-tarjetas-deadline': stamp, 'x-tarjetas-signature': createHmac('sha256', config.key).update(`${request.method}\n${request.url}\n${stamp}`).digest('hex') });
       dispatched = true;

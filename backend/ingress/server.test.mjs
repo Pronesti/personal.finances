@@ -26,10 +26,10 @@ test('production phase guards reject exact upload/non-OCR/OCR boundaries indepen
 test('signed first-byte timestamp precedes complete body and replaces forged client metadata',async()=>{
   const begin=Date.now();
   const result=await new Promise((resolve,reject)=>{
-    const req=https.request(config.origin+'/stamp',{method:'POST',ca,headers:{'Content-Length':2,'X-Tarjetas-Deadline':'forged','X-Tarjetas-Signature':'forged','X_Tarjetas_Deadline':'forged-alternative','Tarjetas_Ingress_Started_At_Unix_Ms':'forged-alternative','X_Forwarded_Host':'untrusted.invalid'}},res=>{let body='';res.on('data',chunk=>body+=chunk);res.on('end',()=>resolve({status:res.statusCode,body:JSON.parse(body)}));});
+    const req=https.request(config.origin+'/stamp',{method:'POST',ca,headers:{'Content-Length':2,'X-Tarjetas-Deadline':'forged','X-Tarjetas-Signature':'forged','X_Tarjetas_Deadline':'forged-alternative','Tarjetas_Ingress_Started_At_Unix_Ms':'forged-alternative','X_Forwarded_Host':'untrusted.invalid','X-Forwarded-Port':'12345','X-Forwarded-Prefix':'/untrusted','X-Forwarded-Server':'untrusted.invalid'}},res=>{let body='';res.on('data',chunk=>body+=chunk);res.on('end',()=>resolve({status:res.statusCode,body:JSON.parse(body)}));});
     req.on('error',reject);req.flushHeaders();req.write('a');setTimeout(()=>req.end('b'),200);
   });
-  assert.equal(result.status,200);assert.ok(Number(result.body.startedAt)>=begin);assert.ok(result.body.now-Number(result.body.startedAt)>=190);assert.ok(result.body.requestId);assert.deepEqual(result.body.alternateHeaders,[]);
+  assert.equal(result.status,200);assert.ok(Number(result.body.startedAt)>=begin);assert.ok(result.body.now-Number(result.body.startedAt)>=190);assert.ok(result.body.requestId);assert.deepEqual(result.body.alternateHeaders,[]);assert.deepEqual(result.body.callerForwarding,[null,null,null]);
 });
 test('real TLS client disconnect cancels and reaps private PHP worker descendants',async()=>{
   const before=new Set(readdirSync(config.root));

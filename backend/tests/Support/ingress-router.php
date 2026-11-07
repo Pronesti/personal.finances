@@ -26,7 +26,7 @@ try {
             $appResult = app(PrivateProcess::class)->json([config('tarjetas.python'), '-c', $program, $marker], '', $budget);
         }
 
-        return response()->json(['requestId' => $request->server->get('TARJETAS_INGRESS_REQUEST_ID'), 'startedAt' => $request->server->get('TARJETAS_INGRESS_STARTED_AT_UNIX_MS'), 'now' => (int) floor(microtime(true) * 1000), 'alternateHeaders' => array_values(array_filter(array_keys(getallheaders()), fn ($name) => str_contains($name, '_') && (str_contains(strtolower($name), 'tarjetas') || str_contains(strtolower($name), 'forwarded'))))]);
+        return response()->json(['requestId' => $request->server->get('TARJETAS_INGRESS_REQUEST_ID'), 'startedAt' => $request->server->get('TARJETAS_INGRESS_STARTED_AT_UNIX_MS'), 'now' => (int) floor(microtime(true) * 1000), 'callerForwarding' => [$request->header('X-Forwarded-Port'), $request->header('X-Forwarded-Prefix'), $request->header('X-Forwarded-Server')], 'alternateHeaders' => array_values(array_filter(array_keys(getallheaders()), fn ($name) => str_contains($name, '_') && (str_contains(strtolower($name), 'tarjetas') || str_contains(strtolower($name), 'forwarded'))))]);
     });
 } catch (Throwable $error) {
     $response = $app->make(ExceptionHandler::class)->render($request, $error);
