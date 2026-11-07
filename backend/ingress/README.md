@@ -21,3 +21,17 @@ The dedicated local FPM pool (`php-fpm.pool.example.conf`) and `fastcgi-bridge.m
 
 
 Only the authenticated financial ZIP export route can stream past the 64 MiB buffered JSON limit. Both adapters require fixed Content-Length and private ZIP/attachment/no-store/nosniff headers, propagate backpressure and reject byte-count mismatch. Command JSON stays buffered, so a late expired command response cannot become a success. A built-SPA/FPM journey verifies a larger-than-64-MiB owned export with full hash/CRC, scope/auth exclusions and temporary-file cleanup. This does not change any request/upload/phase timer or introduce a production guard switch.
+
+
+Task-local recovery TLS acceptance also verifies strict X.509 chains and both API/SPA hostnames. A manually issued leaf without an authority-key identifier passed Chromium but failed Python 3.14 strict verification. Its private extension configuration was corrected and only that local leaf was reissued using the existing key; the CA and global trust were unchanged. Local certificate issuance must include the intended SANs and a complete leaf profile, for example:
+
+```ini
+subjectAltName=DNS:api.tarjetas-recovery.test,DNS:app.tarjetas-recovery.test
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+```
+
+Use operator-controlled CA material, an explicit fresh serial without changing global CA serial state, and private local output paths. Verify with `openssl verify -x509_strict -purpose sslserver -verify_hostname HOST -CAfile CA_CERT LEAF_CERT`, then use the normal client verification settings. The executed check also retains Python's default strict TLS flags. This is local acceptance configuration; production certificates/hosting remain deferred.
