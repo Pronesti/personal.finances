@@ -1,5 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import { resetSyntheticRateLimits } from './target';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+let accounts: Record<string, string>;
+test.beforeAll(() => { accounts = JSON.parse(execFileSync('php', ['artisan', 'tarjetas:acceptance:document-users', '--env=browser-testing'], { cwd: fileURLToPath(new URL('../../backend/', import.meta.url)), encoding: 'utf8' })); });
 test.beforeEach(resetSyntheticRateLimits);
 const api = process.env.TARJETAS_BROWSER_API_ORIGIN ?? 'https://api.tarjetas-browser.test';
 const origin = 'https://app.tarjetas-browser.test';
@@ -8,7 +12,7 @@ const aHash = '37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d'
 const bHash = '61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623';
 async function signIn(page: Page, who = 'a') {
   await page.goto('/login');
-  await page.getByLabel('Email', { exact: true }).fill(`synthetic-${who}@example.invalid`);
+  await page.getByLabel('Email', { exact: true }).fill(accounts[who]);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Private ledger', exact: true })).toBeVisible();
@@ -73,9 +77,9 @@ test('owner documents, forged owner rejection and credentialed PDF button', asyn
 
 test('popup blocked fallback and retained bilingual form on failed login', async ({ page }) => {
   await page.goto('/login');
-  await page.getByLabel('Email', { exact: true }).fill('synthetic-a@example.invalid');
+  await page.getByLabel('Email', { exact: true }).fill(accounts.a);
   await page.getByRole('button', { name: 'Cambiar a español' }).click();
-  await expect(page.getByLabel('Correo electrónico')).toHaveValue('synthetic-a@example.invalid');
+  await expect(page.getByLabel('Correo electrónico')).toHaveValue(accounts.a);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await page.getByRole('button', { name: 'Switch to English' }).click();
   await page.getByLabel('Password', { exact: true }).fill('wrong');

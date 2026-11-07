@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tarjetas API",
-    "version": "1.1.0-receipts",
+    "version": "1.2.0-source-intake",
     "description": "Versioned cookie-authenticated API. Ownership resolves on server. Receipt upload and correction require trusted ingress metadata and fail closed without it. Domain errors use Error; invalid fields use Laravel 422 message/errors."
   },
   "servers": [
@@ -1836,6 +1836,782 @@
           }
         }
       }
+    },
+    "/api/v1/statements": {
+      "get": {
+        "operationId": "listStatements",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StatementSummary"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "per_page",
+                        "total"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "uploadStatement",
+        "description": "One issuer PDF at most 10 MiB. Requires actual configured card and trusted first-ingress deadline. Parse locally; retain full extraction, unknown fields and ordered lines. Duplicate bytes/renamed replay produce no new journals; changed facts remain pending and preserve the accepted revision. Same document cannot switch actual cards. Filename is validated and retained; Mercado Pago requires a year in it.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cardId",
+                  "file"
+                ],
+                "properties": {
+                  "cardId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "contentMediaType": "application/pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned evidence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict or stale decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields"
+          },
+          "503": {
+            "description": "Required processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Original processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipt-charges": {
+      "get": {
+        "operationId": "receiptCharges",
+        "description": "Owner-only retained Coto source observations, current receipts, financial links, historical associations and both immutable histories. Missing/ambiguous links remain distinct.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "receipts",
+                    "charges",
+                    "financialLinks",
+                    "historicalLinks",
+                    "financialHistory",
+                    "historicalHistory"
+                  ],
+                  "properties": {
+                    "receipts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "charges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "revisionId",
+                          "cardId",
+                          "line",
+                          "purchaseIds"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "revisionId": {
+                            "type": "string"
+                          },
+                          "cardId": {
+                            "type": "string"
+                          },
+                          "line": {
+                            "type": "object"
+                          },
+                          "purchaseIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "financialLinks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "historicalLinks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HistoricalAssociation"
+                      }
+                    },
+                    "financialHistory": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "historicalHistory": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HistoricalAssociation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/{id}/historical-associations": {
+      "post": {
+        "operationId": "associateHistoricalReceipt",
+        "description": "Separate evidence-only association. Requires accepted current-owner receipt and actual statement source/card, positive ARS and no USD, first installment or one-off, three-day date window and exact documented cent tolerance. Refuses ownership stealing and conflicting financial associations. Unlink appends a decision without removing financial entries. Stale history returns 409.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "receiptRevisionId",
+                  "sourceLineId",
+                  "action",
+                  "expectedPreviousDecisionId"
+                ],
+                "properties": {
+                  "receiptRevisionId": {
+                    "type": "string"
+                  },
+                  "sourceLineId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "action": {
+                    "enum": [
+                      "link",
+                      "unlink"
+                    ]
+                  },
+                  "expectedPreviousDecisionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalAssociation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned evidence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict or stale decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields"
+          },
+          "503": {
+            "description": "Required processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Original processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historical-refunds": {
+      "post": {
+        "operationId": "postHistoricalFullRefund",
+        "description": "Narrow explicit full refund of a retained pre-opening one-off acquisition. Requires accepted matching owner/card/currency/source, supported original date/cycle and equal full amount, a post-opening refund, no fabricated/posted original purchase, and expense leaf/purpose. Partial or mismatched refunds fail. One opening plus one credit journal; replay never posts again.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cardId",
+                  "currency",
+                  "originalSourceLineId",
+                  "refundSourceLineId",
+                  "accountId",
+                  "purposeId",
+                  "confirmedFullRefund"
+                ],
+                "properties": {
+                  "cardId": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "enum": [
+                      "ARS",
+                      "USD"
+                    ]
+                  },
+                  "originalSourceLineId": {
+                    "type": "string"
+                  },
+                  "refundSourceLineId": {
+                    "type": "string"
+                  },
+                  "accountId": {
+                    "type": "string"
+                  },
+                  "purposeId": {
+                    "type": "string"
+                  },
+                  "confirmedFullRefund": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "journalIds",
+                    "reviewCode"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "posted",
+                        "duplicate"
+                      ]
+                    },
+                    "journalIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "reviewCode": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned evidence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict or stale decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields"
+          },
+          "503": {
+            "description": "Required processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Original processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/corrections": {
+      "post": {
+        "operationId": "correctReceiptByHash",
+        "description": "Authorize retained PDF within current owner, reverify correction, preserve both transcripts and link revision to prior evidence using stable receipt identity. Requires trusted ingress metadata. Accepted revision is not silently overwritten.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rowsText": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4194304
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "rowsText",
+                  "sha256"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Correction still fails verification; retained without purchase",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptRejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2296,6 +3072,168 @@
           "sourceRevisionId",
           "receiptId"
         ]
+      },
+      "StatementResult": {
+        "type": "object",
+        "required": [
+          "sourceRevisionId",
+          "purchaseIds",
+          "postedJournalIds",
+          "reviews",
+          "duplicate"
+        ],
+        "properties": {
+          "sourceRevisionId": {
+            "type": "string"
+          },
+          "purchaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "postedJournalIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        }
+      },
+      "StatementSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "cardId",
+          "documentHash",
+          "admission",
+          "filename",
+          "closingDate",
+          "recordedAt",
+          "previousRevisionId",
+          "reviews"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "documentHash": {
+            "type": "string"
+          },
+          "admission": {
+            "enum": [
+              "accepted",
+              "pending"
+            ]
+          },
+          "filename": {
+            "type": "string"
+          },
+          "closingDate": {
+            "type": "string"
+          },
+          "recordedAt": {
+            "type": "string"
+          },
+          "previousRevisionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "HistoricalAssociation": {
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "receiptId",
+          "receiptRevisionId",
+          "sourceLineId",
+          "cardId",
+          "currency",
+          "receiptMinor",
+          "statementMinor",
+          "installmentCount",
+          "action",
+          "previousDecisionId",
+          "method",
+          "recordedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "integer"
+          },
+          "receiptRevisionId": {
+            "type": "string"
+          },
+          "sourceLineId": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "currency": {
+            "const": "ARS"
+          },
+          "receiptMinor": {
+            "type": "integer"
+          },
+          "statementMinor": {
+            "type": "integer"
+          },
+          "installmentCount": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "action": {
+            "enum": [
+              "link",
+              "unlink"
+            ]
+          },
+          "previousDecisionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "method": {
+            "const": "manual"
+          },
+          "recordedAt": {
+            "type": "string"
+          }
+        }
       }
     }
   }

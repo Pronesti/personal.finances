@@ -1,4 +1,6 @@
 import { lazy, Suspense } from 'react';
+const Charges = lazy(() => import('./features/receipts/Charges').then(module => ({ default: module.Charges })));
+const Upload = lazy(() => import('./features/statements/Upload').then(module => ({ default: module.Upload })));
 const Receipts = lazy(() => import('./features/receipts/Receipts').then(module => ({ default: module.Receipts })));
 const ReceiptPage = lazy(() => import('./features/receipts/Receipts').then(module => ({ default: module.ReceiptPage })));
 const Accounting = lazy(() => import('./features/accounting/Accounting').then(module => ({ default: module.Accounting })));
@@ -63,7 +65,7 @@ function PrivateLedger() {
   const { session, signOut } = useSession(); const { t, locale } = useLocale(); const location = useLocation();
   const [error, setError] = useState(false); const [busy, setBusy] = useState(false);
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
-  return <section className="login-card"><p className="eyebrow">TARJETAS</p><h1>{t.ledger}</h1><p>{t.signedIn} {session.user.name}</p><p>{t.foundation}</p><p><Link to="/receipts">{locale === 'es' ? 'Tickets' : 'Receipts'}</Link></p><p><Link to="/accounting">{t.ledger}</Link></p><Documents />
+  return <section className="login-card"><p className="eyebrow">TARJETAS</p><h1>{t.ledger}</h1><p>{t.signedIn} {session.user.name}</p><p>{t.foundation}</p><p><Link to="/upload">{locale === 'es' ? 'Importar resúmenes' : 'Import statements'}</Link></p><p><Link to="/receipts">{locale === 'es' ? 'Tickets' : 'Receipts'}</Link></p><p><Link to="/accounting">{t.ledger}</Link></p><Documents />
     {error && <p role="alert" className="error">{t.unavailable}</p>}
     <button disabled={busy} onClick={async () => { setBusy(true); setError(false); try { await signOut(); } catch { setError(true); } finally { setBusy(false); } }}>{t.logout}</button>
   </section>;
@@ -71,5 +73,5 @@ function PrivateLedger() {
 export default function App() {
   const { locale, setLocale, t } = useLocale(); const { loading, unavailable, reload } = useSession();
   return <><a className="skip" href="#main">{t.skip}</a><header><a href="/" className="brand">Tarjetas<span> / </span></a><button onClick={() => setLocale(locale === 'en' ? 'es' : 'en')} aria-label={locale === 'en' ? 'Cambiar a español' : 'Switch to English'}>{locale === 'en' ? 'Español' : 'English'}</button></header>
-    <main id="main">{loading ? <p role="status">{t.loading}</p> : unavailable ? <section className="login-card"><h1>{t.unavailable}</h1><button onClick={() => void reload()}>{t.retry}</button><Health /></section> : <Suspense fallback={<p role="status">{locale === 'es' ? 'Cargando…' : 'Loading…'}</p>}><Routes><Route path="/login" element={<Login />} /><Route path="/" element={<PrivateLedger />} /><Route path="/receipts" element={<Receipts />} /><Route path="/receipts/:id" element={<ReceiptPage />} /><Route path="/accounting" element={<Accounting />} /><Route path="/accounting/evidence/:id" element={<Evidence />} /><Route path="*" element={<section className="login-card"><h1>{locale === 'es' ? 'Página no disponible' : 'Page unavailable'}</h1><a href="/">Tarjetas</a></section>} /></Routes></Suspense>}</main></>;
+    <main id="main">{loading ? <p role="status">{t.loading}</p> : unavailable ? <section className="login-card"><h1>{t.unavailable}</h1><button onClick={() => void reload()}>{t.retry}</button><Health /></section> : <Suspense fallback={<p role="status">{locale === 'es' ? 'Cargando…' : 'Loading…'}</p>}><Routes><Route path="/login" element={<Login />} /><Route path="/" element={<PrivateLedger />} /><Route path="/super/charges" element={<Charges />} /><Route path="/upload" element={<Upload />} /><Route path="/receipts" element={<Receipts />} /><Route path="/receipts/:id" element={<ReceiptPage />} /><Route path="/accounting" element={<Accounting />} /><Route path="/accounting/evidence/:id" element={<Evidence />} /><Route path="*" element={<section className="login-card"><h1>{locale === 'es' ? 'Página no disponible' : 'Page unavailable'}</h1><a href="/">Tarjetas</a></section>} /></Routes></Suspense>}</main></>;
 }

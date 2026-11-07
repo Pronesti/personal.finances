@@ -34,7 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json(['error' => ['code' => 'unauthenticated', 'message_key' => 'errors.unauthenticated', 'params' => (object) []]], 401);
         });
         $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
-            $codes = [401 => 'unauthenticated', 404 => 'not_found', 419 => 'csrf_mismatch', 429 => 'rate_limited'];
+            $codes = [401 => 'unauthenticated', 404 => 'not_found', 413 => 'too_large', 419 => 'csrf_mismatch', 429 => 'rate_limited'];
             if (isset($codes[$e->getStatusCode()])) {
                 return response()->json(['error' => ['code' => $codes[$e->getStatusCode()], 'message_key' => 'errors.'.$codes[$e->getStatusCode()], 'params' => (object) []]], $e->getStatusCode(), $e->getHeaders());
             }

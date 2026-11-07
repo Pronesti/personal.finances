@@ -4,6 +4,7 @@ namespace Tests\Postgres;
 
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\HistoricalAssociations;
+use App\Domain\Evidence\HistoricalRefund;
 use App\Domain\Evidence\ReceiptProducts;
 use App\Domain\Evidence\ReceiptReconciliation;
 use App\Domain\Evidence\ReceiptRejected;
@@ -247,6 +248,36 @@ class ReceiptWorkflowsTest extends PostgresTestCase
             } catch (QueryException $error) {
                 $this->assertStringContainsString('immutable_record', $error->getMessage());
                 DB::statement('ROLLBACK TO SAVEPOINT immutable_receipt');
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_confirmed_historical_full_refund_reduces_opening_debt_without_fabricating_purchase(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                [$repository,$service] = $this->setupLedger();
+                $repository->transaction(fn () => $repository->insert('evidence', ['id' => 'opening-proof', 'kind' => 'synthetic', 'metadata' => '{}']));
+                (new FinancialCommands($repository))->post(['id' => (string) Str::uuid(), 'commandKey' => 'opening', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'effectiveDate' => '2026-02-01', 'recordedAt' => '2026-02-01T12:00:00Z', 'kind' => 'opening', 'reversesId' => null, 'evidenceIds' => ['opening-proof'], 'lines' => [['accountId' => 'equity:opening', 'debitMinor' => 13000, 'creditMinor' => 0, 'purchaseId' => null, 'purposeId' => null], ['accountId' => 'synthetic-visa-a:ARS:billed', 'debitMinor' => 0, 'creditMinor' => 13000, 'purchaseId' => null, 'purposeId' => null]]]);
+                $original = $this->statement($repository, true);
+                $raw = json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/visa.expected.json')));
+                $raw->period->closing_date = '2026-03-31';
+                $raw->declared_totals = [];
+                $raw->transactions = [(object) ['section' => 'purchases', 'date' => '2026-03-05', 'description' => 'DEVOLUCION COTO SYNTHETIC', 'ars' => -130, 'usd' => null, 'installment_number' => null, 'installment_count' => null, 'raw_line' => '05-mar-26 DEVOLUCION COTO -130,00']];
+                $refund = (new StatementImporter($repository, app(DocumentStore::class)))->import(['key' => 'refund', 'cardId' => 'synthetic-visa-a', 'filename' => 'synthetic_refund_2026_03.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf'))."\n% synthetic full-refund seam", 'rawJson' => json_encode($raw), 'recordedAt' => '2026-03-31T12:00:00Z', 'appRevision' => 'receipt-acceptance']);
+                $input = ['key' => 'full-refund', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'originalSourceLineId' => SourceIdentity::line($original['sourceRevisionId'], 1), 'refundSourceLineId' => SourceIdentity::line($refund['sourceRevisionId'], 1), 'accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'confirmedFullRefund' => true, 'recordedAt' => '2026-04-01T12:00:00Z'];
+                $useCase = new HistoricalRefund($service);
+                $this->rejects('full_refund_confirmation_required', fn () => $useCase->post([...$input, 'confirmedFullRefund' => false]));
+                $this->assertSame('posted', $useCase->post($input)['status']);
+                $this->assertSame('duplicate', $useCase->post([...$input, 'key' => 'replay', 'recordedAt' => '2026-04-02T12:00:00Z'])['status']);
+                $this->assertSame(-13000, $this->expense($repository));
+                $this->assertSame(2, $repository->query('journals')->count());
+                $this->assertSame(0, $repository->query('purchases')->count());
+                $billed = DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id]);
+                $this->assertSame(0, (int) $billed->minor);
             }
         } finally {
             DB::rollBack();

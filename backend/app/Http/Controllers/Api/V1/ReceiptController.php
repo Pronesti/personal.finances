@@ -57,9 +57,9 @@ class ReceiptController extends Controller
     public function store(Request $request, ReceiptExtraction $extractor, PrivateUpload $uploads): JsonResponse
     {
         $key = $this->key($request);
-        $request->validate(['file' => ['required', 'file', 'max:40960']]);
+        $file = PrivateUpload::validatedFile($request, 41943040);
         $budget = ProcessingBudget::fromIngress($request);
-        $bytes = $request->file('file')->get();
+        $bytes = $file->get();
         $service = $this->service($request);
         $hash = hash('sha256', $bytes);
         if (($accepted = $service->acceptedForHash($hash)) !== null) {
@@ -68,6 +68,13 @@ class ReceiptController extends Controller
         $extraction = $uploads->withPdf($bytes, fn ($path) => $extractor->pdf($path, $budget));
 
         return response()->json($service->import(['key' => $key, 'bytes' => $bytes, 'rowsText' => $extraction['rowsText'], 'scale' => $extraction['scale'], 'recordedAt' => now()->toIso8601String(), 'appRevision' => config('tarjetas.revision')], $budget));
+    }
+
+    public function correction(Request $request): JsonResponse
+    {
+        $input = $request->validate(['sha256' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/D']]);
+
+        return $this->correct($request, $input['sha256']);
     }
 
     public function correct(Request $request, string $hash): JsonResponse
