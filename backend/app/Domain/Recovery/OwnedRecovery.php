@@ -248,7 +248,16 @@ class OwnedRecovery
         $key = $this->key($keyFile);
         $scratch = $this->scratch();
         $zip = new ZipArchive;
+        $referenceLock = null;
         try {
+            $referenceRoot = PrivateRoots::canonical((string) config('tarjetas.reference_root'));
+            if (is_link($referenceRoot.'/.publication.lock')) {
+                throw new RuntimeException('recovery_reference_lock');
+            }
+            $referenceLock = fopen($referenceRoot.'/.publication.lock', 'c');
+            if ($referenceLock === false || ! chmod($referenceRoot.'/.publication.lock', 0600) || ! flock($referenceLock, LOCK_SH | LOCK_NB)) {
+                throw new RuntimeException('recovery_reference_lock');
+            }
             $manifest = DB::transaction(function () use ($scratch, $key, $bin, $output, $zip) {
                 DB::statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
                 DB::statement("SET LOCAL lock_timeout='5000ms'");
@@ -297,9 +306,11 @@ class OwnedRecovery
                         $this->add($zip, $name, $path, $files);
                     }
                 }
+                $referencePaths = [];
                 foreach ((new ReferenceTables)->files() as $path) {
                     $file = basename($path);
                     $this->add($zip, 'references/'.$file, $path, $files);
+                    $referencePaths['references/'.$file] = $path;
                 }
                 $financialTables = array_values(array_filter($tables, fn ($table) => str_starts_with($table, 'accounting.') || $table === 'public.migrations'));
                 $this->write($scratch.'/row-inventory.json', LedgerRepository::json($this->rowInventory($financialTables)));
@@ -311,7 +322,7 @@ class OwnedRecovery
                     throw new RuntimeException('recovery_archive_close');
                 }
                 foreach ($files as $name => $metadata) {
-                    if (str_starts_with($name, 'references/') && $metadata !== $this->file($referenceRoot.'/'.basename($name))) {
+                    if (str_starts_with($name, 'references/') && $metadata !== $this->file($referencePaths[$name])) {
                         throw new RuntimeException('recovery_reference_changed_during_capture');
                     }
                 }
@@ -328,6 +339,10 @@ class OwnedRecovery
                 unlink($output);
             }throw $error;
         } finally {
+            if (is_resource($referenceLock)) {
+                flock($referenceLock, LOCK_UN);
+                fclose($referenceLock);
+            }
             $this->cleanup($scratch);
             sodium_memzero($key);
         }

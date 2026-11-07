@@ -58,6 +58,34 @@ class ReferencePublicationTest extends PostgresTestCase
         $reader->read();
     }
 
+    public function test_first_publication_requires_explicit_empty_expectation_and_does_not_overwrite_partial_tables(): void
+    {
+        $root = PrivateRoots::canonical((string) config('tarjetas.test_target.temp_root')).'/first-references-'.bin2hex(random_bytes(8));
+        mkdir($root, 0700);
+        config(['tarjetas.reference_root' => $root]);
+        $input = $root.'/input.json';
+        copy(base_path('../docs/rebuild/fixtures/references.json'), $input);
+        chmod($input, 0600);
+        try {
+            (new ReferencePublisher)->publish($input, '');
+            $this->fail('Implicit initialization accepted');
+        } catch (\RuntimeException $error) {
+            $this->assertSame('stale_reference_version', $error->getMessage());
+        }
+        $result = (new ReferencePublisher)->publish($input, 'empty');
+        $this->assertSame($result['fingerprint'], FinancialCommands::digest((new ReferenceTables)->read()));
+        try {
+            (new ReferencePublisher)->publish($input, 'empty');
+            $this->fail('Empty expectation overwrote published references');
+        } catch (\RuntimeException $error) {
+            $this->assertSame('stale_reference_version', $error->getMessage());
+        }
+        $metadata = ReferenceTables::metadata(['cpi' => ['2026-01' => 100, '2026-03' => 110], 'mep' => ['2026-01' => 1000]], ['2026-03']);
+        $this->assertSame('2026-03', $metadata['cpiLatestMonth']);
+        $this->assertSame('2026-01', $metadata['mepLatestMonth']);
+        $this->assertTrue($metadata['stale']);
+    }
+
     public function test_unusable_reference_anchors_fail_while_frozen_forward_fill_remains_supported(): void
     {
         $tables = ['cpi' => ['2026-01' => 100, '2026-03' => 110], 'mep' => ['2026-01' => 1000, '2026-03' => 1100]];

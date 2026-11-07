@@ -28,6 +28,22 @@ class StatementApiTest extends PostgresTestCase
         $this->post('/api/v1/receipts', [], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('file');
     }
 
+    public function test_upload_envelope_and_missing_card_fail_before_processing(): void
+    {
+        $ledger = Ledger::factory()->create();
+        $this->actingAs($ledger->owner, 'web')->withHeader('Idempotency-Key', 'invalid-envelope');
+        $file = fn () => UploadedFile::fake()->createWithContent('synthetic.pdf', '%PDF-1.4 synthetic');
+        $this->post('/api/v1/statements', ['file' => $file()], ['Accept' => 'application/json'])
+            ->assertStatus(400)->assertJsonPath('error.code', 'missing_card_identity');
+        foreach (['receipts', 'statements'] as $route) {
+            $this->post('/api/v1/'.$route, ['file' => $file(), 'extra' => $file(), 'cardId' => 'synthetic-visa-a'], ['Accept' => 'application/json'])
+                ->assertStatus(400)->assertJsonPath('error.code', 'invalid_upload_envelope');
+            $this->post('/api/v1/'.$route, ['file' => $file(), 'cardId' => 'synthetic-visa-a', 'extra' => str_repeat('a', 1048577)], ['Accept' => 'application/json'])
+                ->assertStatus(413)->assertJsonPath('error.code', 'too_large');
+        }
+        $this->assertSame(0, (new LedgerRepository($ledger))->query('source_revisions')->count());
+    }
+
     public function test_owned_statement_http_extraction_admission_replay_and_history(): void
     {
         config(['tarjetas.python' => base_path('.venv/bin/python'), 'tarjetas.revision' => 'statement-http-acceptance']);
@@ -45,7 +61,7 @@ class StatementApiTest extends PostgresTestCase
             $response->assertOk()->assertJsonPath('duplicate', false);
             $expected = json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/outcomes.json')), true)['imports'][$brand];
             $response->assertJsonCount($expected['purchases'], 'purchaseIds')->assertJsonCount($expected['journals'], 'postedJournalIds');
-            $this->withHeader('Idempotency-Key', 'replay-'.$brand)->post('/api/v1/statements', ['file' => $file(), 'cardId' => $card], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('duplicate', true)->assertJsonCount(0, 'postedJournalIds');
+            $this->withHeader('Idempotency-Key', 'replay-'.$brand)->post('/api/v1/statements/import', ['file' => $file(), 'cardId' => $card], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('duplicate', true)->assertJsonCount(0, 'postedJournalIds');
         }
         $this->getJson('/api/v1/statements')->assertOk()->assertJsonPath('meta.total', 3);
         app('auth')->forgetGuards();

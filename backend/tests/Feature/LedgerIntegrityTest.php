@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Ledger\CatalogBootstrap;
+use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Recovery\LedgerIntegrity;
 use App\Models\Ledger;
@@ -40,5 +41,20 @@ class LedgerIntegrityTest extends PostgresTestCase
             chmod($path, 0600);
         }
         $this->assertTrue($checker->check()['integrityOk']);
+    }
+
+    public function test_release_check_refuses_references_that_cannot_value_this_owners_history(): void
+    {
+        $this->artisan('tarjetas:acceptance:references')->assertExitCode(0);
+        $repository = new LedgerRepository(Ledger::factory()->create());
+        app(CatalogBootstrap::class)->initialize($repository, [['id' => 'synthetic-visa-a', 'displayName' => 'Synthetic Visa A']]);
+        $repository->transaction(fn () => $repository->insert('evidence', ['id' => 'synthetic:anchor', 'kind' => 'synthetic', 'metadata' => '{}']));
+        (new FinancialCommands($repository))->purchase(['key' => 'synthetic:future-anchor', 'purchaseId' => 'purchase:anchor', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'effectiveDate' => '2026-04-15', 'recordedAt' => '2026-04-15T12:00:00Z', 'evidenceIds' => ['synthetic:anchor'], 'principalMinor' => 100, 'allocations' => [['accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'minor' => 100]]]);
+        $report = (new LedgerIntegrity($repository, app(DocumentStore::class)))->check();
+        $this->assertFalse($report['releaseReady']);
+        $this->assertContains('references_too_old', array_column($report['issues'], 'code'));
+        $this->assertSame(1, $report['journalCount']);
+        $other = new LedgerRepository(Ledger::factory()->create());
+        $this->assertTrue((new LedgerIntegrity($other, app(DocumentStore::class)))->check()['releaseReady']);
     }
 }

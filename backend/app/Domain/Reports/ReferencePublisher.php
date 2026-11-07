@@ -24,8 +24,9 @@ class ReferencePublisher
             throw new RuntimeException('reference_publication_lock');
         }
         try {
-            $old = (new ReferenceTables)->read();
-            if (! hash_equals(FinancialCommands::digest($old), $expected)) {
+            $empty = array_all(['current.json', 'ipc.json', 'mep.json'], fn ($file) => ! file_exists($root.'/'.$file) && ! is_link($root.'/'.$file));
+            $oldFingerprint = $empty ? 'empty' : FinancialCommands::digest((new ReferenceTables)->read());
+            if (! hash_equals($oldFingerprint, $expected)) {
                 throw new RuntimeException('stale_reference_version');
             }
             $version = hash('sha256', LedgerRepository::json($tables));

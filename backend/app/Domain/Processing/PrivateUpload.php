@@ -13,6 +13,18 @@ class PrivateUpload
 {
     public static function validatedFile(Request $request, int $limit): UploadedFile
     {
+        $files = $request->allFiles();
+        if (count($files) > 1 || ($files !== [] && (array_keys($files) !== ['file'] || is_array($files['file'])))) {
+            throw new AccountingError('invalid_upload_envelope');
+        }
+        $fields = $request->request->all();
+        if (count($fields) > 32 || array_any($fields, fn ($value) => ! is_scalar($value) && $value !== null)) {
+            throw new AccountingError('invalid_upload_envelope');
+        }
+        $fieldBytes = array_sum(array_map(fn ($value) => strlen((string) $value), $fields));
+        if ($fieldBytes > 1048576) {
+            abort(413);
+        }
         $file = $request->file('file');
         if ($file instanceof UploadedFile && in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
             throw new AccountingError('too_large');
@@ -20,6 +32,10 @@ class PrivateUpload
         $request->validate(['file' => ['required', 'file']]);
         if ($file->getSize() > $limit) {
             throw new AccountingError('too_large');
+        }
+        $length = $request->server->get('CONTENT_LENGTH');
+        if (is_string($length) && ctype_digit($length) && (int) $length - $file->getSize() > 1048576) {
+            abort(413);
         }
 
         return $file;

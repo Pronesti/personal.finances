@@ -4,8 +4,10 @@ namespace App\Domain\Recovery;
 
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\SourceIdentity;
+use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Reports\ReferenceTables;
+use App\Domain\Reports\ReportSnapshot;
 use Illuminate\Support\Facades\DB;
 
 class LedgerIntegrity
@@ -57,10 +59,12 @@ class LedgerIntegrity
             }
             try {
                 $rates = (new ReferenceTables)->read();
-                $references = ['available' => true, 'cpiLatestMonth' => array_key_last($rates['cpi']), 'mepLatestMonth' => array_key_last($rates['mep'])];
-            } catch (\Throwable) {
+                $months = (new ReportSnapshot($this->repository))->read()['months'];
+                ReferenceTables::assertCoverage($rates, $months);
+                $references = ReferenceTables::metadata($rates, $months);
+            } catch (AccountingError $error) {
                 $references = ['available' => false];
-                $issues[] = ['code' => 'references_unavailable'];
+                $issues[] = ['code' => $error->errorCode];
             }
 
             return ['ledgerId' => $owner, 'integrityOk' => $issues === [], 'releaseReady' => $issues === [] && $pending === 0 && $incomplete === 0, 'issues' => $issues, 'openReviews' => $pending, 'incompleteReconstructions' => $incomplete, 'references' => $references, 'journalCount' => $this->repository->query('journals')->where('status', 'posted')->count(), 'objectReferenceCount' => $this->repository->query('object_references')->count()];

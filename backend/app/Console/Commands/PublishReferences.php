@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 class PublishReferences extends Command
 {
-    protected $signature = 'tarjetas:references {input? : Absolute complete local JSON containing cpi and mep maps} {--expected-current= : Current fingerprint required for publication}';
+    protected $signature = 'tarjetas:references {input? : Absolute complete local JSON containing cpi and mep maps} {--expected-current= : Current fingerprint, or empty for first publication into an empty root}';
 
     protected $description = 'Inspect or atomically publish local analytical references on an approved synthetic target; never fetch external data';
 

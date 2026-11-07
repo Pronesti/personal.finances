@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Domain\Recovery\OwnedRecovery;
+use App\Domain\Reports\ReferencePublisher;
 use App\Models\Ledger;
 use App\Support\PrivateRoots;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,20 @@ class RecoveryArchiveTest extends PostgresTestCase
         $archive = $root.'/capture.zip';
         $before = DB::table('accounting.journals')->count();
         try {
-            $result = $recovery->capture($archive, $key, $bin);
+            $configuredRoot = config('tarjetas.reference_root');
+            $publishedRoot = $root.'-references';
+            mkdir($publishedRoot, 0700);
+            config(['tarjetas.reference_root' => $publishedRoot]);
+            $publication = (new ReferencePublisher)->publish(realpath(base_path('../docs/rebuild/fixtures/references.json')), 'empty');
+            try {
+                $result = $recovery->capture($archive, $key, $bin);
+            } finally {
+                config(['tarjetas.reference_root' => $configuredRoot]);
+            }
+            $zip = new ZipArchive;
+            $zip->open($archive);
+            $this->assertSame(file_get_contents($publishedRoot.'/release-'.$publication['version'].'/ipc.json'), $zip->getFromName('references/ipc.json'));
+            $zip->close();
             $this->assertSame(OwnedRecovery::FORMAT, $result['format']);
             $this->assertGreaterThanOrEqual(8, $result['references']);
             $this->assertSame(0, fileperms($archive) & 0077);

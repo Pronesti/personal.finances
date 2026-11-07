@@ -370,7 +370,7 @@
     "/api/v1/bootstrap": {
       "get": {
         "operationId": "bootstrap",
-        "description": "Owner-resolved metadata. Financial catalog and report months are added with the financial stage. Conflicting client owner fields are rejected.",
+        "description": "Owner-resolved cards, catalog, actual report months, reference readiness and retained objects. Missing references do not block evidence workflows.",
         "responses": {
           "200": {
             "description": "Success",
@@ -603,6 +603,15 @@
               "maximum": 50,
               "default": 20
             }
+          },
+          {
+            "name": "journal",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Show one owned posted journal, regardless of ordinary pagination. Unknown/other-owner UUID returns 404."
           }
         ],
         "description": "Native owner balances and paginated immutable journals. Balance cents are signed decimal integer strings, independent of presentation valuation. No journal editing.",
@@ -987,7 +996,7 @@
       },
       "post": {
         "operationId": "uploadReceipt",
-        "description": "One Coto PDF, at most 40 MiB. Original bytes and OCR transcript retained privately. Verification failure is retained before returning 422. Accepted bytes deduplicate before OCR. Requires trusted deadline from before buffering; caller stamps are ignored.",
+        "description": "One Coto PDF, at most 40 MiB. Original bytes and OCR transcript retained privately. Verification failure is retained before returning 422. Accepted bytes deduplicate before OCR. Requires trusted deadline from before buffering; caller stamps are ignored. Exactly one file; at most 32 multipart parts and 1 MiB total framing/non-file data. Extra/nested/duplicate files return 400 invalid_upload_envelope; excess framing/fields return 413 too_large.",
         "security": [
           {
             "session": [],
@@ -1111,6 +1120,16 @@
           },
           "504": {
             "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Multipart framing or whole-body limit exceeded",
             "content": {
               "application/json": {
                 "schema": {
@@ -1964,7 +1983,7 @@
       },
       "post": {
         "operationId": "uploadStatement",
-        "description": "One issuer PDF at most 10 MiB. Requires actual configured card and trusted first-ingress deadline. Parse locally; retain full extraction, unknown fields and ordered lines. Duplicate bytes/renamed replay produce no new journals; changed facts remain pending and preserve the accepted revision. Same document cannot switch actual cards. Filename is validated and retained; Mercado Pago requires a year in it.",
+        "description": "One issuer PDF at most 10 MiB. Requires actual configured card and trusted first-ingress deadline. Parse locally; retain full extraction, unknown fields and ordered lines. Duplicate bytes/renamed replay produce no new journals; changed facts remain pending and preserve the accepted revision. Same document cannot switch actual cards. Filename is validated and retained; Mercado Pago requires a year in it. Exactly one file; at most 32 multipart parts and 1 MiB total framing/non-file data. Extra/nested/duplicate files return 400 invalid_upload_envelope; excess framing/fields return 413 too_large.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -2085,6 +2104,16 @@
           },
           "504": {
             "description": "Original processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Multipart framing or whole-body limit exceeded",
             "content": {
               "application/json": {
                 "schema": {
@@ -4438,6 +4467,299 @@
           }
         }
       }
+    },
+    "/api/v1/statements/import": {
+      "post": {
+        "operationId": "importStatement",
+        "description": "One issuer PDF at most 10 MiB. Requires actual configured card and trusted first-ingress deadline. Parse locally; retain full extraction, unknown fields and ordered lines. Duplicate bytes/renamed replay produce no new journals; changed facts remain pending and preserve the accepted revision. Same document cannot switch actual cards. Filename is validated and retained; Mercado Pago requires a year in it. Exactly one file; at most 32 multipart parts and 1 MiB total framing/non-file data. Extra/nested/duplicate files return 400 invalid_upload_envelope; excess framing/fields return 413 too_large.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cardId",
+                  "file"
+                ],
+                "properties": {
+                  "cardId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "contentMediaType": "application/pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned evidence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict or stale decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields"
+          },
+          "503": {
+            "description": "Required processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Original processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Multipart framing or whole-body limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/import": {
+      "post": {
+        "operationId": "importReceipt",
+        "description": "One Coto PDF, at most 40 MiB. Original bytes and OCR transcript retained privately. Verification failure is retained before returning 422. Accepted bytes deduplicate before OCR. Requires trusted deadline from before buffering; caller stamps are ignored. Exactly one file; at most 32 multipart parts and 1 MiB total framing/non-file data. Extra/nested/duplicate files return 400 invalid_upload_envelope; excess framing/fields return 413 too_large.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "contentMediaType": "application/pdf"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Retained exact-cent verification failure, or invalid fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptRejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Multipart framing or whole-body limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4549,7 +4871,8 @@
           "cards",
           "catalog",
           "months",
-          "documents"
+          "documents",
+          "references"
         ],
         "properties": {
           "cards": {
@@ -4567,7 +4890,8 @@
           "months": {
             "type": "array",
             "items": {
-              "type": "object"
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
             }
           },
           "documents": {
@@ -4592,6 +4916,9 @@
                 }
               }
             }
+          },
+          "references": {
+            "$ref": "#/components/schemas/ReferenceStatus"
           }
         }
       },
@@ -8445,23 +8772,7 @@
             "type": "boolean"
           },
           "references": {
-            "type": "object",
-            "required": [
-              "cpiLatestMonth",
-              "mepLatestMonth",
-              "stale"
-            ],
-            "properties": {
-              "cpiLatestMonth": {
-                "type": "string"
-              },
-              "mepLatestMonth": {
-                "type": "string"
-              },
-              "stale": {
-                "type": "boolean"
-              }
-            }
+            "$ref": "#/components/schemas/ReferenceStatus"
           },
           "evidence": {
             "type": "array",
@@ -8469,29 +8780,28 @@
             "items": {
               "type": "object",
               "required": [
-                "purchaseId",
+                "id",
                 "origin",
+                "kind",
                 "cardId",
-                "merchant",
-                "description",
-                "accountId",
-                "purposeId",
                 "currency",
                 "minor",
-                "purchaseDate",
-                "cycleMonth",
+                "effectiveDate",
+                "purchaseId",
+                "accountId",
+                "purposeId",
                 "sourceLineId",
                 "statementId",
-                "coverage",
-                "financed",
-                "id",
-                "kind",
-                "effectiveDate",
-                "journalId"
+                "merchant",
+                "description",
+                "coverage"
               ],
               "properties": {
                 "purchaseId": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "origin": {
                   "type": "string"
@@ -8500,34 +8810,63 @@
                   "type": "string"
                 },
                 "merchant": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "description": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "accountId": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "purposeId": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "currency": {
-                  "type": "string"
+                  "enum": [
+                    "ARS",
+                    "USD"
+                  ]
                 },
                 "minor": {
-                  "type": "number"
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
                 },
                 "purchaseDate": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "cycleMonth": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "sourceLineId": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "statementId": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "coverage": {
                   "type": "string"
@@ -8545,7 +8884,15 @@
                   "type": "string"
                 },
                 "journalId": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "receiptIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
                 }
               },
               "additionalProperties": true
@@ -9053,6 +9400,33 @@
           "seq": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "ReferenceStatus": {
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "cpiLatestMonth": {
+            "type": "string"
+          },
+          "mepLatestMonth": {
+            "type": "string"
+          },
+          "mepLatestRate": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
           }
         }
       }

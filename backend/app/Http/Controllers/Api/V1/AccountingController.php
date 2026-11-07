@@ -12,10 +12,10 @@ class AccountingController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $input = $request->validate(['page' => ['sometimes', 'integer', 'min:1', 'max:1000000'], 'per_page' => ['sometimes', 'integer', 'min:1', 'max:50']]);
+        $input = $request->validate(['journal' => ['sometimes', 'uuid'], 'page' => ['sometimes', 'integer', 'min:1', 'max:1000000'], 'per_page' => ['sometimes', 'integer', 'min:1', 'max:50']]);
         $reader = new LedgerReader(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget')));
 
-        return response()->json($reader->inspection((int) ($input['page'] ?? 1), (int) ($input['per_page'] ?? 20)));
+        return response()->json($reader->inspection((int) ($input['page'] ?? 1), (int) ($input['per_page'] ?? 20), $input['journal'] ?? null));
     }
 
     public function evidence(Request $request, string $id): JsonResponse

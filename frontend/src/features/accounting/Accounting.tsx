@@ -18,6 +18,7 @@ export function nativeMoney(minor: string | number, currency: 'ARS' | 'USD') {
 export function Accounting() {
   const { session } = useSession(); const { locale, tr, t } = useLocale();
   const [search, setSearch] = useSearchParams(); const location = useLocation();
+  const journalId = search.get('journal');
   const page = Math.max(1, Math.min(1000000, Number.parseInt(search.get('page') ?? '1', 10) || 1));
   const [state, setState] = useState<{ owner: string; data: Inspection } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -25,9 +26,9 @@ export function Accounting() {
     if (!session) return;
     setFailed(false); setState(null);
     const controller = new AbortController();
-    api.get<Inspection>('/accounting', { params: { page }, signal: controller.signal }).then(({ data }) => setState({ owner: session.ledger.id, data })).catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    api.get<Inspection>('/accounting', { params: { page, ...(journalId?{journal:journalId}:{}) }, signal: controller.signal }).then(({ data }) => setState({ owner: session.ledger.id, data })).catch(() => { if (!controller.signal.aborted) setFailed(true); });
     return () => controller.abort();
-  }, [session?.ledger.id, page]);
+  }, [session?.ledger.id, page, journalId]);
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   const data = state?.owner === session.ledger.id ? state.data : null;
   const label = (id: string) => { const account = data?.accounts.find(row => row.id === id); return account?.customName ?? (account?.labelKey ? tr(account.labelKey) : id); };
@@ -41,7 +42,7 @@ export function Accounting() {
       {(['ARS', 'USD'] as const).map(currency => <div className="table-region" key={currency}><table><caption>{currency}</caption><thead><tr><th>{locale === 'es' ? 'Grupo' : 'Group'}</th><th>{locale === 'es' ? 'Gasto' : 'Expense'}</th><th>{locale === 'es' ? 'Deuda' : 'Debt'}</th><th>{locale === 'es' ? 'Pagos' : 'Repayments'}</th></tr></thead><tbody>{data.groupMeasures[currency].filter(row => [row.expenseMinor, row.debtMinor, row.repaymentMinor].some(value => value !== '0')).map(row => { const group = data.groups.find(group => group.id === row.groupId); return <tr key={row.groupId}><th>{group?.customName ?? (group?.labelKey ? tr(group.labelKey) : row.groupId)}</th><td>{nativeMoney(row.expenseMinor, currency)}</td><td>{nativeMoney(row.debtMinor, currency)}</td><td>{nativeMoney(row.repaymentMinor, currency)}</td></tr>; })}</tbody></table></div>)}
       <h2>{locale === 'es' ? 'Gasto, deuda y pagos por finalidad' : 'Expense, debt and repayment by purpose'}</h2><p>{locale === 'es' ? 'La deuda incluye compras soportadas y costos; los saldos sin atribución se muestran por separado.' : 'Debt includes supported acquisitions and costs; unattributed balances remain separate.'}</p>
       {data.purposeMeasures.filter(scope => scope.rows.length > 0).map(scope => <div className="table-region" key={scope.cardId + scope.currency}><table><caption>{scope.cardId} · {scope.currency}</caption><thead><tr><th>{locale === 'es' ? 'Finalidad' : 'Purpose'}</th><th>{locale === 'es' ? 'Gasto' : 'Expense'}</th><th>{locale === 'es' ? 'Deuda' : 'Debt'}</th><th>{locale === 'es' ? 'Pagos' : 'Repayments'}</th></tr></thead><tbody>{scope.rows.map(row => <tr key={row.purposeId ?? 'unattributed'}><th>{row.purposeId === null ? (locale === 'es' ? 'Sin atribuir' : 'Unattributed') : (data.groups.find(group => group.id === row.purposeId)?.customName ?? tr(`accounting.group.${row.purposeId}`))}</th><td>{nativeMoney(row.expenseMinor, scope.currency)}</td><td>{nativeMoney(row.debtMinor, scope.currency)}</td><td>{nativeMoney(row.repaymentMinor, scope.currency)}</td></tr>)}</tbody></table></div>)}
-      <h2>{tr('accounting.journals')}</h2><p>{tr('accounting.audit')}</p>{data.journals.map(journal => <details className="journal" key={journal.id}><summary>{journal.effectiveDate} · {journal.kind} · {journal.currency}</summary><dl><dt>{tr('accounting.effectiveDate')}</dt><dd>{journal.effectiveDate}</dd><dt>{tr('accounting.recordedAt')}</dt><dd>{journal.recordedAt}</dd></dl>
+      <h2>{tr('accounting.journals')}</h2>{journalId&&<p><Link to="/accounting">{locale==='es'?'Todos los asientos':'All journals'}</Link></p>}<p>{tr('accounting.audit')}</p>{data.journals.map(journal => <details className="journal" key={journal.id} open={journal.id===journalId||undefined} id={'journal-'+journal.id}><summary>{journal.effectiveDate} · {journal.kind} · {journal.currency}</summary><dl><dt>{tr('accounting.effectiveDate')}</dt><dd>{journal.effectiveDate}</dd><dt>{tr('accounting.recordedAt')}</dt><dd>{journal.recordedAt}</dd></dl>
         <div className="table-region"><table><thead><tr><th>{tr('accounting.account')}</th><th>{tr('accounting.debit')}</th><th>{tr('accounting.credit')}</th></tr></thead><tbody>{journal.lines.map((line, index) => <tr key={index}><th scope="row">{label(line.accountId)}</th><td>{nativeMoney(line.debitMinor, journal.currency)}</td><td>{nativeMoney(line.creditMinor, journal.currency)}</td></tr>)}</tbody></table></div>
         <ul>{journal.evidenceIds.map(id => <li key={id}><Link to={`/accounting/evidence/${encodeURIComponent(id)}`}>{tr('accounting.evidence')}</Link></li>)}</ul>
       </details>)}

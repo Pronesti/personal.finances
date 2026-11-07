@@ -1,6 +1,7 @@
 import https from 'node:https';
 import {exportStreamLength} from './export-stream.mjs';
 import http from 'node:http';
+import {uploadEnvelope} from './upload-envelope.mjs';
 import { randomUUID, createHmac } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, lstatSync, realpathSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -70,6 +71,9 @@ export function createIngress(config) {
     request.on('end', () => {
       if (cancelled || poll()) return;
       uploaded = true;
+      const body = Buffer.concat(chunks);
+      const envelope = uploadEnvelope(request.method, request.url, request.headers['content-type'], body);
+      if (envelope) return cancel(envelope.status, envelope.code);
       const clean = Object.fromEntries(Object.entries(request.headers).filter(([name]) => {
         const normalized=name.replaceAll('_','-');
         return !normalized.startsWith('x-tarjetas-')&&!normalized.startsWith('tarjetas-ingress-')&&!['connection','transfer-encoding','host','forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto'].includes(normalized);
@@ -103,7 +107,7 @@ export function createIngress(config) {
       });
       upstream.on('socket', socket => { if (!socket.connecting) upstreamConnected = true; else socket.once('connect', () => { upstreamConnected = true; }); });
       upstream.on('error', () => { cancel(502, 'upstream_unavailable'); if (!upstreamConnected) releaseContext(); });
-      upstream.end(Buffer.concat(chunks)); chunks.length = 0;
+      upstream.end(body); chunks.length = 0;
     });
     request.on('aborted', () => cancel(499,'client_disconnected'));
     response.on('close', () => { if (!complete && !cancelled) cancel(499,'client_disconnected'); });

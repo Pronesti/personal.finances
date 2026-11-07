@@ -10,12 +10,12 @@ class LedgerReader
 {
     public function __construct(private LedgerRepository $repository) {}
 
-    public function inspection(int $page = 1, int $perPage = 20): array
+    public function inspection(int $page = 1, int $perPage = 20, ?string $journal = null): array
     {
-        return $this->repository->readSnapshot(fn () => $this->inspect($page, $perPage));
+        return $this->repository->readSnapshot(fn () => $this->inspect($page, $perPage, $journal));
     }
 
-    private function inspect(int $page, int $perPage): array
+    private function inspect(int $page, int $perPage, ?string $journal): array
     {
         $owner = $this->repository->ledger->id;
         $balances = DB::select("SELECT l.account_id,j.currency,sum(l.debit_minor-l.credit_minor)::text AS minor FROM accounting.journal_lines l JOIN accounting.journals j ON j.ledger_id=l.ledger_id AND j.id=l.journal_id WHERE l.ledger_id=? AND j.status='posted' GROUP BY l.account_id,j.currency", [$owner]);
@@ -35,6 +35,11 @@ class LedgerReader
             return ['id' => $row->id, 'parentId' => $row->parent_id, 'type' => $row->type, 'labelKey' => $row->label_key, 'customName' => $row->custom_name, 'currency' => $row->currency, 'posting' => $row->posting, 'enabled' => $row->enabled, 'balances' => ['ARS' => $amounts['ARS'] ?? '0', 'USD' => $amounts['USD'] ?? '0']];
         })->all();
         $query = $this->repository->query('journals')->where('status', 'posted');
+        if ($journal !== null) {
+            $query->where('id', $journal);
+            abort_unless((clone $query)->exists(), 404);
+            $page = 1;
+        }
         $total = $query->count();
         $ids = $query->orderByDesc('effective_date')->orderByDesc('recorded_at')->orderByDesc('id')->offset(($page - 1) * $perPage)->limit($perPage)->pluck('id');
 

@@ -84,6 +84,14 @@ class ReferenceTables
         }
     }
 
+    public static function metadata(array $tables, array $months): array
+    {
+        $cpi = array_key_last($tables['cpi']);
+        $mep = array_key_last($tables['mep']);
+
+        return ['available' => true, 'cpiLatestMonth' => $cpi, 'mepLatestMonth' => $mep, 'mepLatestRate' => $tables['mep'][$mep], 'stale' => ($months === [] ? '' : max($months)) > min($cpi, $mep)];
+    }
+
     public static function validate(mixed &$tables): void
     {
         if (! is_array($tables) || array_diff(array_keys($tables), ['cpi', 'mep']) !== []) {

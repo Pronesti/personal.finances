@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\StatementImporter;
+use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Processing\PrivateProcess;
 use App\Domain\Processing\PrivateUpload;
@@ -36,6 +37,9 @@ class StatementController extends Controller
 
     public function store(Request $request, PrivateUpload $uploads, PrivateProcess $process, DocumentStore $documents): JsonResponse
     {
+        if (! $request->filled('cardId')) {
+            throw new AccountingError('missing_card_identity');
+        }
         $input = $request->validate(['cardId' => ['required', 'string', 'max:200']]);
         $file = PrivateUpload::validatedFile($request, 10485760);
         $key = $request->header('Idempotency-Key');

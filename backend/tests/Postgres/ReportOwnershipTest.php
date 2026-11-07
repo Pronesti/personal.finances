@@ -36,6 +36,7 @@ class ReportOwnershipTest extends PostgresTestCase
             $this->assertSame('SYNTHETIC SENTINEL '.$sentinel, $purchase[0]['merchant']);
             app('auth')->forgetGuards();
             $this->actingAs($ledger->owner, 'web');
+            $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('months', ['2026-01'])->assertJsonPath('references.cpiLatestMonth', '2026-03');
             $this->getJson('/api/v1/reports/trends?value=nominal')->assertOk()->assertJsonPath('data.spending.total', $sentinel)->assertJsonPath('meta.scope.basis', 'purchase');
             $this->getJson('/api/v1/reports/trends?value=nominal&spend=cash')->assertOk()->assertJsonPath('data.spending.total', $sentinel)->assertJsonPath('meta.scope.basis', 'billed');
             $this->getJson('/api/v1/reports/categories?value=invalid&g=invalid&period=invalid')->assertOk()->assertJsonPath('meta.scope.value', 'real')->assertJsonPath('meta.scope.granularity', 'month')->assertJsonPath('meta.scope.period', '2026-01')->assertJsonPath('meta.nativePurpose.from', '2026-01-01')->assertJsonPath('meta.nativePurpose.to', '2026-01-31');

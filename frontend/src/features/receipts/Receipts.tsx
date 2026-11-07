@@ -17,6 +17,12 @@ function useFailure() {
   return (error: unknown) => {
     if (!axios.isAxiosError(error)) return t.unavailable;
     const code = error.response?.data?.error?.code;
+    if (error.response?.status===413) return locale==='es'?'La carga supera el límite del cuerpo permitido. Conservamos el formulario.':'The upload exceeds the whole-body limit. Your form has been retained.';
+    if (code==='invalid_upload_envelope') return locale==='es'?'Enviá exactamente un PDF con campos acotados.':'Send exactly one PDF with bounded form fields.';
+    if (code==='too_large') return locale==='es'?'El ticket supera los 40 MiB.':'The receipt exceeds 40 MiB.';
+    if (['python_missing','ocr_unavailable'].includes(code)) return locale==='es'?'El entorno privado de Vision no está disponible. Solicitá su comprobación al responsable de la instalación.':'The private Vision runtime is unavailable. Ask the installation operator to check readiness.';
+    if (['processing_timeout','non_ocr_budget_exceeded','ocr_attempt_timeout'].includes(code)) return locale==='es'?'Se agotó el plazo de procesamiento. Conservamos el formulario y el comando para reintentar.':'Processing reached its time budget. Your form and command have been retained for retry.';
+    if (['parser_read_error','processing_memory_limit','receipt_processing_failed'].includes(code)) return locale==='es'?'No se pudo procesar el PDF dentro de los límites de lectura y recursos. Conservamos el formulario.':'This PDF could not be processed within the reading and resource limits. Your form has been retained.';
     if (code === 'csrf_mismatch') return t.csrf_mismatch;
     if (['stale_review_version','stale_receipt_link','stale_purchase_version'].includes(code)) return locale === 'es' ? 'La evidencia cambió. Recargá antes de confirmar.' : 'This evidence changed. Reload before confirming.';
     if (code === 'verification_failed') return tr('accounting.receipts.verificationFailed');

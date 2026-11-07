@@ -42,9 +42,11 @@ Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
     Route::post('receipts/{id}/historical-associations', [SourceReviewController::class, 'associate'])->whereNumber('id');
     Route::post('historical-refunds', [SourceReviewController::class, 'refund']);
     Route::get('statements', [StatementController::class, 'index']);
+    Route::post('statements/import', [StatementController::class, 'store']);
     Route::post('statements', [StatementController::class, 'store']);
     Route::get('receipts', [ReceiptController::class, 'index']);
     Route::get('receipts/{id}', [ReceiptController::class, 'show'])->whereNumber('id');
+    Route::post('receipts/import', [ReceiptController::class, 'store']);
     Route::post('receipts', [ReceiptController::class, 'store']);
     Route::post('receipts/corrections', [ReceiptController::class, 'correction']);
     Route::post('receipts/corrections/{hash}', [ReceiptController::class, 'correct'])->where('hash', '[a-f0-9]{64}');
