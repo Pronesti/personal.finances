@@ -2,7 +2,7 @@
 
 Independent Laravel 13 / Sanctum JSON application. Run PHP and Composer using this machine's `~/.config/agent-skills/runtime.md`. No Node, frontend build, Next.js or application views are needed to install or serve this artifact.
 
-The committed rebuild contract starts at `../docs/rebuild/START-HERE.md`. `openapi.json` describes the implemented foundation endpoints. The public surface currently covers sessions, retained documents, native accounting inspection and source detail. Native posting/correction and statement admission use cases exist internally; financial HTTP mutations, receipt persistence/convergence, reviews and analytical reports remain pending. Existing accounts and their private ledger must already exist; public registration and production provisioning are outside scope.
+The committed rebuild contract starts at `../docs/rebuild/START-HERE.md`. `openapi.json` describes the implemented versioned contracts. The public surface covers sessions, retained documents, native accounting/source inspection and receipt intake/correction/product review/reconciliation. Receipt intake requires authenticated trusted-ingress deadlines and fails closed when that boundary is absent. Statement admission and historical receipt associations have internal use cases; statement HTTP intake, remaining review workflows and analytical reports remain pending. See `ingress/README.md` for local-only ingress acceptance and its production limitations. Existing accounts and their private ledger must already exist; public registration and production provisioning are outside scope.
 
 ## Installation
 

@@ -1,8 +1,10 @@
 <?php
 
+use App\Domain\Evidence\ReceiptRejected;
 use App\Domain\Ledger\AccountingError;
 use App\Http\Middleware\RequireApprovedTestTarget;
 use App\Http\Middleware\ResolveLedger;
+use App\Http\Middleware\VerifyPrivateIngress;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
@@ -21,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequireApprovedTestTarget::class);
+        $middleware->append(VerifyPrivateIngress::class);
         $middleware->statefulApi();
         $middleware->preventRequestForgery(originOnly: false, allowSameSite: false);
         $middleware->alias(['ledger' => ResolveLedger::class]);
@@ -36,11 +39,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['error' => ['code' => $codes[$e->getStatusCode()], 'message_key' => 'errors.'.$codes[$e->getStatusCode()], 'params' => (object) []]], $e->getStatusCode(), $e->getHeaders());
             }
         });
+        $exceptions->render(function (ReceiptRejected $exception) {
+            return response()->json(['error' => ['code' => 'verification_failed', 'message_key' => 'errors.verification_failed', 'params' => (object) []], ...$exception->receiptPayload], 422);
+        });
         $exceptions->render(function (AccountingError $exception) {
             $status = match ($exception->errorCode) {
                 'deadline_metadata_invalid', 'python_missing', 'ocr_unavailable' => 503,
                 'processing_timeout', 'non_ocr_budget_exceeded', 'ocr_attempt_timeout' => 504,
-                'command_conflict', 'stale_purchase_version' => 409,
+                'command_conflict', 'stale_purchase_version', 'stale_review_version', 'stale_receipt_link', 'stale_historical_association' => 409,
                 'verification_failed' => 422,
                 default => 400,
             };

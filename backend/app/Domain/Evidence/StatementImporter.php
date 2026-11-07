@@ -168,6 +168,11 @@ class StatementImporter
                 }
                 if ($admission === 'accepted' && ! ($input['observationOnly'] ?? false)) {
                     $this->postRows($json, $input, $revision, $result, $review);
+                    $receipts = new ReceiptReconciliation(new ReceiptService($this->repository, $this->documents));
+                    foreach ($receipts->reconcileAll('statement:'.$revision, $input['recordedAt']) as $reconciled) {
+                        $result['purchaseIds'] = array_values(array_unique([...$result['purchaseIds'], ...$reconciled['purchaseIds']]));
+                        array_push($result['postedJournalIds'], ...$reconciled['postedJournalIds']);
+                    }
                 }
             }
             $this->repository->insert('source_import_commands', ['key' => $commandKey, 'digest' => $digest, 'result' => LedgerRepository::json($result)]);
@@ -228,7 +233,14 @@ class StatementImporter
                     }
                     $identity = ['cardId' => $input['cardId'], 'currency' => $currency, 'purchaseDate' => $line->date, 'voucher' => $line->voucher ?? null, 'installment' => $line->installment_number ?? null, 'installmentCount' => $line->installment_count ?? null, 'amountMinor' => $minor, 'sourceLineId' => $lineId];
                     $candidates = $this->repository->query('source_purchase_identities')->where('card_id', $input['cardId'])->where('currency', $currency)->where('purchase_date', $line->date)->get()->map(fn ($row) => json_decode($row->payload, true, flags: JSON_THROW_ON_ERROR))->all();
-                    $decision = SourceIdentity::identify($identity, $candidates);
+                    $receipts = new ReceiptReconciliation(new ReceiptService($this->repository, $this->documents));
+                    $origin = $receipts->statementOrigin(['cardId' => $input['cardId'], 'currency' => $currency, 'date' => $line->date, 'amountMinor' => $minor, 'description' => $line->description, 'installmentCount' => $line->installment_count ?? null, 'sourceLineId' => $lineId]);
+                    if ($origin['reviewCode'] !== null) {
+                        $review($origin['reviewCode'], [$lineId], ['currency' => $currency]);
+
+                        continue;
+                    }
+                    $decision = $origin['purchaseId'] !== null ? ['status' => 'matched', 'purchaseId' => $origin['purchaseId']] : SourceIdentity::identify($identity, $candidates);
                     if ($decision['status'] === 'review') {
                         $review($decision['reason'], [$lineId], ['currency' => $currency]);
 

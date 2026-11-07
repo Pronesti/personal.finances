@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
-const api = 'https://api.tarjetas-browser.test';
+import { resetSyntheticRateLimits } from './target';
+test.beforeEach(resetSyntheticRateLimits);
+const api = process.env.TARJETAS_BROWSER_API_ORIGIN ?? 'https://api.tarjetas-browser.test';
 const origin = 'https://app.tarjetas-browser.test';
 const password = 'Synthetic-Acceptance-Only-2026!';
 const aHash = '37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d';

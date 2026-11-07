@@ -22,6 +22,8 @@ class ProcessingBudget
 
     private Closure $clock;
 
+    private ?string $context = null;
+
     public function __construct(float $remainingMs, float $nonOcrConsumedMs, ?Closure $monotonicClock = null)
     {
         if (! is_finite($remainingMs) || ! is_finite($nonOcrConsumedMs) || $nonOcrConsumedMs < 0) {
@@ -36,6 +38,11 @@ class ProcessingBudget
 
     public static function fromIngress(Request $request): self
     {
+        if (($existing = $request->attributes->get('processing_budget')) instanceof self) {
+            $existing->check();
+
+            return $existing;
+        }
         $metadata = [];
         foreach (['REQUEST_ID', 'STARTED_AT_UNIX_MS', 'DEADLINE_UNIX_MS', 'CLOCK_SKEW_MS'] as $key) {
             $metadata[$key] = $request->server->get('TARJETAS_INGRESS_'.$key);
@@ -50,11 +57,26 @@ class ProcessingBudget
             throw new AccountingError('deadline_metadata_invalid');
         }
 
-        return new self($deadline - $now - 1000, max(0, $now - $start));
+        $budget = new self($deadline - $now - 1000, max(0, $now - $start));
+        $context = $request->server->get('TARJETAS_INGRESS_CONTEXT');
+        if (is_string($context)) {
+            $budget->context = $context;
+            $budget->publish();
+        }
+        $request->attributes->set('processing_budget', $budget);
+
+        return $budget;
     }
 
     public function check(): void
     {
+        if ($this->context !== null) {
+            clearstatcache(true, $this->context.'/cancelled');
+        }
+        if ($this->context !== null && is_file($this->context.'/cancelled')) {
+            $code = file_get_contents($this->context.'/cancelled');
+            throw new AccountingError(in_array($code, ['processing_timeout', 'non_ocr_budget_exceeded', 'ocr_attempt_timeout', 'client_disconnected'], true) ? $code : 'processing_timeout');
+        }
         $now = ($this->clock)();
         $elapsed = max(0, $now - $this->last);
         if ($this->activeOcr === null) {
@@ -82,6 +104,7 @@ class ProcessingBudget
         }
         $this->ocr[$attempt] ??= 0;
         $this->activeOcr = $attempt;
+        $this->publish();
     }
 
     public function leaveOcr(?float $workerEndedAt = null): void
@@ -101,6 +124,7 @@ class ProcessingBudget
         }
         $this->activeOcr = null;
         $this->check();
+        $this->publish();
     }
 
     public function assertNonOcr(): void
@@ -117,5 +141,30 @@ class ProcessingBudget
         $phase = $this->activeOcr === null ? 180000 - $this->nonOcr : 180000 - $this->ocr[$this->activeOcr];
 
         return min($this->deadline - $this->last, $phase);
+    }
+
+    private function publish(): void
+    {
+        if ($this->context === null) {
+            return;
+        }
+        $payload = json_encode(['clockMs' => $this->last, 'nonOcrMs' => $this->nonOcr, 'activeOcr' => $this->activeOcr, 'ocrMs' => $this->ocr], JSON_THROW_ON_ERROR);
+        $path = $this->context.'/phase-'.bin2hex(random_bytes(8));
+        $handle = fopen($path, 'xb');
+        if ($handle === false) {
+            throw new AccountingError('deadline_metadata_invalid');
+        }
+        try {
+            chmod($path, 0600);
+            if (fwrite($handle, $payload) !== strlen($payload) || ! fflush($handle)) {
+                throw new AccountingError('deadline_metadata_invalid');
+            }
+        } finally {
+            fclose($handle);
+        }
+        if (! rename($path, $this->context.'/phase.json')) {
+            @unlink($path);
+            throw new AccountingError('deadline_metadata_invalid');
+        }
     }
 }

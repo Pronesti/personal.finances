@@ -2,17 +2,19 @@
 
 namespace App\Domain\Ledger;
 
+use App\Domain\Processing\ProcessingBudget;
 use App\Models\Ledger;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /** Every SQL read, write and lock carries the explicitly resolved owner. */
 class LedgerRepository
 {
-    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence', 'source_documents', 'object_references', 'source_revisions', 'source_lines', 'source_import_commands', 'source_purchase_identities', 'review_events', 'statement_cycles', 'statement_terms', 'issuer_schedules'];
+    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence', 'source_documents', 'object_references', 'source_revisions', 'source_lines', 'source_import_commands', 'source_purchase_identities', 'review_events', 'statement_cycles', 'statement_terms', 'issuer_schedules', 'receipt_entities', 'receipt_entity_keys', 'receipt_facts', 'receipt_link_decisions', 'review_products', 'product_revisions', 'product_code_revisions', 'product_match_revisions', 'product_rule_revisions', 'review_decisions', 'historical_receipt_associations'];
 
-    public function __construct(public readonly Ledger $ledger)
+    public function __construct(public readonly Ledger $ledger, private ?ProcessingBudget $budget = null)
     {
         if (! $ledger->exists || ! Str::isUuid($ledger->id)) {
             throw new AccountingError('missing_ledger_context');
@@ -38,9 +40,21 @@ class LedgerRepository
             if (DB::connection()->getDriverName() !== 'pgsql') {
                 throw new AccountingError('postgres_required');
             }
+            if ($this->budget !== null) {
+                $remaining = max(1, (int) floor($this->budget->remainingMs()));
+                DB::select("SELECT set_config('statement_timeout', ?, true), set_config('lock_timeout', ?, true)", [(string) $remaining, (string) $remaining]);
+            }
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 8581401))', [$this->ledger->id]);
 
-            return $work($this);
+            try {
+                $result = $work($this);
+                $this->budget?->assertNonOcr();
+
+                return $result;
+            } catch (QueryException $error) {
+                $this->budget?->check();
+                throw $error;
+            }
         });
     }
 

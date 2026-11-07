@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tarjetas API",
-    "version": "1.0.0-foundation",
-    "description": "Implemented foundation contract. Financial commands, pagination, optimistic versions and Idempotency-Key contracts must be specified before those consumers are introduced. Standard Laravel field validation uses HTTP 422 message/errors; domain errors use Error."
+    "version": "1.1.0-receipts",
+    "description": "Versioned cookie-authenticated API. Ownership resolves on server. Receipt upload and correction require trusted ingress metadata and fail closed without it. Domain errors use Error; invalid fields use Laravel 422 message/errors."
   },
   "servers": [
     {
@@ -854,6 +854,988 @@
           }
         }
       }
+    },
+    "/api/v1/receipts": {
+      "get": {
+        "operationId": "listReceipts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReceiptSummary"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "per_page": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "per_page",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "uploadReceipt",
+        "description": "One Coto PDF, at most 40 MiB. Original bytes and OCR transcript retained privately. Verification failure is retained before returning 422. Accepted bytes deduplicate before OCR. Requires trusted deadline from before buffering; caller stamps are ignored.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "contentMediaType": "application/pdf"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Retained exact-cent verification failure, or invalid fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptRejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/{id}": {
+      "get": {
+        "operationId": "showReceipt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned receipt not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/corrections/{hash}": {
+      "post": {
+        "operationId": "correctReceipt",
+        "description": "Authorize retained PDF within current owner, reverify correction, preserve both transcripts and link revision to prior evidence using stable receipt identity. Requires trusted ingress metadata. Accepted revision is not silently overwritten.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          },
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rowsText": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4194304
+                  }
+                },
+                "required": [
+                  "rowsText"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Correction still fails verification; retained without purchase",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptRejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/{id}/reconciliation": {
+      "post": {
+        "operationId": "reconcileReceipt",
+        "description": "Expected latest decision is mandatory, null for first link. Item allocations require reviewed canonical and individual identity; remainder stays Unallocated. Receipt-first requires actual card and full payment verification. Statement-first uses existing acquisition. Ambiguity reviews do not fabricate purchases.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receiptRevisionId": {
+                    "type": "string"
+                  },
+                  "cardId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "paymentVerified": {
+                    "type": "boolean"
+                  },
+                  "purchaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "expectedPreviousDecisionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "expectedPurchaseVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "allocation": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "maxItems": 500,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "accountId": {
+                          "type": "string"
+                        },
+                        "purposeId": {
+                          "type": "string"
+                        },
+                        "minor": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "accountId",
+                        "purposeId",
+                        "minor"
+                      ]
+                    }
+                  },
+                  "itemAllocations": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "accountId": {
+                          "type": "string"
+                        },
+                        "purposeId": {
+                          "type": "string"
+                        },
+                        "minor": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "sourceLineId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "accountId",
+                        "purposeId",
+                        "minor",
+                        "sourceLineId"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "receiptRevisionId",
+                  "cardId",
+                  "paymentVerified",
+                  "purchaseId",
+                  "expectedPreviousDecisionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields or retained receipt verification failure"
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/{id}/unlink": {
+      "post": {
+        "operationId": "unlinkReceipt",
+        "description": "Append unlink history, preserving expense and preventing automatic relinking.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receiptRevisionId": {
+                    "type": "string"
+                  },
+                  "expectedPreviousDecisionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "receiptRevisionId",
+                  "expectedPreviousDecisionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "unlinked"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields or retained receipt verification failure"
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/product-reviews": {
+      "post": {
+        "operationId": "reviewReceiptProduct",
+        "description": "Append-only owner-scoped review. Canonical changes invalidate individual approvals. Move-code and merge remap matches and invalidate approval without changing printed evidence/principal. expectedSeq is the latest subject product, item-match or code revision.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "product_update",
+                      "product_match",
+                      "move_code",
+                      "product_merge"
+                    ]
+                  },
+                  "subjectId": {
+                    "type": "string"
+                  },
+                  "expectedSeq": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "payload": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      "category": {
+                        "enum": [
+                          "produce",
+                          "meat_fish",
+                          "dairy",
+                          "deli",
+                          "pantry",
+                          "bakery",
+                          "prepared",
+                          "beverages",
+                          "cleaning",
+                          "personal_care",
+                          "pets",
+                          "other"
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "un",
+                          "kg"
+                        ]
+                      },
+                      "productId": {
+                        "type": "string"
+                      },
+                      "targetId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": []
+                  }
+                },
+                "required": [
+                  "kind",
+                  "subjectId",
+                  "expectedSeq",
+                  "payload"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "decisionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "affectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "decisionId",
+                    "affectedIds",
+                    "duplicate"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields or retained receipt verification failure"
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1010,6 +1992,310 @@
             }
           }
         }
+      },
+      "ReceiptSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "revisionId": {
+            "type": "string"
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fiscalId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "totalMinor": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "admission": {
+            "enum": [
+              "accepted",
+              "rejected",
+              "pending"
+            ]
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ok",
+              "checks",
+              "errors",
+              "warnings"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "revisionId",
+          "date",
+          "fiscalId",
+          "totalMinor",
+          "admission",
+          "report"
+        ]
+      },
+      "ReceiptResult": {
+        "type": "object",
+        "properties": {
+          "sourceRevisionId": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "purchaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "postedJournalIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sourceRevisionId",
+          "receiptId",
+          "purchaseIds",
+          "postedJournalIds",
+          "reviews",
+          "duplicate"
+        ]
+      },
+      "ReceiptDetail": {
+        "type": "object",
+        "properties": {
+          "receiptId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "revisionId": {
+            "type": "string"
+          },
+          "parsed": {
+            "type": "object"
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ok",
+              "checks",
+              "errors",
+              "warnings"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "item": {
+                  "type": "object"
+                },
+                "match": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "product": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "item",
+                "match",
+                "product"
+              ]
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "facts": {
+                  "type": "object"
+                },
+                "source": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "facts",
+                "source"
+              ]
+            }
+          },
+          "link": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "documentHash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId",
+          "revisionId",
+          "parsed",
+          "report",
+          "items",
+          "history",
+          "link",
+          "documentHash"
+        ]
+      },
+      "ReceiptRejected": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object"
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ok",
+              "checks",
+              "errors",
+              "warnings"
+            ]
+          },
+          "rowsText": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "number"
+          },
+          "sourceRevisionId": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "error",
+          "report",
+          "rowsText",
+          "sha256",
+          "scale",
+          "sourceRevisionId",
+          "receiptId"
+        ]
       }
     }
   }

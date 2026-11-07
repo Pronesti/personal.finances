@@ -8,6 +8,9 @@ return [
     'pdf_script' => env('TARJETAS_PDF_SCRIPT'),
     'ocr_script' => env('TARJETAS_OCR_SCRIPT'),
     'node_helper' => env('TARJETAS_NODE_HELPER'),
+    'processing_temp_root' => env('TARJETAS_PROCESSING_TEMP_ROOT'),
+    'ingress_key' => env('TARJETAS_INGRESS_KEY'),
+    'ingress_root' => env('TARJETAS_INGRESS_ROOT'),
     'revision' => env('ACCOUNTING_APP_REVISION'),
     'test_target' => [
         'id' => env('TARJETAS_TEST_TARGET_ID'),
