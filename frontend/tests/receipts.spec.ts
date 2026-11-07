@@ -8,7 +8,7 @@ let users:Record<string,string>;
 test.beforeAll(()=>{users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:receipt-rejection','--fresh','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));});
 const api = process.env.TARJETAS_BROWSER_API_ORIGIN ?? 'https://api.tarjetas-browser.test';
 async function login(page: Page, who: string) {
-  await page.goto('/login'); await page.getByLabel('Email',{exact:true}).fill(users[who]); await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!'); await page.getByRole('button',{name:'Sign in',exact:true}).click(); await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+  await page.goto('/login'); await page.getByLabel('Email',{exact:true}).fill(users[who]); await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!'); await page.getByRole('button',{name:'Sign in',exact:true}).click(); await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible(); const menu=page.getByRole('button',{name:'Explore sections',exact:true});if(await menu.isVisible())await menu.click();const group=page.getByRole('navigation',{name:'Sections'}).getByRole('button',{name:'Supermarket',exact:true});if(await group.getAttribute('aria-expanded')!=='true')await group.click();
 }
 test('actual Vision upload, item review, partial/full allocation and duplicate bytes',async({page})=>{
   test.setTimeout(120_000);
