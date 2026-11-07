@@ -4152,7 +4152,8 @@
                     "provider": {
                       "enum": [
                         "disabled",
-                        "synthetic-test"
+                        "synthetic-test",
+                        "anthropic"
                       ]
                     }
                   }

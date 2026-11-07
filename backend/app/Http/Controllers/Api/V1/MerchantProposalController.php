@@ -24,7 +24,7 @@ class MerchantProposalController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['proposals' => $this->service($request)->read(), 'provider' => config('tarjetas.proposal_driver') === 'synthetic-test' ? 'synthetic-test' : 'disabled']);
+        return response()->json(['proposals' => $this->service($request)->read(), 'provider' => in_array(config('tarjetas.proposal_driver'), ['anthropic', 'synthetic-test'], true) ? config('tarjetas.proposal_driver') : 'disabled']);
     }
 
     public function generate(Request $request): JsonResponse

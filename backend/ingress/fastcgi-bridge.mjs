@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {exportStreamLength} from './export-stream.mjs';
 import net from 'node:net';
 import {readFileSync,realpathSync,lstatSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
@@ -19,13 +20,50 @@ export function createBridge(config){
    if(done)return;const url=new URL(request.url,'http://127.0.0.1');
    const environment={GATEWAY_INTERFACE:'CGI/1.1',SERVER_SOFTWARE:'tarjetas-private-fastcgi',SERVER_PROTOCOL:request.httpVersion==='1.1'?'HTTP/1.1':'HTTP/1.0',REQUEST_METHOD:request.method,REQUEST_URI:request.url,QUERY_STRING:url.search.slice(1),SCRIPT_FILENAME:script,SCRIPT_NAME:'/index.php',DOCUMENT_ROOT:publicRoot,REMOTE_ADDR:'127.0.0.1',REMOTE_PORT:String(request.socket.remotePort),SERVER_ADDR:'127.0.0.1',SERVER_NAME:request.headers.host??'localhost',SERVER_PORT:'443',HTTPS:'on',CONTENT_LENGTH:String(size)};
    for(const [name,value] of Object.entries(request.headers)){if(value===undefined)continue;const key=name==='content-type'?'CONTENT_TYPE':name==='content-length'?'CONTENT_LENGTH':'HTTP_'+name.toUpperCase().replaceAll('-','_');environment[key]=Array.isArray(value)?value.join(', '):value;}
-   socket=net.createConnection(config.socket);socket.setTimeout(745000,()=>fail(504,'upstream_timeout'));let pending=Buffer.alloc(0),stdout=[],outSize=0,errSize=0;
+   socket=net.createConnection(config.socket);socket.setTimeout(745000,()=>fail(504,'upstream_timeout'));
+   let pending=Buffer.alloc(0),headerBytes=Buffer.alloc(0),stdout=[],outSize=0,errSize=0,parsed=null,streamLength=null,streamed=0,waitingDrain=false;
+   function consume(payload){
+    outSize+=payload.length;
+    if(parsed===null){
+     headerBytes=Buffer.concat([headerBytes,payload]);const boundary=headerBytes.indexOf('\r\n\r\n');
+     if(boundary<0){if(headerBytes.length>65536)fail(502,'invalid_fastcgi_headers');return;}
+     if(boundary>65536){fail(502,'invalid_fastcgi_headers');return;}
+     const headers={};let status=200;
+     for(const line of headerBytes.subarray(0,boundary).toString('latin1').split('\r\n')){
+      const index=line.indexOf(':');if(index<1){fail(502,'invalid_fastcgi_headers');return;}
+      const name=line.slice(0,index).toLowerCase(),value=line.slice(index+1).trim();
+      if(name==='status'){if(!/^\d{3}(?: .*)?$/.test(value)){fail(502,'invalid_fastcgi_status');return;}status=Number.parseInt(value,10);}
+      else if(name==='set-cookie'){(headers[name]??=[]).push(value);}else if(!['connection','transfer-encoding'].includes(name)){headers[name]=value;}
+     }
+     if(!Number.isInteger(status)||status<100||status>599){fail(502,'invalid_fastcgi_status');return;}
+     parsed={status,headers};streamLength=exportStreamLength(request.method,request.url,status,headers);
+     payload=headerBytes.subarray(boundary+4);headerBytes=Buffer.alloc(0);
+     if(streamLength!==null){response.writeHead(status,headers);}
+    }
+    if(streamLength!==null){
+     streamed+=payload.length;if(streamed>streamLength){fail(502,'upstream_response_length');return;}
+     if(payload.length&&!response.write(payload)&&!waitingDrain){waitingDrain=true;socket.pause();response.once('drain',()=>{waitingDrain=false;socket.resume();});}
+    }else{if(outSize>64*1024*1024){fail(502,'upstream_response_limit');return;}stdout.push(payload);}
+   }
    socket.on('connect',()=>{const begin=Buffer.alloc(8);begin.writeUInt16BE(1);socket.write(record(1,begin));const encoded=params(environment);for(let start=0;start<encoded.length;start+=65535)socket.write(record(4,encoded.subarray(start,start+65535)));socket.write(record(4));const input=Buffer.concat(body);body.length=0;for(let start=0;start<input.length;start+=65535)socket.write(record(5,input.subarray(start,start+65535)));socket.write(record(5));});
-   socket.on('data',bytes=>{if(done)return;pending=Buffer.concat([pending,bytes]);while(pending.length>=8){if(pending[0]!==1||pending.readUInt16BE(2)!==1){fail(502,'invalid_fastcgi_response');return;}const count=pending.readUInt16BE(4),padding=pending[6],type=pending[1];if(pending.length<8+count+padding)return;const payload=pending.subarray(8,8+count);pending=pending.subarray(8+count+padding);
-     if(type===6){outSize+=payload.length;if(outSize>64*1024*1024){fail(502,'upstream_response_limit');return;}stdout.push(payload);}
-     if(type===7){errSize+=payload.length;if(errSize>65536){fail(502,'upstream_error_limit');return;}}
-     if(type===3){if(payload.length<8||payload.readUInt32BE(0)!==0||payload[4]!==0){fail(502,'fastcgi_failure');return;}const result=Buffer.concat(stdout);const boundary=result.indexOf('\r\n\r\n');if(boundary<0||boundary>65536){fail(502,'invalid_fastcgi_headers');return;}const headers={};let status=200;for(const line of result.subarray(0,boundary).toString('latin1').split('\r\n')){const index=line.indexOf(':');if(index<1){fail(502,'invalid_fastcgi_headers');return;}const name=line.slice(0,index).toLowerCase(),value=line.slice(index+1).trim();if(name==='status'){status=Number.parseInt(value,10);}else if(name==='set-cookie'){(headers[name]??=[]).push(value);}else if(!['connection','transfer-encoding'].includes(name)){headers[name]=value;}}if(!Number.isInteger(status)||status<100||status>599){fail(502,'invalid_fastcgi_status');return;}done=true;socket.end();response.writeHead(status,headers).end(result.subarray(boundary+4));return;}
-   }});socket.on('error',()=>fail(502,'upstream_unavailable'));socket.on('end',()=>{if(!done)fail(502,'upstream_incomplete');});
+   socket.on('data',bytes=>{if(done)return;pending=Buffer.concat([pending,bytes]);while(pending.length>=8){
+    if(pending[0]!==1||pending.readUInt16BE(2)!==1){fail(502,'invalid_fastcgi_response');return;}
+    const count=pending.readUInt16BE(4),padding=pending[6],type=pending[1];if(pending.length<8+count+padding)return;
+    const payload=pending.subarray(8,8+count);pending=pending.subarray(8+count+padding);
+    if(type===6){consume(payload);if(done)return;}
+    if(type===7){errSize+=payload.length;if(errSize>65536){fail(502,'upstream_error_limit');return;}}
+    if(type===3){
+     if(payload.length<8||payload.readUInt32BE(0)!==0||payload[4]!==0){fail(502,'fastcgi_failure');return;}
+     if(parsed===null){fail(502,'invalid_fastcgi_headers');return;}
+     if(streamLength!==null&&streamed!==streamLength){fail(502,'upstream_response_length');return;}
+     done=true;socket.end();
+     if(streamLength!==null){response.end();}else{response.writeHead(parsed.status,parsed.headers).end(Buffer.concat(stdout));}
+     return;
+    }
+   }});
+   socket.on('error',()=>fail(502,'upstream_unavailable'));socket.on('end',()=>{if(!done)fail(502,'upstream_incomplete');});
+   response.on('close',()=>{if(!done){done=true;socket.destroy();}});
+
   });
  });
 }

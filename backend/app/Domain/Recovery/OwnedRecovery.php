@@ -4,6 +4,7 @@ namespace App\Domain\Recovery;
 
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
+use App\Domain\Processing\ProcessingBudget;
 use App\Domain\Reports\ReferenceTables;
 use App\Models\Ledger;
 use App\Support\PrivateRoots;
@@ -632,16 +633,17 @@ class OwnedRecovery
         return ['status' => 'empty disposable recovery target', 'source' => 'unchanged', 'previousArchiveSha256' => $sha];
     }
 
-    public function export(Ledger $ledger, string $output): array
+    public function export(Ledger $ledger, string $output, ?ProcessingBudget $budget = null): array
     {
         $this->output($output);
-        $repository = new LedgerRepository($ledger);
+        $repository = new LedgerRepository($ledger, $budget);
         $zip = new ZipArchive;
         $files = [];
         try {
-            return $repository->readSnapshot(function () use ($ledger, $repository, $zip, $output, &$files) {
+            return $repository->readSnapshot(function () use ($ledger, $repository, $zip, $output, &$files, $budget) {
                 $tables = [];
                 foreach (self::FINANCIAL as $table) {
+                    $budget?->assertNonOcr();
                     $tables[$table] = $repository->query($table)->get()->map(fn ($row) => (array) $row)->all();
                 }
                 $rows = LedgerRepository::json(['format' => 'tarjetas-single-ledger-export-v1', 'ledgerId' => $ledger->id, 'tables' => $tables]);
@@ -654,6 +656,7 @@ class OwnedRecovery
                 $root = PrivateRoots::canonical((string) config('tarjetas.document_root'));
                 $refs = $this->references($ledger->id);
                 foreach ($refs as $reference) {
+                    $budget?->assertNonOcr();
                     $name = $this->referencePath($reference);
                     if (isset($files[$name])) {
                         continue;

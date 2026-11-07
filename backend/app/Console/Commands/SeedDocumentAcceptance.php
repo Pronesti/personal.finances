@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 /** Fresh factory dataset keeps exclusive hashes exclusive during the document journey. */
 class SeedDocumentAcceptance extends Command
 {
-    protected $signature = 'tarjetas:acceptance:document-users';
+    protected $signature = 'tarjetas:acceptance:document-users {--large-export : Add two 34 MiB incompressible synthetic attachments to owner A}';
 
     protected $description = 'Create a fresh pair of guarded factory document-isolation ledgers';
 
@@ -42,6 +42,12 @@ class SeedDocumentAcceptance extends Command
                     $repository->insert('object_references', ['kind' => $reference['kind'], 'reference_id' => $reference['reference_id'], ...$object]);
                 }
             });
+            if ($this->option('large-export') && $label === 'a') {
+                foreach (['one', 'two'] as $suffix) {
+                    $object = $documents->put($ledger, random_bytes(34 * 1024 * 1024));
+                    $repository->transaction(fn () => $repository->insert('object_references', ['kind' => 'object', 'reference_id' => 'synthetic-large-export-'.$suffix, ...$object]));
+                }
+            }
             $emails[$label] = $email;
         }
         $this->line(json_encode($emails));

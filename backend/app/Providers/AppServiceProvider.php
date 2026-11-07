@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Reviews\AnthropicProposals;
 use App\Domain\Reviews\DisabledProposals;
 use App\Domain\Reviews\MerchantProposalProvider;
 use App\Domain\Reviews\SyntheticProposals;
@@ -18,7 +19,11 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(MerchantProposalProvider::class, fn () => config('tarjetas.proposal_driver') === 'synthetic-test' ? new SyntheticProposals : new DisabledProposals);
+        $this->app->bind(MerchantProposalProvider::class, fn () => match (config('tarjetas.proposal_driver')) {
+            'synthetic-test' => new SyntheticProposals,
+            'anthropic' => new AnthropicProposals(request()->attributes->get('processing_budget')),
+            default => new DisabledProposals,
+        });
     }
 
     public function boot(): void

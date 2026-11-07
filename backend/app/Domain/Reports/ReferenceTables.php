@@ -62,6 +62,26 @@ class ReferenceTables
         return $files;
     }
 
+    public static function assertCoverage(array $tables, array $months): void
+    {
+        $months = array_values(array_unique($months));
+        sort($months, SORT_STRING);
+        $latest = end($months);
+        if ($latest === false) {
+            return;
+        }
+        foreach (['cpi', 'mep'] as $name) {
+            if (array_key_last($tables[$name]) < $latest) {
+                throw new AccountingError('references_too_old', ['requiredMonth' => $latest, 'table' => $name, 'latestMonth' => array_key_last($tables[$name])]);
+            }
+            foreach ($months as $month) {
+                if (! array_key_exists($month, $tables[$name])) {
+                    throw new AccountingError('references_unavailable', ['table' => $name, 'missingMonth' => $month]);
+                }
+            }
+        }
+    }
+
     public static function validate(mixed &$tables): void
     {
         if (! is_array($tables) || array_diff(array_keys($tables), ['cpi', 'mep']) !== []) {

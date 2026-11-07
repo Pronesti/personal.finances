@@ -1,4 +1,5 @@
 import https from 'node:https';
+import {exportStreamLength} from './export-stream.mjs';
 import http from 'node:http';
 import { randomUUID, createHmac } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, lstatSync, realpathSync, existsSync, rmSync } from 'node:fs';
@@ -74,17 +75,28 @@ export function createIngress(config) {
       dispatched = true;
       upstream = http.request({ hostname: '127.0.0.1', port: config.upstreamPort, method: request.method, path: request.url, headers: clean }, result => {
         if (cancelled) { result.on('end', releaseContext); result.resume(); return; }
-        // Buffer bounded API responses so an expired response never becomes a success.
+        // Financial command JSON remains buffered; authorized exports use bounded-memory backpressure.
         const output = []; let size = 0;
-        result.on('data', chunk => { size += chunk.length; if (size > 64 * 1024 * 1024) cancel(502,'upstream_response_limit'); else output.push(chunk); });
-        result.on('end', () => {
-          if (cancelled) { releaseContext(); return; }
-          if (poll()) { releaseContext(); return; }
-          complete = true; clearInterval(timer);
-          const replyHeaders = { ...result.headers, connection: 'close' }; delete replyHeaders['transfer-encoding'];
-          response.writeHead(result.statusCode, replyHeaders).end(Buffer.concat(output));
+        const streamLength=exportStreamLength(request.method,request.url,result.statusCode,result.headers);
+        const replyHeaders={...result.headers,connection:'close'};delete replyHeaders['transfer-encoding'];
+        if(streamLength!==null){if(poll()){result.resume();return;}response.writeHead(result.statusCode,replyHeaders);}
+        result.on('data',chunk=>{
+          if(cancelled)return;size+=chunk.length;
+          if(streamLength!==null){
+            if(size>streamLength){cancel(502,'upstream_response_length');return;}
+            if(!response.write(chunk)){result.pause();response.once('drain',()=>result.resume());}
+          }else if(size>64*1024*1024){cancel(502,'upstream_response_limit');}else{output.push(chunk);}
+        });
+        result.on('error',()=>{cancel(502,'upstream_incomplete');releaseContext();});
+        result.on('end',()=>{
+          if(cancelled){releaseContext();return;}
+          if(poll()){releaseContext();return;}
+          if(streamLength!==null&&size!==streamLength){cancel(502,'upstream_response_length');releaseContext();return;}
+          complete=true;clearInterval(timer);
+          if(streamLength!==null){response.end();}else{response.writeHead(result.statusCode,replyHeaders).end(Buffer.concat(output));}
           releaseContext();
         });
+
       });
       upstream.on('socket', socket => { if (!socket.connecting) upstreamConnected = true; else socket.once('connect', () => { upstreamConnected = true; }); });
       upstream.on('error', () => { cancel(502, 'upstream_unavailable'); if (!upstreamConnected) releaseContext(); });

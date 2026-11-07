@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Reports\ReferencePublisher;
 use App\Domain\Reports\ReferenceTables;
@@ -55,5 +56,24 @@ class ReferencePublicationTest extends PostgresTestCase
         file_put_contents($paths['cpi'], '{}');
         $this->expectExceptionMessage('references_unavailable');
         $reader->read();
+    }
+
+    public function test_old_or_incomplete_reference_tables_fail_with_actionable_setup_codes(): void
+    {
+        $tables = ['cpi' => ['2026-01' => 100, '2026-03' => 110], 'mep' => ['2026-01' => 1000, '2026-03' => 1100]];
+        try {
+            ReferenceTables::assertCoverage($tables, ['2026-04']);
+            $this->fail('Outdated rates admitted');
+        } catch (AccountingError $error) {
+            $this->assertSame('references_too_old', $error->errorCode);
+            $this->assertSame('2026-04', $error->parameters['requiredMonth']);
+        }
+        try {
+            ReferenceTables::assertCoverage($tables, ['2026-02']);
+            $this->fail('Missing rate month admitted');
+        } catch (AccountingError $error) {
+            $this->assertSame('references_unavailable', $error->errorCode);
+            $this->assertSame('2026-02', $error->parameters['missingMonth']);
+        }
     }
 }

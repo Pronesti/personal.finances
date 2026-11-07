@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'anthropic_key' => env('ANTHROPIC_API_KEY'),
+    'anthropic_model' => env('ANTHROPIC_MODEL'),
     'proposal_driver' => env('TARJETAS_PROPOSAL_DRIVER', 'disabled'),
     'frontend_url' => env('FRONTEND_URL'),
     'document_root' => env('TARJETAS_DOCUMENT_ROOT'),
