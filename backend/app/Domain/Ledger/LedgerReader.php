@@ -2,6 +2,7 @@
 
 namespace App\Domain\Ledger;
 
+use App\Domain\Catalog\CatalogSettings;
 use Brick\Math\BigInteger;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +38,21 @@ class LedgerReader
         $total = $query->count();
         $ids = $query->orderByDesc('effective_date')->orderByDesc('recorded_at')->orderByDesc('id')->offset(($page - 1) * $perPage)->limit($perPage)->pluck('id');
 
-        return ['accounts' => $accounts, 'journals' => $ids->map(fn ($id) => $this->repository->journal($id))->all(), 'meta' => ['page' => $page, 'per_page' => $perPage, 'total' => $total]];
+        $allJournals = $this->repository->query('journals')->where('status', 'posted')->pluck('id')->map(fn ($id) => $this->repository->journal($id))->all();
+        $groups = (new CatalogSettings($this->repository))->groups();
+        $measures = new NativeMeasures;
+        $groupMeasures = [];
+        $purposeMeasures = [];
+        $state = $this->repository->state(null, null);
+        $purchases = $this->repository->query('purchases')->pluck('id')->map(fn ($id) => $this->repository->purchase($id))->all();
+        foreach (['ARS', 'USD'] as $currency) {
+            $groupMeasures[$currency] = $measures->groups($groups, $accounts, $allJournals, $currency, '0001-01-01', '9999-12-31');
+            foreach ($this->repository->query('cards')->pluck('id') as $card) {
+                $purposeMeasures[] = ['cardId' => $card, 'currency' => $currency, 'rows' => $measures->purposes($accounts, $allJournals, $purchases, $state, $card, $currency, '0001-01-01', '9999-12-31')];
+            }
+        }
+
+        return ['groups' => $groups, 'groupMeasures' => $groupMeasures, 'purposeMeasures' => $purposeMeasures, 'accounts' => $accounts, 'journals' => $ids->map(fn ($id) => $this->repository->journal($id))->all(), 'meta' => ['page' => $page, 'per_page' => $perPage, 'total' => $total]];
     }
 
     public function evidence(string $id): ?array

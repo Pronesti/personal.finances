@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reports;
 
+use App\Domain\Catalog\CatalogSettings;
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\HistoricalAssociations;
 use App\Domain\Evidence\ReceiptProducts;
@@ -208,7 +209,7 @@ class ReportSnapshot
             $alertStates[$decision->subject_id] = ['id' => $decision->subject_id, 'state' => $payload['input']['state'], ...($payload['source'] === null ? [] : ['source' => $payload['source']])];
             $alertVersions[$decision->subject_id] = $decision->id;
         }
-        $groups = json_decode(file_get_contents(resource_path('catalog.json')), true)['groups'];
+        $groups = (new CatalogSettings($repository))->groups();
 
         return ['facts' => $facts, 'statements' => $statementRows, 'schedules' => $schedules, 'cards' => $cards, 'sources' => $sources, 'supermarket' => $receiptFacts, 'allocations' => $allocations, 'months' => $months, 'alertVersions' => $alertVersions, 'inspection' => ['accounts' => $accounts, 'groups' => $groups, 'cards' => $cards, 'sources' => $sources, 'sourceLines' => $lines, 'journals' => $journals, 'reviews' => $reviews, 'alertStates' => array_values($alertStates), 'historicalAssociations' => $historical]];
     }

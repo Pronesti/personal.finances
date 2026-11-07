@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 /** Every SQL read, write and lock carries the explicitly resolved owner. */
 class LedgerRepository
 {
-    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence', 'source_documents', 'object_references', 'source_revisions', 'source_lines', 'source_import_commands', 'source_purchase_identities', 'review_events', 'statement_cycles', 'statement_terms', 'issuer_schedules', 'receipt_entities', 'receipt_entity_keys', 'receipt_facts', 'receipt_link_decisions', 'review_products', 'product_revisions', 'product_code_revisions', 'product_match_revisions', 'product_rule_revisions', 'review_decisions', 'historical_receipt_associations'];
+    private const array TABLES = ['accounts', 'cards', 'evidence', 'commands', 'journals', 'journal_lines', 'journal_evidence', 'purchases', 'purchase_versions', 'billings', 'billed_components', 'payments', 'attributions', 'linked_credits', 'correction_links', 'component_revisions', 'credit_revisions', 'attribution_revisions', 'opening_obligations', 'opening_obligation_evidence', 'source_documents', 'object_references', 'source_revisions', 'source_lines', 'source_import_commands', 'source_purchase_identities', 'review_events', 'statement_cycles', 'statement_terms', 'issuer_schedules', 'receipt_entities', 'receipt_entity_keys', 'receipt_facts', 'receipt_link_decisions', 'review_products', 'product_revisions', 'product_code_revisions', 'product_match_revisions', 'product_rule_revisions', 'review_decisions', 'historical_receipt_associations', 'catalog_commands', 'account_name_revisions', 'account_groups', 'account_group_revisions', 'account_group_members'];
 
     public function __construct(public readonly Ledger $ledger, private ?ProcessingBudget $budget = null)
     {
@@ -152,12 +152,19 @@ class LedgerRepository
         $this->insert('component_revisions', ['id' => $revision['id'], 'component_id' => $revision['componentId'], 'billing_id' => $revision['billingId'], 'revision' => $revision['revision'], 'purpose_id' => $revision['purposeId'], 'minor' => $revision['minor'], 'purchase_date' => $revision['purchaseDate']]);
     }
 
-    public function state(string $card, string $currency): array
+    public function state(?string $card, ?string $currency): array
     {
-        $filter = ['card_id' => $card, 'currency' => $currency];
+        if (($card === null) !== ($currency === null)) {
+            throw new AccountingError('invalid_report_scope');
+        }
+        $filter = $card === null ? [] : ['card_id' => $card, 'currency' => $currency];
         $billings = $this->payloads('billings', $filter);
         $payments = $this->payloads('payments', $filter);
-        $purchaseIds = $this->query('purchases')->where('card_id', $card)->where('currency', $currency)->pluck('id')->all();
+        $purchaseQuery = $this->query('purchases');
+        foreach ($filter as $column => $value) {
+            $purchaseQuery->where($column, $value);
+        }
+        $purchaseIds = $purchaseQuery->pluck('id')->all();
         $credits = array_values(array_filter($this->payloads('linked_credits'), fn ($row) => in_array($row['purchaseId'], $purchaseIds, true)));
         foreach ($credits as &$credit) {
             $latest = $this->query('credit_revisions')->where('credit_id', $credit['id'])->orderByDesc('purchase_version')->first();

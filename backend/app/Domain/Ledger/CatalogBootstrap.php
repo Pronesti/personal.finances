@@ -33,7 +33,13 @@ class CatalogBootstrap
 
     private function account(LedgerRepository $ledger, array $account): void
     {
-        if ($ledger->query('accounts')->where('id', $account['id'])->exists()) {
+        if (($existing = $ledger->query('accounts')->where('id', $account['id'])->first()) !== null) {
+            foreach (['parent_id' => 'parentId', 'type' => 'type', 'label_key' => 'labelKey', 'currency' => 'currency', 'primary_purpose_id' => 'primaryPurposeId', 'posting' => 'posting'] as $column => $field) {
+                if ($account[$field] !== $existing->$column) {
+                    throw new AccountingError('catalog_structure_conflict');
+                }
+            }
+
             return;
         }
         $ledger->insert('accounts', [

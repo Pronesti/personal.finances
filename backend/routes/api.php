@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\BootstrapController;
+use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\ReceiptController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -16,6 +17,9 @@ Route::get('health', fn () => response()->json([
 ]))->withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->name('api.v1.health');
 
 Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
+    Route::get('accounting/settings', [CatalogController::class, 'show']);
+    Route::post('accounting/settings/account-name', [CatalogController::class, 'rename']);
+    Route::post('accounting/settings/groups', [CatalogController::class, 'group']);
     Route::post('alerts/{id}/state', [ReportController::class, 'review']);
     Route::get('reports/{report}', [ReportController::class, 'show']);
     Route::get('receipt-charges', [SourceReviewController::class, 'charges']);
