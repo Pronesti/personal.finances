@@ -22,11 +22,13 @@ test.describe('dedicated local FPM upload acceptance',()=>{
  });
  test('aborting a correction while PostgreSQL is locked prevents a late financial commit',async({page})=>{
   test.setTimeout(40000);const cwd=fileURLToPath(new URL('../../backend/',import.meta.url));
-  await page.goto(app+'/login');await page.getByLabel('Email',{exact:true}).fill(users.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+  const owners=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd,encoding:'utf8'}));
+  await page.goto(app+'/login');await page.getByLabel('Email',{exact:true}).fill(owners.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+  await page.goto(app+'/upload');await page.getByLabel('Actual card',{exact:true}).selectOption('synthetic-visa-a');await page.getByLabel('Statement PDF (max. 10 MiB)',{exact:true}).setInputFiles('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf');const admitted=page.waitForResponse(response=>response.url()===api+'/api/v1/statements'&&response.request().method()==='POST');await page.getByRole('button',{name:'Import statement',exact:true}).click();expect((await admitted).status()).toBe(200);
   const before=await page.evaluate(async api=>{const get=async(path:string)=>(await(await fetch(api+'/api/v1/'+path,{credentials:'include',headers:{Accept:'application/json'}})).json());return {review:await get('merchant-review'),accounting:await get('accounting')};},api);
   const selected=before.review.purchases[0];expect(selected).toBeTruthy();
   const marker='/Users/pronestivm/.local/share/tarjetas-rebuild-acceptance/browser/temp/hold-'+crypto.randomUUID()+'.json';
-  const child=spawn('php',['artisan','tarjetas:acceptance:hold-ledger',users.a,marker,'--env=browser-testing'],{cwd,stdio:['ignore','pipe','pipe']});let failure='';child.stderr.on('data',bytes=>failure+=bytes.toString());
+  const child=spawn('php',['artisan','tarjetas:acceptance:hold-ledger',owners.a,marker,'--env=browser-testing'],{cwd,stdio:['ignore','pipe','pipe']});let failure='';child.stderr.on('data',bytes=>failure+=bytes.toString());
   try{
    await expect.poll(()=>existsSync(marker),{timeout:4000}).toBe(true);
    await page.evaluate(({api,selected})=>{
@@ -34,7 +36,7 @@ test.describe('dedicated local FPM upload acceptance',()=>{
     Object.assign(window,{abortCorrection:()=>controller.abort(),correctionDone:false});
     void fetch(api+'/api/v1/merchant-review',{method:'POST',credentials:'include',signal:controller.signal,headers:{Accept:'application/json','Content-Type':'application/json','X-XSRF-TOKEN':token,'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({kind:'purchase_classification',purchaseId:selected.id,cardId:selected.cardId,accountId:'expense:home:cleaning',purposeId:'home',scope:'selected',match:null,expectedVersion:selected.purchase.version})}).catch(()=>{}).finally(()=>Object.assign(window,{correctionDone:true}));
    },{api,selected});
-   await expect.poll(()=>JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:hold-ledger',users.a,'--status','--env=browser-testing'],{cwd,encoding:'utf8'})).waiting,{timeout:4000}).toBeGreaterThan(0);
+   await expect.poll(()=>JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:hold-ledger',owners.a,'--status','--env=browser-testing'],{cwd,encoding:'utf8'})).waiting,{timeout:4000}).toBeGreaterThan(0);
    await page.evaluate(()=>{(window as unknown as {abortCorrection:()=>void}).abortCorrection();});
    await expect.poll(()=>child.exitCode,{timeout:10000}).toBe(0);expect(failure).toBe('');
    const after=await page.evaluate(async api=>{const get=async(path:string)=>(await(await fetch(api+'/api/v1/'+path,{credentials:'include',headers:{Accept:'application/json'}})).json());return {review:await get('merchant-review'),accounting:await get('accounting')};},api);

@@ -41,10 +41,10 @@ test('all analytical layouts fit every required width, language and appearance s
  test.setTimeout(360_000);await login(page);const failures:string[]=[];page.on('pageerror',error=>failures.push(error.message));page.on('console',message=>{if(message.type()==='error')failures.push(message.text());});page.on('response',response=>{if(response.status()>=400)failures.push(`${response.status()} ${response.url()}`);});
  for(const locale of ['en','es'] as const){
   if(locale==='es')await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();
-  for(const colorScheme of ['light','dark'] as const){await page.emulateMedia({colorScheme,reducedMotion:'reduce'});for(const width of [390,1280,1920]){
+  for(const colorScheme of ['light','dark'] as const){await page.emulateMedia({colorScheme,reducedMotion:'reduce'});await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.body).backgroundColor)).toBe(colorScheme==='light'?'rgb(247, 248, 250)':'rgb(13, 15, 19)');for(const width of [390,1280,1920]){
    await page.setViewportSize({width,height:900});
    for(const path of reports){const report=path==='/'?'overview':path.slice(1).replaceAll('/','-');const loaded=page.waitForResponse(response=>response.url().startsWith(`${api}/api/v1/reports/${report}`)&&response.request().method()==='GET');await page.goto(path+'?value=nominal');const response=await loaded;expect(response.status(),`${path} ${locale}`).toBe(200);await expect(page.locator('.report-toolbar')).toBeAttached();await expect(page.locator('html')).toHaveAttribute('lang',locale);await expect(page.locator('#main h1')).toBeVisible();if(path!=='/'){let expected=dictionary[locale][controls[path].title];if(path==='/sankey'){const period=await page.getByLabel(dictionary[locale]['period.shown'],{exact:true}).inputValue();expected=expected.replace('{period}',period==='all'?dictionary[locale]['sankey.everything']:period);}await expect(page.locator('#main h1')).toContainText(expected);}await expect(page.locator('#main h1')).not.toContainText(/\{(?:period|date)\}/);expect((await page.locator('figcaption').allTextContents()).some(value=>value.includes('{period}'))).toBe(false);await expect(page.getByRole('alert')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`${path} ${locale} ${width} ${colorScheme}`).toBe(true);}
-   await page.goto('/trends?value=nominal');await expect(page.locator('.recharts-wrapper')).toBeVisible();await page.screenshot({path:`../qa-output/reports-trends-${locale}-${colorScheme}-${width}.png`,fullPage:true});console.info(`Verified 23 report layouts: ${locale}, ${colorScheme}, ${width}px`);
+   await page.goto('/trends?value=nominal');await expect(page.locator('.recharts-wrapper')).toBeVisible();await page.screenshot({path:`../qa-output/qa-gaps-20261107/reports-trends-${locale}-${colorScheme}-${width}.png`,fullPage:true});console.info(`Verified 23 report layouts: ${locale}, ${colorScheme}, ${width}px`);
   }}
  }
  expect(failures).toEqual([]);
@@ -92,6 +92,28 @@ test('Unallocated purpose labels are translated on categories and accounting in 
    await page.goto(path);await expect(page.getByRole('rowheader',{name:label,exact:true}).first()).toBeVisible();
    await expect(page.getByText('accounting.group.unallocated',{exact:true})).toHaveCount(0);
    await page.screenshot({path:`../qa-output/manual-qa-fixes-20261107/${path.slice(1)}-${locale}.png`,fullPage:true});
+  }
+ }
+});
+
+
+test('light appearance covers all nine financial workflow destinations in both languages and three widths',async({page})=>{
+ test.setTimeout(120000);await login(page);await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});
+ await page.goto('/receipts');const receipt=await page.locator('#main table a[href^="/receipts/"]').first().getAttribute('href');expect(receipt).toBeTruthy();
+ await page.goto('/upload');const evidence=await page.getByRole('link',{name:'Original source and review history',exact:true}).first().getAttribute('href');expect(evidence).toBeTruthy();
+ const destinations=['/receipts',receipt!,'/super/charges','/super/review','/upload','/review','/accounting','/accounting/settings',evidence!];
+ for(const locale of ['en','es'] as const){
+  if(locale==='es')await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();
+  for(const width of [390,1280,1920]){
+   await page.setViewportSize({width,height:900});
+   for(let index=0;index<destinations.length;index++){
+    await page.goto(destinations[index]);await expect(page.locator('#main h1')).toBeVisible();
+    await expect(page.locator('#main [role="status"]').filter({hasText:/Loading|Restoring|Cargando|Restaurando/})).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);await expect(page.locator('html')).toHaveAttribute('lang',locale);
+    expect(await page.evaluate(()=>({light:matchMedia('(prefers-color-scheme: light)').matches,canvas:getComputedStyle(document.body).backgroundColor,ink:getComputedStyle(document.body).color,fits:document.documentElement.scrollWidth<=innerWidth}))).toEqual({light:true,canvas:'rgb(247, 248, 250)',ink:'rgb(20, 22, 26)',fits:true});
+    await page.screenshot({path:`../qa-output/qa-gaps-20261107/workflow-${index}-${locale}-light-${width}.png`,fullPage:true});
+   }
+   console.info(`Verified 9 workflow light layouts: ${locale}, ${width}px`);
   }
  }
 });
