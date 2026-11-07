@@ -60,6 +60,13 @@ class MerchantProposals
                     $suppressed[$proposal['wireName']] = true;
                 }
             }
+            foreach ((new SourceClassification($this->repository))->eligible() as $fact) {
+                if ($fact['purposeId'] !== 'unallocated') {
+                    continue;
+                }
+                $merchant = $reviews->retainIdentity($fact['merchant']);
+                $rows[] = ['subjectKind' => 'source', 'sourceLineId' => $fact['sourceLineId'], 'merchantId' => $merchant['id'], 'merchant' => $fact['merchant'], 'purchase' => ['allocations' => [['purposeId' => 'unallocated']]]];
+            }
             $names = [];
             foreach ($rows as $row) {
                 if ($row['purchase']['allocations'] === [] || array_any($row['purchase']['allocations'], fn ($allocation) => $allocation['purposeId'] !== 'unallocated')) {
@@ -101,7 +108,7 @@ class MerchantProposals
             foreach ($validated as $suggestion) {
                 $row = $names[$suggestion['name']];
                 $id = Str::uuid()->toString();
-                $payload = ['id' => $id, 'merchantId' => $row['merchantId'], 'wireName' => $suggestion['name'], 'suggestedAccountId' => $suggestion['accountId'], 'suggestedPurposeId' => $suggestion['purposeId'], 'confidence' => (float) $suggestion['confidence'], 'state' => 'pending'];
+                $payload = ['id' => $id, 'merchantId' => $row['merchantId'], 'subjectKind' => $row['subjectKind'] ?? 'purchase', 'sourceLineId' => $row['sourceLineId'] ?? null, 'wireName' => $suggestion['name'], 'suggestedAccountId' => $suggestion['accountId'], 'suggestedPurposeId' => $suggestion['purposeId'], 'confidence' => (float) $suggestion['confidence'], 'state' => 'pending'];
                 $this->repository->insert('proposal_revisions', ['id' => $id, 'merchant_id' => $row['merchantId'], 'prior_row_id' => null, 'state' => 'pending', 'payload' => LedgerRepository::json($payload)]);
                 $created[] = $id;
             }
@@ -122,8 +129,17 @@ class MerchantProposals
             $result = ['id' => $proposal['id'], 'state' => $input['action'] === 'accept' ? 'accepted' : 'rejected'];
             if ($input['action'] === 'accept') {
                 $reviews = new MerchantReviews($this->repository);
-                $purchase = array_values(array_filter($reviews->read()['purchases'], fn ($p) => $p['id'] === $input['purchaseId']))[0] ?? null;
-                abort_if($purchase === null, 404);
+                $historical = ($proposal['subjectKind'] ?? 'purchase') === 'source';
+                if ($historical) {
+                    validator($input, ['sourceLineId' => ['required', 'string'], 'expectedPreviousDecisionId' => ['present', 'nullable', 'string']])->validate();
+                    $purchase = array_values(array_filter((new SourceClassification($this->repository))->eligible(), fn ($row) => $row['sourceLineId'] === $input['sourceLineId']))[0] ?? null;
+                    abort_if($purchase === null, 404);
+                    $purchase['merchantId'] = $reviews->resolve($purchase['merchant'])['id'];
+                } else {
+                    validator($input, ['purchaseId' => ['required', 'string'], 'cardId' => ['required', 'string'], 'expectedVersion' => ['required', 'integer']])->validate();
+                    $purchase = array_values(array_filter($reviews->read()['purchases'], fn ($p) => $p['id'] === $input['purchaseId']))[0] ?? null;
+                    abort_if($purchase === null, 404);
+                }
                 if ($purchase['merchantId'] !== $proposal['merchantId']) {
                     throw new AccountingError('stale_review_version');
                 }
@@ -138,7 +154,7 @@ class MerchantProposals
                         }
                     }
                 }
-                $result['classification'] = $reviews->decide([...$input, 'kind' => 'purchase_classification']);
+                $result['classification'] = $historical ? (new SourceClassification($this->repository))->decide($input) : $reviews->decide([...$input, 'kind' => 'purchase_classification']);
             }
             $this->repository->insert('proposal_revisions', ['id' => $proposal['id'], 'merchant_id' => $proposal['merchantId'], 'prior_row_id' => $row->row_id, 'state' => $result['state'], 'payload' => LedgerRepository::json([...$proposal, 'state' => $result['state']])]);
 

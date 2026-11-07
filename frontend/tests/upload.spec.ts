@@ -1,10 +1,14 @@
 import {test,expect} from '@playwright/test';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {readFileSync} from 'node:fs';
 import {resetSyntheticRateLimits} from './target';
+let users:Record<string,string>;
+test.beforeAll(()=>{users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));});
 test.beforeEach(resetSyntheticRateLimits);
 const api=process.env.TARJETAS_BROWSER_API_ORIGIN??'https://api.tarjetas-browser.test';
 test('actual issuer PDF upload for each card, renamed replay and card identity refusal',async({page})=>{
-  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('synthetic-a@example.invalid');await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();await page.getByRole('link',{name:'Upload',exact:true}).first().click();
+  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill(users.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();await page.getByRole('link',{name:'Upload',exact:true}).first().click();
   for(const [brand,card] of [['visa','synthetic-visa-a'],['mastercard','synthetic-mastercard'],['mercadopago','synthetic-mp']]){
     const fixture=JSON.parse(readFileSync(`../docs/rebuild/fixtures/${brand}.expected.json`,'utf8'));
     await page.getByLabel('Actual card',{exact:true}).selectOption(card);await page.getByLabel('Statement PDF').setInputFiles(`../docs/rebuild/fixtures/pdf/${fixture.file}`);

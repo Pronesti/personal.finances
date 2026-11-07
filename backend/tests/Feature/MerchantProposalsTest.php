@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\StatementImporter;
 use App\Domain\Ledger\CatalogBootstrap;
+use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Reviews\MerchantProposalProvider;
 use App\Domain\Reviews\MerchantProposals;
+use App\Domain\Reviews\SourceClassification;
 use App\Domain\Reviews\SyntheticProposals;
 use App\Models\Ledger;
 use Tests\PostgresTestCase;
@@ -88,5 +90,25 @@ class MerchantProposalsTest extends PostgresTestCase
         $this->postJson('/api/v1/merchant-proposals/generate', [], ['Idempotency-Key' => 'failed'])->assertStatus(503)->assertJsonPath('error.code', 'proposal_service_failed');
         $this->getJson('/api/v1/accounting')->assertOk();
         $this->assertSame(0, $r->query('proposal_revisions')->count());
+    }
+
+    public function test_historical_source_proposals_classify_retained_acquisitions_without_posting_purchases(): void
+    {
+        $owner = Ledger::factory()->create();
+        $r = new LedgerRepository($owner);
+        app(CatalogBootstrap::class)->initialize($r, [['id' => 'merchant-card', 'displayName' => 'Synthetic']]);
+        $r->transaction(fn () => $r->insert('evidence', ['id' => 'opening-proof', 'kind' => 'synthetic', 'metadata' => '{}']));
+        (new FinancialCommands($r))->post(['id' => 'opening-journal', 'commandKey' => 'opening', 'cardId' => 'merchant-card', 'currency' => 'ARS', 'effectiveDate' => '2026-02-01', 'recordedAt' => '2026-02-01T00:00:00Z', 'kind' => 'opening', 'reversesId' => null, 'evidenceIds' => ['opening-proof'], 'lines' => [['accountId' => 'equity:opening', 'debitMinor' => 10000, 'creditMinor' => 0, 'purchaseId' => null, 'purposeId' => null], ['accountId' => 'merchant-card:ARS:billed', 'debitMinor' => 0, 'creditMinor' => 10000, 'purchaseId' => null, 'purposeId' => null]]]);
+        (new StatementImporter($r, app(DocumentStore::class)))->import(['key' => 'historic', 'cardId' => 'merchant-card', 'filename' => 'synthetic_visa_2026_02.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf')), 'rawJson' => file_get_contents(base_path('../docs/rebuild/fixtures/visa.expected.json')), 'recordedAt' => '2026-02-02T00:00:00Z', 'appRevision' => 'synthetic-proposal', 'observationOnly' => true]);
+        $this->actingAs($owner->owner, 'web');
+        $this->app->bind(MerchantProposalProvider::class, SyntheticProposals::class);
+        $this->postJson('/api/v1/merchant-proposals/generate', [], ['Idempotency-Key' => 'historical-proposal'])->assertOk()->assertJsonCount(2, 'created');
+        $proposal = $this->getJson('/api/v1/merchant-proposals')->assertOk()->json('proposals.0');
+        $this->assertSame('source', $proposal['subjectKind']);
+        $this->postJson('/api/v1/merchant-proposals/'.$proposal['id'].'/decision', ['action' => 'accept', 'expectedSeq' => $proposal['seq'], 'sourceLineId' => $proposal['sourceLineId'], 'expectedPreviousDecisionId' => null, 'accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'scope' => 'selected', 'match' => null], ['Idempotency-Key' => 'human-source-accept'])->assertOk()->assertJsonPath('state', 'accepted');
+        $this->assertSame(0, $r->query('purchases')->count());
+        $this->assertSame(1, $r->query('journals')->count());
+        $classified = array_values(array_filter((new SourceClassification($r))->eligible(), fn ($row) => $row['sourceLineId'] === $proposal['sourceLineId']))[0];
+        $this->assertSame('food', $classified['purposeId']);
     }
 }

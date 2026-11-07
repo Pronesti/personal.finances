@@ -62,6 +62,15 @@ class MerchantReviewWorkflowsTest extends PostgresTestCase
             $before = $repository->query('journals')->count();
             $merchants = (new MerchantReviews($repository))->current('merchant_revisions');
             $merge = ['kind' => 'merchant_merge', 'sourceId' => $merchants[0]['id'], 'targetId' => $merchants[1]['id'], 'expectedSeq' => $merchants[0]['seq']];
+            $preview = $this->postJson('/api/v1/merchant-review/merge-preview', ['sourceId' => $merge['sourceId'], 'targetId' => $merge['targetId']])->assertOk()->json();
+            $merge = [...$merge, 'confirmMerge' => true, 'confirmedMerchantIds' => array_column($preview['merchants'], 'id'), 'expectedMergeFingerprint' => $preview['fingerprint']];
+            $this->statement($repository, $merchants[0]['normalizedName'].' EXTRA', '2026-04-18', 'family-expansion');
+            $before = $repository->query('journals')->count();
+            $this->postJson('/api/v1/merchant-review', $merge, ['Idempotency-Key' => 'stale-family'])->assertStatus(400)->assertJsonPath('error.code', 'merge_confirmation_required');
+            $preview = $this->postJson('/api/v1/merchant-review/merge-preview', ['sourceId' => $merge['sourceId'], 'targetId' => $merge['targetId']])->assertOk()->json();
+            $this->assertCount(2, $preview['merchants']);
+            $merge = [...$merge, 'confirmedMerchantIds' => array_column($preview['merchants'], 'id'), 'expectedMergeFingerprint' => $preview['fingerprint']];
+
             $this->postJson('/api/v1/merchant-review', $merge, ['Idempotency-Key' => 'merge'])->assertOk();
             $this->assertSame($before, $repository->query('journals')->count());
             $merged = (new MerchantReviews($repository))->resolve($merchants[0]['normalizedName']);

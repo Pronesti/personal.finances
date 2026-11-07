@@ -43,7 +43,10 @@ class SourceClassification
 
     public function decide(array $input): array
     {
-        if (!in_array($input['scope'], ['selected', 'future_rule', 'matching_history'], true)) { throw new AccountingError('invalid_classification_scope'); }
+        if (! in_array($input['scope'], ['selected', 'future_rule', 'matching_history'], true)) {
+            throw new AccountingError('invalid_classification_scope');
+        }
+
         return $this->repository->transaction(function () use ($input) {
             $key = 'source-classification:'.rawurlencode($input['key']);
             $digest = FinancialCommands::digest($input);
@@ -53,12 +56,12 @@ class SourceClassification
                     throw new AccountingError('command_conflict');
                 }
 
-return [...json_decode($saved->payload, true)['result'], 'duplicate' => true];
+                return [...json_decode($saved->payload, true)['result'], 'duplicate' => true];
             }
             $subject = array_values(array_filter($this->eligible(), fn ($row) => $row['sourceLineId'] === $input['sourceLineId']))[0] ?? null;
             abort_if($subject === null, 404);
             $merchant = new MerchantReviews($this->repository);
-            $merchant->target($input['accountId'], $input['purposeId']);
+            $merchant->target($input['accountId'], $input['purposeId'], $subject['currency']);
             if ($subject['previousDecisionId'] !== $input['expectedPreviousDecisionId']) {
                 throw new AccountingError('stale_review_version');
             }
@@ -78,6 +81,7 @@ return [...json_decode($saved->payload, true)['result'], 'duplicate' => true];
             }
             $ruleId = $input['scope'] === 'selected' ? null : $merchant->futureRule($match, $input['accountId'], $input['purposeId']);
             foreach ($rows as $row) {
+                $merchant->target($input['accountId'], $input['purposeId'], $row['currency']);
                 $this->repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $row['sourceLineId'], 'prior_decision_id' => $row['previousDecisionId'], 'code' => 'historical_source_classification', 'params' => LedgerRepository::json(['accountId' => $input['accountId'], 'purposeId' => $input['purposeId'], 'scope' => $input['scope'], 'match' => $match]), 'source_line_ids' => LedgerRepository::json([$row['sourceLineId']]), 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
             }
             $result = ['decisionId' => Str::uuid()->toString(), 'affectedSourceLineIds' => array_column($rows, 'sourceLineId'), 'ruleId' => $ruleId, 'duplicate' => false];

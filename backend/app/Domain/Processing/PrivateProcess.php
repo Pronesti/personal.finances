@@ -3,6 +3,7 @@
 namespace App\Domain\Processing;
 
 use App\Domain\Ledger\AccountingError;
+use Symfony\Component\Process\Exception\ProcessSignaledException;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -75,7 +76,13 @@ class PrivateProcess
                 $budget->check();
                 usleep(10000);
             }
-            $process->wait();
+            try {
+                $process->wait();
+            } catch (ProcessSignaledException) {
+                $budget->check();
+                $failure = json_decode(trim($stderr), true);
+                throw new AccountingError(($failure['code'] ?? null) === 'processing_memory_limit' ? 'processing_memory_limit' : 'parser_failed');
+            }
             $budget->check();
             if (! $process->isSuccessful()) {
                 $failure = json_decode(trim($stderr), true);

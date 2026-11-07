@@ -117,5 +117,7 @@ if __name__=='__main__':
     try:
         main()
     except Exception as error:
-        print(json.dumps({'code':'receipt_processing_failed','kind':type(error).__name__}),file=sys.stderr)
+        known = {'render_page_limit','render_pixel_limit','embedded_image_pixel_limit','render_chunk_limit','render_temp_limit','ocr_box_limit','unsafe_processing_context','invalid_receipt_pdf'}
+        reason = str(error) if isinstance(error, RuntimeError) and str(error) in known else 'processing_failed'
+        print(json.dumps({'code':'receipt_processing_failed','kind':type(error).__name__,'reason':reason}),file=sys.stderr)
         sys.exit(2)

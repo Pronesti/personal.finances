@@ -257,8 +257,15 @@ class ReportSnapshot
             if ($statement === null) {
                 continue;
             }$row = $line['payload'];
+            $values = array_values(array_filter(['ars', 'usd'], fn ($field) => ($row[$field] ?? 0) != 0));
+            if (count($values) !== 1) {
+                continue;
+            }
+            $field = $values[0];
+            $currency = $field === 'ars' ? 'ARS' : 'USD';
+            $specific = array_values(array_filter($journals, fn ($journal) => $journal['kind'] === 'opening' && $journal['cardId'] === $statement['cardId'] && $journal['currency'] === $currency));
             $opening = null;
-            foreach ($journals as $journal) {
+            foreach ($specific !== [] ? $specific : $journals as $journal) {
                 if ($journal['kind'] === 'opening' && $journal['cardId'] === $statement['cardId'] && ($opening === null || $journal['effectiveDate'] < $opening)) {
                     $opening = $journal['effectiveDate'];
                 }

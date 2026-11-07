@@ -7,6 +7,7 @@ use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Reports\FinancialFacts;
+use App\Domain\Reports\ReportSnapshot;
 use Illuminate\Support\Str;
 
 class MerchantReviews
@@ -53,7 +54,7 @@ class MerchantReviews
         return $merchant;
     }
 
-    public function register(string $purchase, string $card, string $name, string $line): void
+    public function retainIdentity(string $name): array
     {
         $normalized = mb_strtoupper(trim(FinancialFacts::merchant($name)));
         $id = hash('sha256', $normalized);
@@ -63,6 +64,15 @@ class MerchantReviews
             $merchant = ['id' => $id, 'normalizedName' => $normalized, 'displayName' => null, 'redirectId' => $resolved['id'] === $id ? null : $resolved['id']];
             $this->append('merchant_revisions', $merchant, ['redirect_id' => $merchant['redirectId']]);
         }
+
+        return $this->resolve($name);
+    }
+
+    public function register(string $purchase, string $card, string $name, string $line): void
+    {
+        $normalized = mb_strtoupper(trim(FinancialFacts::merchant($name)));
+        $id = hash('sha256', $normalized);
+        $this->retainIdentity($name);
         $existing = array_values(array_filter($this->current('merchant_purchase_revisions'), fn ($row) => $row['id'] === $purchase))[0] ?? null;
         if ($existing !== null) {
             return;
@@ -118,12 +128,15 @@ class MerchantReviews
         return ['purchases' => $rows, 'versions' => $versions, 'fingerprint' => FinancialCommands::digest(['cardId' => $card, 'match' => $match, 'versions' => $versions])];
     }
 
-    public function target(string $id, string $purpose): void
+    public function target(string $id, string $purpose, ?string $currency = null): void
     {
         $account = $this->repository->query('accounts')->where('id', $id)->first();
         abort_if($account === null, 404);
         if (! $account->enabled || ! $account->posting || ! in_array($account->type, ['expense', 'asset'], true) || $this->repository->query('accounts')->where('parent_id', $id)->exists()) {
             throw new AccountingError('invalid_posting_account');
+        }
+        if ($currency !== null && $account->currency !== null && $account->currency !== $currency) {
+            throw new AccountingError('account_currency_mismatch');
         }
         $purposes = array_column(json_decode(file_get_contents(resource_path('catalog.json')), true)['groups'], 'id');
         if (! in_array($purpose, ['unallocated', ...$purposes], true) || ($account->primary_purpose_id !== null && $account->primary_purpose_id !== $purpose)) {
@@ -146,6 +159,26 @@ class MerchantReviews
         $this->append('merchant_rule_revisions', ['id' => $ruleId, 'match' => $match, 'accountId' => $account, 'purposeId' => $purpose, 'position' => 0, 'enabled' => true], ['account_id' => $account]);
 
         return $ruleId;
+    }
+
+    public function mergePreview(string $sourceId, string $targetId): array
+    {
+        return $this->repository->readSnapshot(function () use ($sourceId, $targetId) {
+            $merchants = array_column($this->current('merchant_revisions'), null, 'id');
+            $source = $merchants[$sourceId] ?? null;
+            $target = $merchants[$targetId] ?? null;
+            abort_if($source === null || $target === null, 404);
+            if ($sourceId === $targetId || $source['redirectId'] !== null || $target['redirectId'] !== null || str_starts_with($target['normalizedName'], $source['normalizedName'])) {
+                throw new AccountingError('merchant_alias_cycle');
+            }
+            $family = array_values(array_filter($merchants, fn ($row) => $row['redirectId'] === null && str_starts_with($row['normalizedName'], $source['normalizedName'])));
+            usort($family, fn ($a, $b) => strcmp($a['id'], $b['id']));
+            $facts = array_values(array_filter((new ReportSnapshot($this->repository))->read()['facts'], fn ($fact) => is_string($fact['merchant']) && str_starts_with(mb_strtoupper($fact['merchant']), $source['normalizedName'])));
+            $purchaseIds = array_values(array_unique(array_filter(array_column($facts, 'purchaseId'))));
+            sort($purchaseIds, SORT_STRING);
+
+            return ['merchants' => $family, 'target' => $target, 'affectedPurchaseIds' => $purchaseIds, 'affectedFactIds' => array_column($facts, 'id'), 'fingerprint' => FinancialCommands::digest(['family' => $family, 'target' => $target, 'facts' => $facts])];
+        });
     }
 
     public function decide(array $input): array
@@ -203,6 +236,12 @@ class MerchantReviews
                     throw new AccountingError('stale_review_version');
                 }if ($source['id'] === $target['id'] || str_starts_with($target['normalizedName'], $source['normalizedName']) || $source['redirectId'] !== null || $target['redirectId'] !== null) {
                     throw new AccountingError('merchant_alias_cycle');
+                }
+                $preview = $this->mergePreview($input['sourceId'], $input['targetId']);
+                $confirmed = $input['confirmedMerchantIds'] ?? [];
+                sort($confirmed, SORT_STRING);
+                if (! ($input['confirmMerge'] ?? false) || array_column($preview['merchants'], 'id') !== $confirmed || ! hash_equals($preview['fingerprint'], $input['expectedMergeFingerprint'] ?? '')) {
+                    throw new AccountingError('merge_confirmation_required');
                 }
                 foreach ($merchants as $merchant) {
                     if ($merchant['redirectId'] === null && str_starts_with($merchant['normalizedName'], $source['normalizedName'])) {

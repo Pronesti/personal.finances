@@ -52,7 +52,27 @@ class LedgerReader
             }
         }
 
-        return ['groups' => $groups, 'groupMeasures' => $groupMeasures, 'purposeMeasures' => $purposeMeasures, 'accounts' => $accounts, 'journals' => $ids->map(fn ($id) => $this->repository->journal($id))->all(), 'meta' => ['page' => $page, 'per_page' => $perPage, 'total' => $total]];
+        $coverage = [];
+        foreach ($allJournals as $journal) {
+            if ($journal['kind'] !== 'opening') {
+                continue;
+            }
+            $supported = BigInteger::zero();
+            foreach ($this->repository->payloads('opening_obligations', ['opening_journal_id' => $journal['id']]) as $obligation) {
+                $supported = $supported->plus($obligation['remainingMinor']);
+            }
+            $cycle = $this->repository->query('statement_cycles')->where('card_id', $journal['cardId'])->where('closing_date', '<=', $journal['effectiveDate'])->orderByDesc('closing_date')->first();
+            $schedule = BigInteger::zero();
+            if ($cycle !== null && $journal['currency'] === 'ARS') {
+                foreach ($this->repository->query('issuer_schedules')->where('revision_id', $cycle->revision_id)->get() as $entry) {
+                    $schedule = $schedule->plus(Money::source(json_decode($entry->payload, true)['amount_ars']));
+                }
+            }
+            $unproven = $schedule->minus($supported);
+            $coverage[] = ['journalId' => $journal['id'], 'cardId' => $journal['cardId'], 'currency' => $journal['currency'], 'observationDate' => $journal['effectiveDate'], 'supportedUnbilledMinor' => (string) $supported, 'futureAggregateMinor' => $cycle === null ? null : (string) $schedule, 'unprovenFutureMinor' => $cycle === null ? null : (string) BigInteger::max($unproven, 0), 'completeFuturePrincipalKnown' => false, 'completeHistoricalCoverage' => false];
+        }
+
+        return ['openingCoverage' => $coverage, 'groups' => $groups, 'groupMeasures' => $groupMeasures, 'purposeMeasures' => $purposeMeasures, 'accounts' => $accounts, 'journals' => $ids->map(fn ($id) => $this->repository->journal($id))->all(), 'meta' => ['page' => $page, 'per_page' => $perPage, 'total' => $total]];
     }
 
     public function evidence(string $id): ?array

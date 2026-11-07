@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Reviews\DisabledProposals;
 use App\Domain\Reviews\MerchantProposalProvider;
+use App\Domain\Reviews\SyntheticProposals;
 use App\Support\TestTargetGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandStarting;
@@ -17,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(MerchantProposalProvider::class, DisabledProposals::class);
+        $this->app->bind(MerchantProposalProvider::class, fn () => config('tarjetas.proposal_driver') === 'synthetic-test' ? new SyntheticProposals : new DisabledProposals);
     }
 
     public function boot(): void

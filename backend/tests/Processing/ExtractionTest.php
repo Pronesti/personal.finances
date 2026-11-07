@@ -78,4 +78,34 @@ class ExtractionTest extends PostgresTestCase
         $this->assertSame(13000, $extraction['parsed']['footer']['totalCents']);
         $this->assertCount(2, $extraction['parsed']['items']);
     }
+
+    public function test_actual_native_renderer_rejects_page_and_pixel_bombs_before_ocr_and_cleans_scratch(): void
+    {
+        foreach (['pages', 'pixels'] as $case) {
+            $root = config('tarjetas.test_target.temp_root').'/resource-'.bin2hex(random_bytes(8));
+            mkdir($root, 0700);
+            $pdf = $root.'/synthetic.pdf';
+            $code = 'import pymupdf,sys,json; d=pymupdf.open(); [(d.new_page(width=20000 if sys.argv[2]=="pixels" else 100,height=20000 if sys.argv[2]=="pixels" else 100)) for _ in range(21 if sys.argv[2]=="pages" else 1)]; d.save(sys.argv[1]); print("{}")';
+            app(PrivateProcess::class)->json([config('tarjetas.python'), '-c', $code, $pdf, $case], '', new ProcessingBudget(10000, 0));
+            $process = new Process([config('tarjetas.python'), base_path('processing/receipt_vision.py'), $pdf, '3', '1', $root]);
+            $process->setTimeout(15);
+            $process->run();
+            $this->assertSame(2, $process->getExitCode());
+            $error = json_decode(trim($process->getErrorOutput()), true);
+            $this->assertSame($case === 'pages' ? 'render_page_limit' : 'render_pixel_limit', $error['reason']);
+            $this->assertSame('', trim($process->getOutput()));
+            $this->assertSame([], glob($root.'/vision-*'));
+        }
+    }
+
+    public function test_actual_private_rss_supervision_kills_an_over_limit_process_group(): void
+    {
+        $available = app(PrivateProcess::class)->json([config('tarjetas.python'), '-c', 'import psutil,json; print(json.dumps({"available":psutil.virtual_memory().available}))'], '', new ProcessingBudget(5000, 0));
+        if ($available['available'] < 2147483648) {
+            $this->markTestSkipped('Actual RSS supervision requires at least 2 GiB currently available.');
+        }
+        $this->expectException(AccountingError::class);
+        $this->expectExceptionMessage('processing_memory_limit');
+        app(PrivateProcess::class)->json([config('tarjetas.python'), '-c', 'import time; allocation=bytearray(800*1024*1024); time.sleep(10)'], '', new ProcessingBudget(15000, 0));
+    }
 }

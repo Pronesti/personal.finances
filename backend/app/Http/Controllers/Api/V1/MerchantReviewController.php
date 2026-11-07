@@ -39,11 +39,19 @@ class MerchantReviewController extends Controller
             'match' => ['present_if:kind,purchase_classification', 'nullable', 'string', 'max:300'],
             'confirmedPurchaseIds' => ['required_if:scope,matching_history', 'array', 'max:500'], 'confirmedPurchaseIds.*' => ['required', 'string', 'max:300', 'distinct'],
             'confirmHistory' => ['required_if:scope,matching_history', 'boolean'], 'expectedFingerprint' => ['required_if:scope,matching_history', 'string', 'regex:/^[a-f0-9]{64}$/D'],
+            'confirmMerge' => ['required_if:kind,merchant_merge', 'boolean'], 'expectedMergeFingerprint' => ['required_if:kind,merchant_merge', 'string', 'regex:/^[a-f0-9]{64}$/D'], 'confirmedMerchantIds' => ['required_if:kind,merchant_merge', 'array', 'min:1', 'max:500'], 'confirmedMerchantIds.*' => ['string', 'max:200', 'distinct'],
             'sourceId' => ['required_if:kind,merchant_merge', 'string', 'max:200'], 'targetId' => ['required_if:kind,merchant_merge', 'string', 'max:200'], 'expectedSeq' => ['required_if:kind,merchant_merge', 'integer', 'min:1']]);
         $key = $request->header('Idempotency-Key');
         validator(['key' => $key], ['key' => ['required', 'string', 'max:200', 'regex:/^[A-Za-z0-9._:-]+$/D']])->validate();
 
         return response()->json($this->service($request)->decide([...$input, 'key' => $key, 'recordedAt' => now()->toIso8601String()]));
+    }
+
+    public function mergePreview(Request $request): JsonResponse
+    {
+        $input = $request->validate(['sourceId' => ['required', 'string', 'max:200'], 'targetId' => ['required', 'string', 'max:200']]);
+
+        return response()->json($this->service($request)->mergePreview($input['sourceId'], $input['targetId']));
     }
 
     public function sourcePreview(Request $request): JsonResponse

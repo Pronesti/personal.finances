@@ -653,6 +653,62 @@
                           "type": "integer"
                         }
                       }
+                    },
+                    "openingCoverage": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "journalId",
+                          "cardId",
+                          "currency",
+                          "observationDate",
+                          "supportedUnbilledMinor",
+                          "futureAggregateMinor",
+                          "unprovenFutureMinor",
+                          "completeFuturePrincipalKnown",
+                          "completeHistoricalCoverage"
+                        ],
+                        "properties": {
+                          "journalId": {
+                            "type": "string"
+                          },
+                          "cardId": {
+                            "type": "string"
+                          },
+                          "currency": {
+                            "enum": [
+                              "ARS",
+                              "USD"
+                            ]
+                          },
+                          "observationDate": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "supportedUnbilledMinor": {
+                            "type": "string"
+                          },
+                          "futureAggregateMinor": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unprovenFutureMinor": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "completeFuturePrincipalKnown": {
+                            "const": false
+                          },
+                          "completeHistoricalCoverage": {
+                            "const": false
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -3637,7 +3693,10 @@
                       "kind",
                       "sourceId",
                       "targetId",
-                      "expectedSeq"
+                      "expectedSeq",
+                      "confirmMerge",
+                      "confirmedMerchantIds",
+                      "expectedMergeFingerprint"
                     ],
                     "properties": {
                       "kind": {
@@ -3652,6 +3711,22 @@
                       "expectedSeq": {
                         "type": "integer",
                         "minimum": 1
+                      },
+                      "confirmMerge": {
+                        "const": true
+                      },
+                      "confirmedMerchantIds": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "expectedMergeFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
                       }
                     }
                   }
@@ -3974,6 +4049,391 @@
           },
           "400": {
             "description": "Owner override refused"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-review/merge-preview": {
+      "post": {
+        "operationId": "previewOwnedMerchantFamilyMerge",
+        "description": "Read-only exact affected family, target identity and historical/native fact identities. A new merchant, target revision or affected fact invalidates confirmation.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceId",
+                  "targetId"
+                ],
+                "properties": {
+                  "sourceId": {
+                    "type": "string"
+                  },
+                  "targetId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "merchants",
+                    "target",
+                    "affectedPurchaseIds",
+                    "affectedFactIds",
+                    "fingerprint"
+                  ],
+                  "properties": {
+                    "merchants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantIdentity"
+                      }
+                    },
+                    "target": {
+                      "$ref": "#/components/schemas/MerchantIdentity"
+                    },
+                    "affectedPurchaseIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "affectedFactIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-proposals": {
+      "get": {
+        "operationId": "ownedMerchantProposals",
+        "description": "Current owner-qualified immutable proposal revisions. Includes historical acquisitions without creating native purchases.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "proposals",
+                    "provider"
+                  ],
+                  "properties": {
+                    "proposals": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantProposal"
+                      }
+                    },
+                    "provider": {
+                      "enum": [
+                        "disabled",
+                        "synthetic-test"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-proposals/generate": {
+      "post": {
+        "operationId": "generateSanitizedMerchantProposals",
+        "description": "Optional disabled-by-default provider. Only deduplicated sanitized merchant names cross the boundary, max 200. Long identifiers removed; money/rate/percentage-shaped names refused. Validates response names, native leaf targets and finite confidence. No automatic posting. Pending/rejected names suppressed. Deterministic provider injection requires an approved synthetic target; no live provider/key required.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "created",
+                    "duplicate"
+                  ],
+                  "properties": {
+                    "created": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "proposals_unavailable or proposal_service_failed; manual review remains available"
+          },
+          "400": {
+            "description": "invalid_proposal_response or command_conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-proposals/{id}/decision": {
+      "post": {
+        "operationId": "humanMerchantProposalDecision",
+        "description": "Human account/purpose/scope selection required for acceptance, independently of suggestion/confidence. Uses purchase-version or historical-source CAS and exact scope previews. A conflicting owned future rule cannot be overwritten by an unrelated proposal. Reject appends immutable suppression; it changes no financial journal.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "action",
+                      "expectedSeq"
+                    ],
+                    "properties": {
+                      "action": {
+                        "const": "reject"
+                      },
+                      "expectedSeq": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "purchaseId",
+                      "cardId",
+                      "accountId",
+                      "purposeId",
+                      "scope",
+                      "match",
+                      "expectedVersion",
+                      "action",
+                      "expectedSeq"
+                    ],
+                    "properties": {
+                      "purchaseId": {
+                        "type": "string"
+                      },
+                      "cardId": {
+                        "type": "string"
+                      },
+                      "accountId": {
+                        "type": "string"
+                      },
+                      "purposeId": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "enum": [
+                          "selected",
+                          "future_rule",
+                          "matching_history"
+                        ]
+                      },
+                      "match": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "expectedVersion": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "confirmedPurchaseIds": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "maxItems": 500,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "confirmHistory": {
+                        "type": "boolean"
+                      },
+                      "expectedFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "action": {
+                        "const": "accept"
+                      },
+                      "expectedSeq": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "sourceLineId",
+                      "accountId",
+                      "purposeId",
+                      "scope",
+                      "match",
+                      "expectedPreviousDecisionId",
+                      "action",
+                      "expectedSeq"
+                    ],
+                    "properties": {
+                      "sourceLineId": {
+                        "type": "string",
+                        "maxLength": 400
+                      },
+                      "accountId": {
+                        "type": "string"
+                      },
+                      "purposeId": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "enum": [
+                          "selected",
+                          "future_rule",
+                          "matching_history"
+                        ]
+                      },
+                      "match": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "expectedPreviousDecisionId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "confirmedSourceLineIds": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "maxItems": 500,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "confirmHistory": {
+                        "type": "boolean"
+                      },
+                      "expectedFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "action": {
+                        "const": "accept"
+                      },
+                      "expectedSeq": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "state",
+                    "duplicate"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "enum": [
+                        "accepted",
+                        "rejected"
+                      ]
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown or exclusively other-owner proposal/subject"
+          },
+          "409": {
+            "description": "stale_review_version or command_conflict"
+          },
+          "400": {
+            "description": "Scope/preview/owned-rule conflict; no mutation"
           }
         }
       }
@@ -8100,6 +8560,76 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "nativePurpose": {
+            "type": "object",
+            "required": [
+              "from",
+              "to",
+              "measures"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date"
+              },
+              "to": {
+                "type": "string",
+                "format": "date"
+              },
+              "measures": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "cardId",
+                    "currency",
+                    "rows"
+                  ],
+                  "properties": {
+                    "cardId": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "enum": [
+                        "ARS",
+                        "USD"
+                      ]
+                    },
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "purposeId",
+                          "expenseMinor",
+                          "debtMinor",
+                          "repaymentMinor"
+                        ],
+                        "properties": {
+                          "purposeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expenseMinor": {
+                            "type": "string"
+                          },
+                          "debtMinor": {
+                            "type": "string"
+                          },
+                          "repaymentMinor": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Categories only: whole-card native period expense/repayment and closing debt, independent of analytical valuation/drill. Exact aggregate cents are decimal integer strings."
           }
         }
       },
@@ -8462,6 +8992,66 @@
           },
           "seq": {
             "type": "integer"
+          }
+        }
+      },
+      "MerchantProposal": {
+        "type": "object",
+        "required": [
+          "id",
+          "merchantId",
+          "subjectKind",
+          "sourceLineId",
+          "wireName",
+          "suggestedAccountId",
+          "suggestedPurposeId",
+          "confidence",
+          "state",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "merchantId": {
+            "type": "string"
+          },
+          "subjectKind": {
+            "enum": [
+              "purchase",
+              "source"
+            ]
+          },
+          "sourceLineId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wireName": {
+            "type": "string"
+          },
+          "suggestedAccountId": {
+            "type": "string"
+          },
+          "suggestedPurposeId": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ]
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 1
           }
         }
       }

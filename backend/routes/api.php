@@ -28,6 +28,7 @@ Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
     Route::post('merchant-proposals/generate', [MerchantProposalController::class, 'generate']);
     Route::post('merchant-proposals/{id}/decision', [MerchantProposalController::class, 'decide']);
     Route::get('merchant-review', [MerchantReviewController::class, 'index']);
+    Route::post('merchant-review/merge-preview', [MerchantReviewController::class, 'mergePreview']);
     Route::post('merchant-review/preview', [MerchantReviewController::class, 'preview']);
     Route::post('merchant-review', [MerchantReviewController::class, 'command']);
     Route::get('product-review', [ProductReviewController::class, 'index']);
