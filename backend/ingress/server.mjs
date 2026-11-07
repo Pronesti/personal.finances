@@ -70,7 +70,10 @@ export function createIngress(config) {
     request.on('end', () => {
       if (cancelled || poll()) return;
       uploaded = true;
-      const clean = Object.fromEntries(Object.entries(request.headers).filter(([name]) => !name.startsWith('x-tarjetas-') && !['connection','transfer-encoding','host','forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto'].includes(name)));
+      const clean = Object.fromEntries(Object.entries(request.headers).filter(([name]) => {
+        const normalized=name.replaceAll('_','-');
+        return !normalized.startsWith('x-tarjetas-')&&!normalized.startsWith('tarjetas-ingress-')&&!['connection','transfer-encoding','host','forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto'].includes(normalized);
+      }));
       Object.assign(clean, { host: new URL(config.origin).host, connection: 'close', 'content-length': length, 'x-forwarded-proto': 'https', 'x-tarjetas-deadline': stamp, 'x-tarjetas-signature': createHmac('sha256', config.key).update(`${request.method}\n${request.url}\n${stamp}`).digest('hex') });
       dispatched = true;
       upstream = http.request({ hostname: '127.0.0.1', port: config.upstreamPort, method: request.method, path: request.url, headers: clean }, result => {

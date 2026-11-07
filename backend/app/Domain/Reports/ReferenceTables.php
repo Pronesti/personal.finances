@@ -62,22 +62,24 @@ class ReferenceTables
         return $files;
     }
 
+    /** Preserve the frozen at-or-before lookup; later periods remain visibly stale. */
     public static function assertCoverage(array $tables, array $months): void
     {
         $months = array_values(array_unique($months));
         sort($months, SORT_STRING);
-        $latest = end($months);
-        if ($latest === false) {
+        $first = $months[0] ?? null;
+        if ($first === null) {
             return;
         }
         foreach (['cpi', 'mep'] as $name) {
-            if (array_key_last($tables[$name]) < $latest) {
-                throw new AccountingError('references_too_old', ['requiredMonth' => $latest, 'table' => $name, 'latestMonth' => array_key_last($tables[$name])]);
+            $observations = array_keys($tables[$name]);
+            sort($observations, SORT_STRING);
+            $latest = end($observations);
+            if ($latest < $first || ($name === 'cpi' && count($observations) < 2)) {
+                throw new AccountingError('references_too_old', ['requiredMonth' => $first, 'table' => $name, 'latestMonth' => $latest]);
             }
-            foreach ($months as $month) {
-                if (! array_key_exists($month, $tables[$name])) {
-                    throw new AccountingError('references_unavailable', ['table' => $name, 'missingMonth' => $month]);
-                }
+            if ($observations[0] > $first) {
+                throw new AccountingError('references_unavailable', ['table' => $name, 'missingMonth' => $first]);
             }
         }
     }

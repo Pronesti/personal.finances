@@ -58,9 +58,10 @@ class ReferencePublicationTest extends PostgresTestCase
         $reader->read();
     }
 
-    public function test_old_or_incomplete_reference_tables_fail_with_actionable_setup_codes(): void
+    public function test_unusable_reference_anchors_fail_while_frozen_forward_fill_remains_supported(): void
     {
         $tables = ['cpi' => ['2026-01' => 100, '2026-03' => 110], 'mep' => ['2026-01' => 1000, '2026-03' => 1100]];
+        ReferenceTables::assertCoverage($tables, ['2026-01', '2026-02', '2026-06']);
         try {
             ReferenceTables::assertCoverage($tables, ['2026-04']);
             $this->fail('Outdated rates admitted');
@@ -69,11 +70,11 @@ class ReferencePublicationTest extends PostgresTestCase
             $this->assertSame('2026-04', $error->parameters['requiredMonth']);
         }
         try {
-            ReferenceTables::assertCoverage($tables, ['2026-02']);
+            ReferenceTables::assertCoverage($tables, ['2025-12']);
             $this->fail('Missing rate month admitted');
         } catch (AccountingError $error) {
             $this->assertSame('references_unavailable', $error->errorCode);
-            $this->assertSame('2026-02', $error->parameters['missingMonth']);
+            $this->assertSame('2025-12', $error->parameters['missingMonth']);
         }
     }
 }

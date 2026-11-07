@@ -66,7 +66,7 @@ class ReportController extends Controller
         unset($snapshot['nativeState'], $snapshot['nativePurchases']);
         $rates = $references->read();
         ReferenceTables::assertCoverage($rates, $snapshot['months']);
-        $meta['references'] = ['cpiLatestMonth' => array_key_last($rates['cpi']), 'mepLatestMonth' => array_key_last($rates['mep']), 'stale' => ($snapshot['months'][array_key_last($snapshot['months'])] ?? '') > array_key_last($rates['cpi'])];
+        $meta['references'] = ['cpiLatestMonth' => min(array_key_last($rates['cpi']), array_key_last($rates['mep'])), 'mepLatestMonth' => array_key_last($rates['mep']), 'stale' => ($snapshot['months'][array_key_last($snapshot['months'])] ?? '') > min(array_key_last($rates['cpi']), array_key_last($rates['mep']))];
         $evidence = array_values(array_filter($snapshot['facts'], function ($fact) use ($scope, $query) {
             $month = $scope['basis'] === 'purchase' ? substr($fact['effectiveDate'], 0, 7) : ($fact['cycleMonth'] ?? substr($fact['effectiveDate'], 0, 7));
 
