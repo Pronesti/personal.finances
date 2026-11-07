@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\LedgerExportController;
+use App\Http\Controllers\Api\V1\MerchantProposalController;
 use App\Http\Controllers\Api\V1\MerchantReviewController;
 use App\Http\Controllers\Api\V1\ProductReviewController;
 use App\Http\Controllers\Api\V1\ReceiptController;
@@ -23,6 +24,9 @@ Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
     Route::get('exports/ledger', [LedgerExportController::class, 'show']);
     Route::post('merchant-review/source-preview', [MerchantReviewController::class, 'sourcePreview']);
     Route::post('merchant-review/source-classification', [MerchantReviewController::class, 'sourceClassification']);
+    Route::get('merchant-proposals', [MerchantProposalController::class, 'index']);
+    Route::post('merchant-proposals/generate', [MerchantProposalController::class, 'generate']);
+    Route::post('merchant-proposals/{id}/decision', [MerchantProposalController::class, 'decide']);
     Route::get('merchant-review', [MerchantReviewController::class, 'index']);
     Route::post('merchant-review/preview', [MerchantReviewController::class, 'preview']);
     Route::post('merchant-review', [MerchantReviewController::class, 'command']);

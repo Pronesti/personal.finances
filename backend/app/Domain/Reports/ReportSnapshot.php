@@ -220,7 +220,7 @@ class ReportSnapshot
         unset($fact);
         $groups = (new CatalogSettings($repository))->groups();
 
-        return ['facts' => $facts, 'statements' => $statementRows, 'schedules' => $schedules, 'cards' => $cards, 'sources' => $sources, 'supermarket' => $receiptFacts, 'allocations' => $allocations, 'months' => $months, 'alertVersions' => $alertVersions, 'inspection' => ['accounts' => $accounts, 'groups' => $groups, 'cards' => $cards, 'sources' => $sources, 'sourceLines' => $lines, 'journals' => $journals, 'reviews' => $reviews, 'alertStates' => array_values($alertStates), 'historicalAssociations' => $historical]];
+        return ['nativeState' => $repository->state(null, null), 'nativePurchases' => $repository->query('purchases')->pluck('id')->map(fn ($id) => $repository->purchase($id))->all(), 'facts' => $facts, 'statements' => $statementRows, 'schedules' => $schedules, 'cards' => $cards, 'sources' => $sources, 'supermarket' => $receiptFacts, 'allocations' => $allocations, 'months' => $months, 'alertVersions' => $alertVersions, 'inspection' => ['accounts' => $accounts, 'groups' => $groups, 'cards' => $cards, 'sources' => $sources, 'sourceLines' => $lines, 'journals' => $journals, 'reviews' => $reviews, 'alertStates' => array_values($alertStates), 'historicalAssociations' => $historical]];
     }
 
     private function appendObservations(array &$facts, array $statements, array $lines): void

@@ -38,7 +38,11 @@ class ReportOwnershipTest extends PostgresTestCase
             $this->actingAs($ledger->owner, 'web');
             $this->getJson('/api/v1/reports/trends?value=nominal')->assertOk()->assertJsonPath('data.spending.total', $sentinel)->assertJsonPath('meta.scope.basis', 'purchase');
             $this->getJson('/api/v1/reports/trends?value=nominal&spend=cash')->assertOk()->assertJsonPath('data.spending.total', $sentinel)->assertJsonPath('meta.scope.basis', 'billed');
-            $this->getJson('/api/v1/reports/categories?value=invalid&g=invalid&period=invalid')->assertOk()->assertJsonPath('meta.scope.value', 'real')->assertJsonPath('meta.scope.granularity', 'month')->assertJsonPath('meta.scope.period', '2026-01');
+            $this->getJson('/api/v1/reports/categories?value=invalid&g=invalid&period=invalid')->assertOk()->assertJsonPath('meta.scope.value', 'real')->assertJsonPath('meta.scope.granularity', 'month')->assertJsonPath('meta.scope.period', '2026-01')->assertJsonPath('meta.nativePurpose.from', '2026-01-01')->assertJsonPath('meta.nativePurpose.to', '2026-01-31');
+            $native = $this->getJson('/api/v1/reports/categories?value=nominal')->assertOk()->json('meta.nativePurpose.measures');
+            $visa = array_values(array_filter($native, fn ($row) => $row['cardId'] === 'synthetic-visa-a' && $row['currency'] === 'ARS'))[0];
+            $this->assertSame((string) ($sentinel * 100), $visa['rows'][0]['expenseMinor']);
+            $this->assertSame((string) ($sentinel * 100), $visa['rows'][0]['debtMinor']);
             $this->getJson('/api/v1/reports/merchants?value=nominal&period=invalid')->assertOk()->assertJsonPath('meta.scope.period', 'all');
             $this->getJson('/api/v1/reports/trends?ledger_id=22222222-2222-4222-8222-222222222222')->assertStatus(400);
             $this->getJson('/api/v1/reports/does-not-exist')->assertNotFound();
@@ -48,6 +52,6 @@ class ReportOwnershipTest extends PostgresTestCase
     public function test_empty_owner_report_does_not_require_reference_files_or_other_owners_data(): void
     {
         $ledger = Ledger::factory()->create();
-        $this->actingAs($ledger->owner, 'web')->getJson('/api/v1/reports/overview')->assertOk()->assertJsonPath('meta.empty',true)->assertJsonPath('data',null);
+        $this->actingAs($ledger->owner, 'web')->getJson('/api/v1/reports/overview')->assertOk()->assertJsonPath('meta.empty', true)->assertJsonPath('data', null);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Reviews\DisabledProposals;
+use App\Domain\Reviews\MerchantProposalProvider;
 use App\Support\TestTargetGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandStarting;
@@ -13,7 +15,10 @@ use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->bind(MerchantProposalProvider::class, DisabledProposals::class);
+    }
 
     public function boot(): void
     {

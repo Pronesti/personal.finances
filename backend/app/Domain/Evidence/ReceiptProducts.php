@@ -155,6 +155,7 @@ class ReceiptProducts
                     throw new AccountingError('product_identity_unreviewed');
                 }
                 $line = json_decode($this->repository->query('source_lines')->where('id', $subject)->value('payload'), true);
+                unset($match['unitCorrection']);
                 $correction = [];
                 if ($line['unit'] !== $product['unit']) {
                     $code = isset($line['sku']) ? $this->latest('product_code_revisions', 'id', LedgerRepository::json(['coto', $line['sku']])) : null;

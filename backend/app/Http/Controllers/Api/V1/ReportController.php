@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Ledger\LedgerRepository;
+use App\Domain\Ledger\NativeMeasures;
 use App\Domain\Processing\ProcessingBudget;
 use App\Domain\Reports\AlertReviews;
 use App\Domain\Reports\ReferenceTables;
@@ -51,6 +52,18 @@ class ReportController extends Controller
         if ($empty) {
             return response()->json(['data' => null, 'meta' => $meta]);
         }
+        if ($report === 'categories') {
+            $months = array_values(array_filter($snapshot['months'], fn ($month) => $period === null || $period === 'all' || self::period($month, $granularity) === $period));
+            $from = ($months[0] ?? '0001-01').'-01';
+            $to = $months === [] ? '9999-12-31' : (new \DateTimeImmutable(end($months).'-01'))->modify('last day of this month')->format('Y-m-d');
+            $meta['nativePurpose'] = ['from' => $from, 'to' => $to, 'measures' => []];
+            foreach ($snapshot['cards'] as $card) {
+                foreach (['ARS', 'USD'] as $currency) {
+                    $meta['nativePurpose']['measures'][] = ['cardId' => $card['id'], 'currency' => $currency, 'rows' => (new NativeMeasures)->purposes($snapshot['inspection']['accounts'], $snapshot['inspection']['journals'], $snapshot['nativePurchases'], $snapshot['nativeState'], $card['id'], $currency, $from, $to)];
+                }
+            }
+        }
+        unset($snapshot['nativeState'], $snapshot['nativePurchases']);
         $rates = $references->read();
         $meta['references'] = ['cpiLatestMonth' => array_key_last($rates['cpi']), 'mepLatestMonth' => array_key_last($rates['mep']), 'stale' => ($snapshot['months'][array_key_last($snapshot['months'])] ?? '') > array_key_last($rates['cpi'])];
         $evidence = array_values(array_filter($snapshot['facts'], function ($fact) use ($scope, $query) {

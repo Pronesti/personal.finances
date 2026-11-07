@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Domain\Evidence\DocumentStore;
 use App\Domain\Evidence\ReceiptProducts;
 use App\Domain\Evidence\ReceiptService;
+use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\CatalogBootstrap;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Processing\ProcessingBudget;
@@ -60,5 +61,51 @@ class ProductReviewWorkflowsTest extends PostgresTestCase
         app('auth')->forgetGuards();
         $this->actingAs($owners[0]->owner, 'web');
         $this->postJson('/api/v1/product-review', ['kind' => 'product_rule', 'subjectId' => Str::uuid()->toString(), 'expectedSeq' => 0, 'payload' => ['productId' => $ownedProductIds[1], 'match' => 'foreign', 'position' => 0, 'enabled' => true]], ['Idempotency-Key' => 'foreign'])->assertNotFound();
+    }
+
+    public function test_legacy_packaged_mass_can_be_reviewed_as_units_only_with_owned_code_and_unambiguous_printed_evidence(): void
+    {
+        config(['tarjetas.python' => base_path('.venv/bin/python')]);
+        $owner = Ledger::factory()->create();
+        $repository = new LedgerRepository($owner);
+        app(CatalogBootstrap::class)->initialize($repository, []);
+        (new ReceiptService($repository, app(DocumentStore::class)))->import(['key' => 'package-source', 'bytes' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf')), 'rowsText' => file_get_contents(base_path('../docs/rebuild/fixtures/receipt-valid.rows.txt')), 'scale' => 3, 'recordedAt' => '2026-01-16T12:00:00Z', 'appRevision' => 'synthetic-legacy'], new ProcessingBudget(719000, 0));
+        $source = $repository->query('source_lines')->whereRaw("payload->>'descPrinted' LIKE '%RICE%'")->first();
+        $printed = json_decode($source->payload, true);
+        $service = new ReceiptProducts($repository);
+        $match = $service->latest('product_match_revisions', 'id', $source->id);
+        $product = $service->product($match['productId']);
+        $service->decide(['key' => 'review-package', 'kind' => 'product_update', 'subjectId' => $product['id'], 'expectedSeq' => $product['seq'], 'payload' => ['name' => 'SYNTHETIC PACKAGED RICE', 'category' => 'pantry', 'unit' => 'un'], 'recordedAt' => '2026-01-17T00:00:00Z']);
+        $cases = [['unit' => 'kg'], ['unit' => 'kg', 'qtyMilli' => 500], ['unit' => 'kg', 'ean' => '2000000000000'], ['unit' => 'kg', 'descPrinted' => 'SYNTHETIC RICE PAQ 1 KG X KG'], ['unit' => 'kg', 'descPrinted' => 'SYNTHETIC WEIGHED RICE'], ['unit' => 'kg', 'sku' => 'unowned-code']];
+        foreach ($cases as $i => $changes) {
+            $id = 'synthetic-legacy-unit-'.$i;
+            $payload = [...$printed, ...$changes];
+            $repository->transaction(function () use ($repository, $id, $payload, $source, $i) {
+                $repository->insert('evidence', ['id' => $id, 'kind' => 'receipt', 'metadata' => '{}']);
+                $repository->insert('source_lines', ['id' => $id, 'revision_id' => $source->revision_id, 'occurrence' => 100 + $i, 'payload' => LedgerRepository::json($payload), 'legacy_fingerprint' => hash('sha256', LedgerRepository::json($payload))]);
+            });
+        }
+        $repository->transaction(fn () => $service->matchReceipt($source->revision_id));
+        foreach ($cases as $i => $changes) {
+            $id = 'synthetic-legacy-unit-'.$i;
+            $match = $service->latest('product_match_revisions', 'id', $id);
+            $before = $repository->query('source_lines')->where('id', $id)->value('payload');
+            $input = ['key' => 'unit-review-'.$i, 'kind' => 'product_match', 'subjectId' => $id, 'expectedSeq' => $match['seq'], 'payload' => ['productId' => $product['id']], 'recordedAt' => '2026-01-18T00:00:00Z'];
+            if ($i === 0) {
+                $service->decide($input);
+                $latest = $service->latest('product_match_revisions', 'id', $id);
+                $this->assertTrue($latest['reviewed']);
+                $this->assertEquals(['from' => 'kg', 'to' => 'un', 'reason' => 'packaged_mass'], $latest['unitCorrection']);
+            } else {
+                try {
+                    $service->decide($input);
+                    $this->fail('Ambiguous unit conversion accepted');
+                } catch (AccountingError $error) {
+                    $this->assertSame('product_unit_mismatch', $error->errorCode);
+                }
+            }
+            $this->assertSame($before, $repository->query('source_lines')->where('id', $id)->value('payload'));
+        }
+        $this->assertSame(0,$repository->query('journals')->count());
     }
 }
