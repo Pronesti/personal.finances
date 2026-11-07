@@ -43,16 +43,34 @@ class DocumentStore
             }
         }
         if (! file_exists($path)) {
-            $handle = @fopen($path, 'x+b');
-            if ($handle !== false) {
-                try {
-                    chmod($path, 0600);
-                    if (fwrite($handle, $bytes) !== strlen($bytes) || ! fflush($handle)) {
+            $temporary = $directory.'/.object-'.bin2hex(random_bytes(16));
+            $handle = fopen($temporary, 'x+b');
+            if ($handle === false) {
+                throw new RuntimeException('object_write_failed');
+            }
+            try {
+                chmod($temporary, 0600);
+                $offset = 0;
+                while ($offset < strlen($bytes)) {
+                    $written = fwrite($handle, substr($bytes, $offset));
+                    if ($written === false || $written === 0) {
                         throw new RuntimeException('object_write_failed');
                     }
-                } finally {
+                    $offset += $written;
+                }
+                if (! fflush($handle) || ! fsync($handle)) {
+                    throw new RuntimeException('object_write_failed');
+                }
+                fclose($handle);
+                $handle = null;
+                if (! @link($temporary, $path) && ! file_exists($path)) {
+                    throw new RuntimeException('object_publish_failed');
+                }
+            } finally {
+                if (is_resource($handle)) {
                     fclose($handle);
                 }
+                unlink($temporary);
             }
         }
         $this->read($ledger, $hash, strlen($bytes), $pending);
