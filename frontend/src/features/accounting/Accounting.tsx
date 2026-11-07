@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
+import { LedgerExport } from './LedgerExport';
 import { OriginalDocument } from '../../api/OriginalDocument';
 import { useSession } from '../../auth/SessionProvider';
 import { useLocale } from '../../i18n/LocaleProvider';
@@ -33,7 +34,7 @@ export function Accounting() {
   function move(next: number) { const values = new URLSearchParams(search); values.set('page', String(next)); setSearch(values); }
   return <section className="financial-page"><nav><Link to="/">Tarjetas</Link></nav><h1>{tr('accounting.title')}</h1><Link to="/accounting/settings">{locale === 'es' ? 'Configurar cuentas y grupos' : 'Account and group settings'}</Link><p>{tr('accounting.subtitle')}</p><p className="muted">{tr('accounting.native')}</p>
     {failed ? <p role="alert">{t.unavailable}</p> : !data ? <p role="status">{locale === 'es' ? 'Cargando…' : 'Loading…'}</p> : <>
-      <h2>{tr('accounting.accounts')}</h2><p>{tr('accounting.clearingNote')}</p>
+      <LedgerExport /><h2>{tr('accounting.accounts')}</h2><p>{tr('accounting.clearingNote')}</p>
       {data.journals.length === 0 && <p>{tr('accounting.empty')}</p>}
       <div className="table-region" tabIndex={0} role="region" aria-label={tr('accounting.accounts')}><table><thead><tr><th>{tr('accounting.account')}</th><th>ARS</th><th>USD</th></tr></thead><tbody>{data.accounts.filter(account => account.posting && (account.balances.ARS !== '0' || account.balances.USD !== '0')).map(account => <tr key={account.id}><th scope="row">{label(account.id)}</th><td>{nativeMoney(account.balances.ARS, 'ARS')}</td><td>{nativeMoney(account.balances.USD, 'USD')}</td></tr>)}</tbody></table></div>
       <h2>{locale === 'es' ? 'Medidas nativas por grupo' : 'Native measures by group'}</h2><p>{locale === 'es' ? 'Todo el historial registrado. Cada línea se cuenta una vez por grupo, incluidos sus descendientes. Los grupos personalizados superpuestos no se suman.' : 'All recorded history. Each line is counted once per group, including descendants. Overlapping custom groups are not summed.'}</p>

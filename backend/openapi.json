@@ -3940,6 +3940,43 @@
           }
         }
       }
+    },
+    "/api/v1/exports/ledger": {
+      "get": {
+        "operationId": "exportOwnFinancialLedger",
+        "description": "Credentialed download of only the resolved caller ledger financial rows and owner-qualified retained documents. Excludes users, credentials, sessions and other authentication state. This is not an administrator recovery archive. Private temporary file is deleted after sending.",
+        "responses": {
+          "200": {
+            "description": "Private single-ledger ZIP",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "private, no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired"
+          },
+          "400": {
+            "description": "Owner override refused"
+          }
+        }
+      }
     }
   },
   "components": {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\LedgerExportController;
 use App\Http\Controllers\Api\V1\MerchantReviewController;
 use App\Http\Controllers\Api\V1\ProductReviewController;
 use App\Http\Controllers\Api\V1\ReceiptController;
@@ -19,6 +20,7 @@ Route::get('health', fn () => response()->json([
 ]))->withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->name('api.v1.health');
 
 Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
+    Route::get('exports/ledger', [LedgerExportController::class, 'show']);
     Route::post('merchant-review/source-preview', [MerchantReviewController::class, 'sourcePreview']);
     Route::post('merchant-review/source-classification', [MerchantReviewController::class, 'sourceClassification']);
     Route::get('merchant-review', [MerchantReviewController::class, 'index']);
