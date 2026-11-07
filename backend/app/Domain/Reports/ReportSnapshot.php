@@ -11,6 +11,7 @@ use App\Domain\Evidence\ReceiptService;
 use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Ledger\Money;
+use App\Domain\Reviews\MerchantReviews;
 
 class ReportSnapshot
 {
@@ -209,6 +210,14 @@ class ReportSnapshot
             $alertStates[$decision->subject_id] = ['id' => $decision->subject_id, 'state' => $payload['input']['state'], ...($payload['source'] === null ? [] : ['source' => $payload['source']])];
             $alertVersions[$decision->subject_id] = $decision->id;
         }
+        $merchants = new MerchantReviews($repository);
+        foreach ($facts as &$fact) {
+            if ($fact['merchant'] !== null) {
+                $merchant = $merchants->resolve($fact['merchant']);
+                $fact['merchant'] = $merchant['displayName'] ?? $merchant['normalizedName'];
+            }
+        }
+        unset($fact);
         $groups = (new CatalogSettings($repository))->groups();
 
         return ['facts' => $facts, 'statements' => $statementRows, 'schedules' => $schedules, 'cards' => $cards, 'sources' => $sources, 'supermarket' => $receiptFacts, 'allocations' => $allocations, 'months' => $months, 'alertVersions' => $alertVersions, 'inspection' => ['accounts' => $accounts, 'groups' => $groups, 'cards' => $cards, 'sources' => $sources, 'sourceLines' => $lines, 'journals' => $journals, 'reviews' => $reviews, 'alertStates' => array_values($alertStates), 'historicalAssociations' => $historical]];

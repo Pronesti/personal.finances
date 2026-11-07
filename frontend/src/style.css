@@ -16,3 +16,5 @@ body{background:var(--canvas);color:var(--ink)}:root{--border:var(--line-strong)
 .catalog-members { max-height: 24rem; overflow: auto; display: grid; gap: .5rem; }
 .catalog-members label { display: flex; align-items: center; gap: .6rem; }
 .catalog-members input { width: auto; }
+
+.review-history { overflow-wrap: anywhere; }

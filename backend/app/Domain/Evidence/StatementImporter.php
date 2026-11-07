@@ -6,6 +6,8 @@ use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Ledger\Money;
+use App\Domain\Reports\FinancialFacts;
+use App\Domain\Reviews\MerchantReviews;
 use Illuminate\Support\Str;
 use stdClass;
 
@@ -231,6 +233,32 @@ class StatementImporter
 
                         continue;
                     }
+                    if ($opening !== null && ($line->installment_count ?? 1) > 1) {
+                        $candidates = [];
+                        foreach ($this->repository->payloads('opening_obligations', ['card_id' => $input['cardId'], 'currency' => $currency]) as $obligation) {
+                            if ($obligation['installmentCount'] !== $line->installment_count || abs(strtotime($obligation['purchaseDate']) - strtotime($line->date)) > 3 * 86400) {
+                                continue;
+                            }
+                            foreach ($obligation['evidenceIds'] as $evidence) {
+                                $payload = $this->repository->query('source_lines')->where('id', $evidence)->value('payload');
+                                $description = $payload === null ? null : (json_decode($payload, true)['description'] ?? null);
+                                if (is_string($description) && FinancialFacts::merchant($description) === FinancialFacts::merchant($line->description)) {
+                                    $candidates[$obligation['id']] = $obligation;
+                                    break;
+                                }
+                            }
+                        }
+                        if (count($candidates) > 1) {
+                            $review('ambiguous_opening_obligation', [$lineId], ['currency' => $currency]);
+
+                            continue;
+                        }
+                        if (count($candidates) === 1) {
+                            $collect($commands->billOpening([...$common, 'key' => $common['key'].':opening-billing', 'openingObligationId' => array_values($candidates)[0]['id'], 'installment' => $line->installment_number ?? 0, 'amountMinor' => $minor, 'effectiveDate' => $json->period->closing_date]));
+
+                            continue;
+                        }
+                    }
                     $identity = ['cardId' => $input['cardId'], 'currency' => $currency, 'purchaseDate' => $line->date, 'voucher' => $line->voucher ?? null, 'installment' => $line->installment_number ?? null, 'installmentCount' => $line->installment_count ?? null, 'amountMinor' => $minor, 'sourceLineId' => $lineId];
                     $candidates = $this->repository->query('source_purchase_identities')->where('card_id', $input['cardId'])->where('currency', $currency)->where('purchase_date', $line->date)->get()->map(fn ($row) => json_decode($row->payload, true, flags: JSON_THROW_ON_ERROR))->all();
                     $receipts = new ReceiptReconciliation(new ReceiptService($this->repository, $this->documents));
@@ -253,17 +281,35 @@ class StatementImporter
                     }
                     $purchase = $decision['purchaseId'] ?? Str::uuid()->toString();
                     if ($decision['status'] === 'new') {
-                        $post = $commands->purchase([...$common, 'purchaseId' => $purchase, 'principalMinor' => $minor, 'allocations' => [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => $minor]]]);
+                        $rule = (new MerchantReviews($this->repository))->classification($line->description);
+                        $post = $commands->purchase([...$common, 'purchaseId' => $purchase, 'principalMinor' => $minor, 'allocations' => [['accountId' => $rule['accountId'] ?? 'expense:unallocated', 'purposeId' => $rule['purposeId'] ?? 'unallocated', 'minor' => $minor]]]);
                         $collect($post);
                         if ($post['status'] === 'review') {
                             continue;
                         }
                     }
                     $this->repository->insert('source_purchase_identities', ['source_line_id' => $lineId, 'currency' => $currency, 'purchase_id' => $purchase, 'card_id' => $input['cardId'], 'purchase_date' => $line->date, 'payload' => LedgerRepository::json([...$identity, 'purchaseId' => $purchase])], false);
+                    (new MerchantReviews($this->repository))->register($purchase, $input['cardId'], $line->description, $lineId);
                     if (! in_array($purchase, $result['purchaseIds'], true)) {
                         $result['purchaseIds'][] = $purchase;
                     }
                     $collect($commands->bill([...$common, 'key' => $common['key'].':billing', 'purchaseId' => $purchase, 'installment' => $line->installment_number ?? 1, 'amountMinor' => $minor, 'effectiveDate' => $json->period->closing_date]));
+
+                    continue;
+                }
+                if ($line->section === 'taxes_and_charges' && $minor > 0 && preg_match('/\\b(INTER[EÉ]S|INTERESES|COMISI[OÓ]N|IVA|SELLOS|CARGO)\\b/iu', $line->description)) {
+                    if (preg_match('/IVA|PERCEPCI[OÓ]N|RETENCI[OÓ]N|IMPUESTO|RG\\s*\\d+/iu', $line->description)) {
+                        $review('tax_recoverability_review', [$lineId], ['currency' => $currency]);
+
+                        continue;
+                    }
+                    $account = preg_match('/INTER[EÉ]S|INTERESES/iu', $line->description) ? 'expense:financial:interest' : (preg_match('/SELLOS/iu', $line->description) ? 'expense:financial:stamp' : 'expense:financial:fees');
+                    if (! $this->repository->query('accounts')->where('id', $account)->exists()) {
+                        $review('missing_cost_account', [$lineId], ['currency' => $currency, 'accountId' => $account]);
+
+                        continue;
+                    }
+                    $collect($commands->post(['id' => Str::uuid()->toString(), 'commandKey' => $common['key'], 'cardId' => $input['cardId'], 'currency' => $currency, 'effectiveDate' => $common['effectiveDate'], 'recordedAt' => $input['recordedAt'], 'kind' => 'cost', 'reversesId' => null, 'evidenceIds' => [$lineId], 'lines' => [['accountId' => $account, 'debitMinor' => $minor, 'creditMinor' => 0, 'purchaseId' => null, 'purposeId' => 'financial'], ['accountId' => $input['cardId'].':'.$currency.':billed', 'debitMinor' => 0, 'creditMinor' => $minor, 'purchaseId' => null, 'purposeId' => null]]]));
 
                     continue;
                 }

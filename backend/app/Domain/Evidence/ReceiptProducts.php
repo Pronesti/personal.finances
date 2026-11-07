@@ -74,7 +74,7 @@ class ReceiptProducts
                 $rules = $this->current('product_rule_revisions');
                 usort($rules, fn ($a, $b) => ($a['position'] <=> $b['position']) ?: strcmp($a['id'], $b['id']));
                 foreach ($rules as $rule) {
-                    if ($rule['chain'] === 'coto' && str_contains(mb_strtoupper($item['descPrinted']), mb_strtoupper($rule['match']))) {
+                    if (($rule['enabled'] ?? true) && $rule['chain'] === 'coto' && str_contains(mb_strtoupper($item['descPrinted']), mb_strtoupper($rule['match']))) {
                         $productId = $rule['productId'];
                         $method = 'rule';
                         break;
@@ -104,6 +104,11 @@ class ReceiptProducts
         }
     }
 
+    public function fingerprint(): string
+    {
+        return FinancialCommands::digest(['products' => $this->current('product_revisions', 'product_id'), 'codes' => $this->current('product_code_revisions'), 'rules' => $this->current('product_rule_revisions'), 'matches' => $this->current('product_match_revisions')]);
+    }
+
     public function decide(array $input): array
     {
         return $this->repository->transaction(function () use ($input) {
@@ -118,6 +123,7 @@ class ReceiptProducts
                 return [...json_decode($saved->payload, true, flags: JSON_THROW_ON_ERROR)['result'], 'duplicate' => true];
             }
             $affected = [];
+            $audit = [];
             $payload = $input['payload'];
             $subject = $input['subjectId'];
             if ($input['kind'] === 'product_update') {
@@ -149,10 +155,18 @@ class ReceiptProducts
                     throw new AccountingError('product_identity_unreviewed');
                 }
                 $line = json_decode($this->repository->query('source_lines')->where('id', $subject)->value('payload'), true);
+                $correction = [];
                 if ($line['unit'] !== $product['unit']) {
-                    throw new AccountingError('product_unit_mismatch');
+                    $code = isset($line['sku']) ? $this->latest('product_code_revisions', 'id', LedgerRepository::json(['coto', $line['sku']])) : null;
+                    $packaged = '/(?:PAQ|CJA)\\s*\\d+(?:[.,]\\d+)?\\s*KGM?\\b/i';
+                    $description = preg_replace($packaged, '', $line['descPrinted']);
+                    if ($line['unit'] !== 'kg' || $product['unit'] !== 'un' || ! is_int($line['qtyMilli']) || $line['qtyMilli'] <= 0 || $line['qtyMilli'] % 1000 !== 0 || ! preg_match('/^\\d{12,14}$/D', $line['ean'] ?? '') || preg_match('/^0?2/', $line['ean']) || ($code['productId'] ?? null) !== $product['id'] || ! preg_match($packaged, $line['descPrinted']) || preg_match('/X\\s?KG\\b|XKG|\\bKGM\\b/', $description)) {
+                        throw new AccountingError('product_unit_mismatch');
+                    }
+                    $correction = ['unitCorrection' => ['from' => 'kg', 'to' => 'un', 'reason' => 'packaged_mass']];
+                    $audit = $correction;
                 }
-                $this->appendMatch([...$match, 'productId' => $product['id'], 'method' => 'manual', 'reviewed' => true]);
+                $this->appendMatch([...$match, ...$correction, 'productId' => $product['id'], 'method' => 'manual', 'reviewed' => true]);
                 $affected[] = $subject;
             } elseif ($input['kind'] === 'move_code' || $input['kind'] === 'product_merge') {
                 $target = $this->product($payload['targetId']);
@@ -199,11 +213,33 @@ class ReceiptProducts
                     $affected[] = $match['id'];
                 }
                 array_push($affected, $subject, $target['id']);
+            } elseif ($input['kind'] === 'product_rule') {
+                $existing = $this->latest('product_rule_revisions', 'id', $subject);
+                if (($existing['seq'] ?? 0) !== $input['expectedSeq']) {
+                    throw new AccountingError('stale_review_version');
+                }
+                $product = $this->product($payload['productId']);
+                if ($product['redirectId'] !== null || trim($payload['match']) === '' || ! is_int($payload['position']) || $payload['position'] < 0) {
+                    throw new AccountingError('invalid_review_payload');
+                }
+                $rule = ['id' => $subject, 'chain' => 'coto', 'match' => trim($payload['match']), 'productId' => $product['id'], 'position' => $payload['position'], 'enabled' => $payload['enabled']];
+                $this->repository->insert('product_rule_revisions', ['id' => $subject, 'product_id' => $product['id'], 'payload' => LedgerRepository::json($rule)]);
+                $affected[] = $subject;
+            } elseif ($input['kind'] === 'product_rematch') {
+                if (! hash_equals($this->fingerprint(), $payload['expectedFingerprint'])) {
+                    throw new AccountingError('stale_review_version');
+                }
+                $facts = $this->repository->query('receipt_facts')->where('revision_id', $subject)->first();
+                if ($facts === null || ! $this->repository->query('source_revisions')->where('id', $subject)->whereRaw("payload->>'admission'='accepted'")->exists()) {
+                    throw new AccountingError('missing_review_subject');
+                }
+                $this->matchReceipt($subject, true);
+                $affected = $this->repository->query('source_lines')->where('revision_id', $subject)->pluck('id')->all();
             } else {
                 throw new AccountingError('invalid_review_kind');
             }
             $result = ['decisionId' => Str::uuid()->toString(), 'affectedIds' => array_values(array_unique($affected)), 'duplicate' => false];
-            $this->repository->insert('review_decisions', ['id' => $result['decisionId'], 'key' => $key, 'digest' => $digest, 'subject_id' => $subject, 'kind' => $input['kind'], 'payload' => LedgerRepository::json(['input' => $input, 'result' => $result]), 'recorded_at' => $input['recordedAt']]);
+            $this->repository->insert('review_decisions', ['id' => $result['decisionId'], 'key' => $key, 'digest' => $digest, 'subject_id' => $subject, 'kind' => $input['kind'], 'payload' => LedgerRepository::json(['input' => $input, 'result' => $result, ...$audit]), 'recorded_at' => $input['recordedAt']]);
 
             return $result;
         });

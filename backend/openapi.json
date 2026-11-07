@@ -3268,6 +3268,532 @@
           }
         }
       }
+    },
+    "/api/v1/product-review": {
+      "get": {
+        "operationId": "productReviewQueue",
+        "description": "Current caller-owned canonical products, chain codes, ordered rules, accepted receipt items/matches, review history (latest 100), and opaque optimistic fingerprint. Printed item fields are immutable.",
+        "responses": {
+          "200": {
+            "description": "Owned review queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "products",
+                    "codes",
+                    "rules",
+                    "matches",
+                    "items",
+                    "receipts",
+                    "fingerprint",
+                    "history"
+                  ],
+                  "properties": {
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductIdentity"
+                      }
+                    },
+                    "codes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductCode"
+                      }
+                    },
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductRule"
+                      }
+                    },
+                    "matches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductMatch"
+                      }
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "receipts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "productRuleOrRematch",
+        "description": "Ordered Coto substring rule create/edit/disable or explicit receipt rematch. Codes take precedence over rules. Rematch invalidates item approvals, retains original facts and financial journals, and checks the exact current queue fingerprint. Existing product/update/item/code/merge operations use /product-reviews.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "subjectId",
+                  "expectedSeq",
+                  "payload"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "product_rule",
+                      "product_rematch"
+                    ]
+                  },
+                  "subjectId": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "expectedSeq": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "payload": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "productId",
+                          "match",
+                          "position",
+                          "enabled"
+                        ],
+                        "properties": {
+                          "productId": {
+                            "type": "string"
+                          },
+                          "match": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
+                          "position": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100000
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "expectedFingerprint"
+                        ],
+                        "properties": {
+                          "expectedFingerprint": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Immutable review decision, affectedIds and duplicate status"
+          },
+          "400": {
+            "description": "Domain invariant refusal"
+          },
+          "404": {
+            "description": "Unavailable owner subject"
+          },
+          "409": {
+            "description": "Stale version/fingerprint or key conflict"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-review": {
+      "get": {
+        "operationId": "merchantReviewQueue",
+        "description": "Caller-owned current merchant families, supported purchases with complete current native versions, ordered rules and latest 100 decisions. Source labels remain literal. No mutation.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "merchants",
+                    "purchases",
+                    "rules",
+                    "history"
+                  ],
+                  "properties": {
+                    "merchants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantIdentity"
+                      }
+                    },
+                    "purchases": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "cardId",
+                          "merchantId",
+                          "merchant",
+                          "sourceLineId",
+                          "purchase"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "cardId": {
+                            "type": "string"
+                          },
+                          "merchantId": {
+                            "type": "string"
+                          },
+                          "merchant": {
+                            "type": "string"
+                          },
+                          "sourceLineId": {
+                            "type": "string"
+                          },
+                          "purchase": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    },
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantRule"
+                      }
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "kind",
+                          "subjectId",
+                          "recordedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "subjectId": {
+                            "type": "string"
+                          },
+                          "recordedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "classifyPurchaseOrMergeMerchant",
+        "description": "Requires Idempotency-Key. selected corrects only this purchase; future_rule changes no historical posting; matching_history requires exact owner/card preview IDs, explicit confirmation and fingerprint including purchase versions/principals. Corrections retain original effective dates and evidence; merchant family merges retain descriptions and alter no journals.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "purchaseId",
+                      "cardId",
+                      "accountId",
+                      "purposeId",
+                      "scope",
+                      "match",
+                      "expectedVersion"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "purchase_classification"
+                      },
+                      "purchaseId": {
+                        "type": "string"
+                      },
+                      "cardId": {
+                        "type": "string"
+                      },
+                      "accountId": {
+                        "type": "string"
+                      },
+                      "purposeId": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "enum": [
+                          "selected",
+                          "future_rule",
+                          "matching_history"
+                        ]
+                      },
+                      "match": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "expectedVersion": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "confirmedPurchaseIds": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "maxItems": 500,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "confirmHistory": {
+                        "type": "boolean"
+                      },
+                      "expectedFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "sourceId",
+                      "targetId",
+                      "expectedSeq"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "merchant_merge"
+                      },
+                      "sourceId": {
+                        "type": "string"
+                      },
+                      "targetId": {
+                        "type": "string"
+                      },
+                      "expectedSeq": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "decisionId",
+                    "affectedPurchaseIds",
+                    "ruleId",
+                    "duplicate"
+                  ],
+                  "properties": {
+                    "decisionId": {
+                      "type": "string"
+                    },
+                    "affectedPurchaseIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "ruleId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Confirmation, invariant or merge-cycle refusal"
+          },
+          "404": {
+            "description": "Unavailable owner subject"
+          },
+          "409": {
+            "description": "Stale version or command conflict"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      }
+    },
+    "/api/v1/merchant-review/preview": {
+      "post": {
+        "operationId": "previewMerchantClassification",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cardId",
+                  "match"
+                ],
+                "properties": {
+                  "cardId": {
+                    "type": "string"
+                  },
+                  "match": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "purchases",
+                    "versions",
+                    "fingerprint"
+                  ],
+                  "properties": {
+                    "purchases": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "versions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "purchaseId",
+                          "version",
+                          "principalMinor"
+                        ],
+                        "properties": {
+                          "purchaseId": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          },
+                          "principalMinor": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unavailable owner card"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7511,6 +8037,248 @@
           "version": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "ProductIdentity": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "unit",
+          "reviewed",
+          "redirectId",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "produce",
+              "meat_fish",
+              "dairy",
+              "deli",
+              "pantry",
+              "bakery",
+              "prepared",
+              "beverages",
+              "cleaning",
+              "personal_care",
+              "pets",
+              "other"
+            ]
+          },
+          "unit": {
+            "enum": [
+              "un",
+              "kg"
+            ]
+          },
+          "reviewed": {
+            "type": "boolean"
+          },
+          "redirectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seq": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductCode": {
+        "type": "object",
+        "required": [
+          "id",
+          "chain",
+          "sku",
+          "productId",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "chain",
+          "match",
+          "productId",
+          "position",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "seq": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductMatch": {
+        "type": "object",
+        "required": [
+          "id",
+          "receiptRevisionId",
+          "sourceLineId",
+          "productId",
+          "method",
+          "reviewed",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "receiptRevisionId": {
+            "type": "string"
+          },
+          "sourceLineId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "code",
+              "rule",
+              "auto",
+              "manual"
+            ]
+          },
+          "reviewed": {
+            "type": "boolean"
+          },
+          "seq": {
+            "type": "integer"
+          },
+          "unitCorrection": {
+            "type": "object",
+            "required": [
+              "from",
+              "to",
+              "reason"
+            ],
+            "properties": {
+              "from": {
+                "const": "kg"
+              },
+              "to": {
+                "const": "un"
+              },
+              "reason": {
+                "const": "packaged_mass"
+              }
+            }
+          }
+        }
+      },
+      "MerchantIdentity": {
+        "type": "object",
+        "required": [
+          "id",
+          "normalizedName",
+          "displayName",
+          "redirectId",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "normalizedName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "redirectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seq": {
+            "type": "integer"
+          }
+        }
+      },
+      "MerchantRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "match",
+          "accountId",
+          "purposeId",
+          "position",
+          "enabled",
+          "seq"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "purposeId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "seq": {
+            "type": "integer"
           }
         }
       }

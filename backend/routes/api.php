@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\MerchantReviewController;
+use App\Http\Controllers\Api\V1\ProductReviewController;
 use App\Http\Controllers\Api\V1\ReceiptController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -17,6 +19,11 @@ Route::get('health', fn () => response()->json([
 ]))->withoutMiddleware(EnsureFrontendRequestsAreStateful::class)->name('api.v1.health');
 
 Route::middleware(['auth:sanctum', 'ledger'])->group(function (): void {
+    Route::get('merchant-review', [MerchantReviewController::class, 'index']);
+    Route::post('merchant-review/preview', [MerchantReviewController::class, 'preview']);
+    Route::post('merchant-review', [MerchantReviewController::class, 'command']);
+    Route::get('product-review', [ProductReviewController::class, 'index']);
+    Route::post('product-review', [ProductReviewController::class, 'command']);
     Route::get('accounting/settings', [CatalogController::class, 'show']);
     Route::post('accounting/settings/account-name', [CatalogController::class, 'rename']);
     Route::post('accounting/settings/groups', [CatalogController::class, 'group']);

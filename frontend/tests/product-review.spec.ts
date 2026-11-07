@@ -1,0 +1,16 @@
+import {test,expect} from '@playwright/test';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {resetSyntheticRateLimits} from './target';
+let users:Record<string,string>;
+test.beforeAll(()=>{users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:report-users','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));});
+test.beforeEach(resetSyntheticRateLimits);
+test('canonical edits, explicit rules, rematching and item approval preserve review history',async({page})=>{
+ await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill(users.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+ await page.goto('/super/review');await page.getByRole('combobox',{name:'Product',exact:true}).selectOption({label:'Synthetic Rice ✓'});await page.getByLabel('Name',{exact:true}).fill('Reviewed literal rice');await page.getByRole('button',{name:'Save and approve product',exact:true}).click();await expect(page.getByRole('combobox',{name:'Product',exact:true}).locator('option:checked')).toContainText('Reviewed literal rice');
+ await page.getByLabel('Contained text',{exact:true}).fill('RICE');await page.getByRole('combobox',{name:'Rule product',exact:true}).selectOption({label:'Reviewed literal rice ✓'});await page.getByRole('button',{name:'Save rule',exact:true}).click();await expect(page.getByRole('combobox',{name:'Rule',exact:true}).getByRole('option',{name:'0 · RICE',exact:true})).toHaveCount(1);
+ await page.getByRole('combobox',{name:'Receipt to rematch',exact:true}).selectOption({index:1});await page.getByRole('button',{name:'Rematch receipt',exact:true}).click();await expect(page.getByRole('alert')).toHaveCount(0);
+ const rice=page.locator('tbody tr').filter({hasText:'SYNTHETIC RICE'}).first();await expect(rice).toContainText('Needs review');await rice.getByRole('button',{name:'Approve item',exact:true}).click();await expect(rice).not.toContainText('Needs review');await page.reload();await expect(page.locator('tbody tr').filter({hasText:'SYNTHETIC RICE'}).first()).not.toContainText('Needs review');await page.getByText('Decision history',{exact:true}).click();await expect(page.locator('details')).toContainText('product_rematch');await expect(page.locator('details')).toContainText('product_rule');
+ for(const scheme of ['light','dark'] as const){await page.emulateMedia({colorScheme:scheme});for(const width of [390,1280,1920]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>({fits:document.documentElement.scrollWidth<=window.innerWidth,over:Array.from(document.querySelectorAll('#main *')).filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(el=>[el.tagName,el.className,el.getBoundingClientRect().width])}))).toMatchObject({fits:true});}}
+ await page.getByRole('button',{name:'Cambiar a español'}).click();await expect(page.locator('#main h1')).toHaveText('Revisión de productos');await expect(page.getByRole('combobox',{name:'Producto',exact:true}).getByRole('option',{name:'Reviewed literal rice ✓',exact:true})).toHaveCount(1);
+});

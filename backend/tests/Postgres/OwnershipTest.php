@@ -26,7 +26,7 @@ class OwnershipTest extends PostgresTestCase
             foreach ([[$a->id, 'expense:food:groceries:pantry'], [$b->id, 'expense:food:groceries:pantry'], [$b->id, 'expense:synthetic:b-only'], [$a->id, 'expense:synthetic:b-only']] as $index => [$owner, $key]) {
                 DB::statement('SAVEPOINT owner_fk');
                 try {
-                    DB::table('accounting.account_name_revisions')->insert(['row_id' => Str::uuid()->toString(), 'ledger_id' => $owner, 'id' => Str::uuid()->toString(), 'account_id' => $key, 'custom_name' => 'Synthetic name', 'recorded_at' => now()]);
+                    DB::table('accounting.account_name_revisions')->insert(['row_id' => Str::uuid()->toString(), 'ledger_id' => $owner, 'id' => Str::uuid()->toString(), 'account_id' => $key, 'version' => 1, 'previous_id' => null, 'custom_name' => 'Synthetic name', 'recorded_at' => now()]);
                     DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
                     $this->assertLessThan(3, $index, 'A/B-exclusive must fail in the actual FK');
                     $this->assertSame($owner, DB::table('accounting.accounts')->where('ledger_id', $owner)->where('id', $key)->value('ledger_id'));

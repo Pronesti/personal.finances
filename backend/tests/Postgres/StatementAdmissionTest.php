@@ -7,9 +7,11 @@ use App\Domain\Evidence\SourceIdentity;
 use App\Domain\Evidence\StatementImporter;
 use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\CatalogBootstrap;
+use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Models\Ledger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\PostgresTestCase;
 
 class StatementAdmissionTest extends PostgresTestCase
@@ -112,6 +114,60 @@ class StatementAdmissionTest extends PostgresTestCase
             }
         } finally {
             DB::rollBack();
+        }
+    }
+
+    public function test_supported_costs_post_without_purchase_and_uncertain_tax_recovery_stays_in_review(): void
+    {
+        foreach (['a', 'b'] as $owner) {
+            [$repository, $importer] = $this->fresh();
+            $input = $this->input('visa', 'synthetic-visa-a');
+            $raw = json_decode($input['rawJson']);
+            $raw->declared_totals = [];
+            $raw->transactions = [];
+            foreach ([['INTERESES FINANCIACION', 10], ['COMISION SERVICIO', 5], ['IVA PERCEPCION', 3]] as [$description, $amount]) {
+                $raw->transactions[] = (object) ['section' => 'taxes_and_charges', 'date' => '2026-01-31', 'description' => $description, 'ars' => $amount, 'usd' => null, 'installment_number' => null, 'installment_count' => null, 'raw_line' => $description];
+            }
+            $result = $importer->import([...$input, 'rawJson' => json_encode($raw)]);
+            $this->assertCount(2, $result['postedJournalIds']);
+            $this->assertSame([], $result['purchaseIds']);
+            $this->assertSame(['tax_recoverability_review'], array_column($result['reviews'], 'code'));
+            $journals = $repository->query('journals')->pluck('id')->map(fn ($id) => $repository->journal($id))->all();
+            $this->assertSame(['cost', 'cost'], array_column($journals, 'kind'));
+            $this->assertSame(1500, array_sum(array_map(fn ($journal) => $journal['lines'][0]['debitMinor'], $journals)));
+            $replay = $importer->import([...$input, 'rawJson' => json_encode($raw)]);
+            $this->assertTrue($replay['duplicate']);
+            $this->assertSame(2, $repository->query('journals')->count());
+        }
+    }
+
+    public function test_statement_matches_supported_opening_installment_by_owned_original_evidence_without_acquisition(): void
+    {
+        foreach (['a', 'b'] as $owner) {
+            [$repository, $importer] = $this->fresh();
+            $input = $this->input('visa', 'synthetic-visa-a');
+            $raw = json_decode($input['rawJson']);
+            $raw->declared_totals = [];
+            $raw->transactions = [(object) ['section' => 'purchases', 'date' => '2026-01-15', 'description' => 'SYNTHETIC OPENING PLAN', 'voucher' => 'original', 'ars' => 200, 'usd' => null, 'installment_number' => 1, 'installment_count' => 6, 'raw_line' => 'SYNTHETIC OPENING PLAN 01/06 200,00']];
+            $original = $importer->import([...$input, 'rawJson' => json_encode($raw), 'observationOnly' => true]);
+            $line = SourceIdentity::line($original['sourceRevisionId'], 1);
+            $commands = new FinancialCommands($repository);
+            $openingId = Str::uuid()->toString();
+            $commands->post(['id' => $openingId, 'commandKey' => 'opening', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'effectiveDate' => '2026-02-28', 'recordedAt' => '2026-02-28T12:00:00Z', 'kind' => 'opening', 'reversesId' => null, 'evidenceIds' => [$line], 'lines' => [['accountId' => 'equity:opening', 'debitMinor' => 100000, 'creditMinor' => 0, 'purchaseId' => null, 'purposeId' => null], ['accountId' => 'synthetic-visa-a:ARS:unbilled', 'debitMinor' => 0, 'creditMinor' => 100000, 'purchaseId' => null, 'purposeId' => null]]]);
+            $commands->registerOpening(['id' => 'opening:shared', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'openingJournalId' => $openingId, 'purchaseDate' => '2026-01-15', 'originalPrincipalMinor' => 120000, 'alreadyBilledMinor' => 20000, 'remainingMinor' => 100000, 'lastBilledInstallment' => 1, 'installmentCount' => 6, 'evidenceIds' => [$line], 'allocations' => [['accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'minor' => 100000]]]);
+            $raw->period->closing_date = '2026-03-01';
+            $raw->transactions[0]->installment_number = 2;
+            $raw->transactions[0]->voucher = 'later-cycle';
+            $later = [...$input, 'key' => 'later', 'pdf' => $input['pdf']."\n% later synthetic cycle", 'rawJson' => json_encode($raw)];
+            $result = $importer->import($later);
+            $this->assertSame([], $result['purchaseIds']);
+            $this->assertSame([], $result['reviews']);
+            $this->assertCount(1, $result['postedJournalIds']);
+            $this->assertSame('billing', $repository->journal($result['postedJournalIds'][0])['kind']);
+            $this->assertSame(0, $repository->query('purchases')->count());
+            $this->assertSame('opening:shared', $repository->payloads('billings')[0]['openingObligationId']);
+            $this->assertTrue($importer->import($later)['duplicate']);
+            $this->assertSame(2, $repository->query('journals')->count());
         }
     }
 }
