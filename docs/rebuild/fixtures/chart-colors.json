@@ -1,0 +1,90 @@
+{
+  "light": {
+    "scheme": "light",
+    "category": {
+      "food": "#1f9254",
+      "transport": "#0b7fbb",
+      "subscriptions": "#7c4dcc",
+      "health": "#d43f4f",
+      "entertainment": "#cf7211",
+      "shopping": "#c8459a",
+      "services": "#10897f",
+      "travel": "#4d5bd0",
+      "education": "#6b8f19",
+      "taxes_fees": "#6b7280",
+      "transfers": "#8a90a0",
+      "other": "#8f95a3"
+    },
+    "productCategory": {
+      "produce": "#1f9254",
+      "meat_fish": "#d43f4f",
+      "dairy": "#0b7fbb",
+      "deli": "#c8459a",
+      "pantry": "#cf7211",
+      "bakery": "#6b8f19",
+      "prepared": "#10897f",
+      "beverages": "#4d5bd0",
+      "cleaning": "#7c4dcc",
+      "personal_care": "#6b7280",
+      "pets": "#8a90a0",
+      "other": "#8f95a3"
+    },
+    "series": {
+      "primary": "#0b7fbb",
+      "secondary": "#7c4dcc",
+      "band": "#cf7211",
+      "alert": "#d43f4f",
+      "neutral": "#6b7280",
+      "mixed": "#4b5262"
+    },
+    "ink": "#14161a",
+    "inkMuted": "#5a6371",
+    "grid": "#e3e6eb",
+    "surface": "#ffffff",
+    "line": "#c8ced8"
+  },
+  "dark": {
+    "scheme": "dark",
+    "category": {
+      "food": "#3fcf82",
+      "transport": "#45b6f5",
+      "subscriptions": "#a98bff",
+      "health": "#ff7b8a",
+      "entertainment": "#f5b13c",
+      "shopping": "#ff7ac4",
+      "services": "#35d4c2",
+      "travel": "#8a97ff",
+      "education": "#b3d94a",
+      "taxes_fees": "#9aa3b2",
+      "transfers": "#7d8695",
+      "other": "#737c8a"
+    },
+    "productCategory": {
+      "produce": "#3fcf82",
+      "meat_fish": "#ff7b8a",
+      "dairy": "#45b6f5",
+      "deli": "#ff7ac4",
+      "pantry": "#f5b13c",
+      "bakery": "#b3d94a",
+      "prepared": "#35d4c2",
+      "beverages": "#8a97ff",
+      "cleaning": "#a98bff",
+      "personal_care": "#9aa3b2",
+      "pets": "#7d8695",
+      "other": "#737c8a"
+    },
+    "series": {
+      "primary": "#45b6f5",
+      "secondary": "#a98bff",
+      "band": "#f5b13c",
+      "alert": "#ff7b8a",
+      "neutral": "#9aa3b2",
+      "mixed": "#646c7a"
+    },
+    "ink": "#e8eaee",
+    "inkMuted": "#a2abba",
+    "grid": "#272c36",
+    "surface": "#161920",
+    "line": "#39404d"
+  }
+}

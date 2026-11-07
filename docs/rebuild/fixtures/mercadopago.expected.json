@@ -1,0 +1,79 @@
+{
+  "file": "synthetic_mercadopago_2026_02.pdf",
+  "brand": "mercadopago",
+  "product": "Mercado Pago",
+  "account": null,
+  "cardholder": "SYNTHETIC PERSON",
+  "period": {
+    "closing_date": "2026-02-01",
+    "due_date": "2026-02-10",
+    "previous_closing_date": "2026-01-01"
+  },
+  "balances": {
+    "previous_ars": 0,
+    "current_ars": 140,
+    "current_usd": 0,
+    "minimum_payment_ars": 10
+  },
+  "limits": {
+    "purchase": 10000
+  },
+  "rates": {
+    "annual_nominal_ars": 60,
+    "annual_nominal_usd": null,
+    "monthly_effective_ars": 5.946,
+    "monthly_effective_usd": null
+  },
+  "upcoming_installments": [
+    {
+      "month": "2026-03",
+      "amount_ars": 40
+    },
+    {
+      "month": "2026-04",
+      "amount_ars": 40
+    }
+  ],
+  "transactions": [
+    {
+      "section": "purchases",
+      "block": 1,
+      "block_cardholder": null,
+      "date": "2026-01-15",
+      "description": "SYNTHETIC SHOP",
+      "voucher": "990001",
+      "ars": 100,
+      "usd": 0,
+      "installment_number": null,
+      "installment_count": null,
+      "raw_line": "15/ene SYNTHETIC SHOP 990001 $ 100,00 US$ 0,00"
+    },
+    {
+      "section": "purchases",
+      "block": 1,
+      "block_cardholder": null,
+      "date": "2026-01-16",
+      "description": "SYNTHETIC PLAN",
+      "voucher": "990003",
+      "ars": 40,
+      "usd": 0,
+      "installment_number": 1,
+      "installment_count": 3,
+      "raw_line": "16/ene SYNTHETIC PLAN 1 de 3 990003 $ 40,00 US$ 0,00"
+    }
+  ],
+  "declared_totals": [
+    {
+      "concept": "TOTAL CONSUMOS",
+      "block": 1,
+      "ars": 140,
+      "usd": 0
+    },
+    {
+      "concept": "SALDO ACTUAL",
+      "block": null,
+      "ars": 140,
+      "usd": 0
+    }
+  ]
+}

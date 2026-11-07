@@ -1,0 +1,253 @@
+{
+  "oldestBilled": {
+    "amountMinor": 7000,
+    "components": [
+      {
+        "id": "component-c",
+        "purchaseId": "p3",
+        "purposeId": "personal",
+        "currency": "ARS",
+        "billedDate": "2026-02-01",
+        "purchaseDate": "2026-01-16",
+        "outstandingMinor": 3000
+      },
+      {
+        "id": "component-b",
+        "purchaseId": "p2",
+        "purposeId": "travel",
+        "currency": "ARS",
+        "billedDate": "2026-02-01",
+        "purchaseDate": "2026-01-15",
+        "outstandingMinor": 4000
+      },
+      {
+        "id": "component-a",
+        "purchaseId": "p1",
+        "purposeId": "food",
+        "currency": "ARS",
+        "billedDate": "2026-02-01",
+        "purchaseDate": "2026-01-15",
+        "outstandingMinor": 2000
+      }
+    ],
+    "expected": {
+      "assigned": [
+        {
+          "componentId": "component-a",
+          "purposeId": "food",
+          "minor": 2000
+        },
+        {
+          "componentId": "component-b",
+          "purposeId": "travel",
+          "minor": 4000
+        },
+        {
+          "componentId": "component-c",
+          "purposeId": "personal",
+          "minor": 1000
+        }
+      ],
+      "unappliedMinor": 0
+    }
+  },
+  "partialIssuer": {
+    "billings": [
+      {
+        "id": "bill",
+        "purchaseId": "p1",
+        "cardId": "synthetic-visa-a",
+        "currency": "ARS",
+        "installment": 1,
+        "amountMinor": 20000,
+        "effectiveDate": "2026-02-01",
+        "purchaseDate": "2026-01-15",
+        "journalId": "j1",
+        "components": [
+          {
+            "id": "component-a",
+            "purposeId": "food",
+            "minor": 20000
+          }
+        ]
+      }
+    ],
+    "payments": [
+      {
+        "key": "partial",
+        "id": "partial",
+        "journalId": "partial",
+        "cardId": "synthetic-visa-a",
+        "currency": "ARS",
+        "amountMinor": 10000,
+        "effectiveDate": "2026-02-10",
+        "recordedAt": "2026-02-10T12:00:00Z",
+        "evidenceIds": [
+          "synthetic:e1"
+        ],
+        "issuerAllocations": [
+          {
+            "componentId": "component-a",
+            "minor": 3000
+          }
+        ],
+        "unappliedMinor": 10000
+      }
+    ],
+    "expected": [
+      {
+        "paymentId": "partial",
+        "assigned": [
+          {
+            "componentId": "component-a",
+            "purposeId": "food",
+            "minor": 3000
+          }
+        ],
+        "unappliedMinor": 7000
+      }
+    ]
+  },
+  "reservedIssuer": {
+    "billings": [
+      {
+        "id": "bill",
+        "purchaseId": "p1",
+        "cardId": "synthetic-visa-a",
+        "currency": "ARS",
+        "installment": 1,
+        "amountMinor": 20000,
+        "effectiveDate": "2026-02-01",
+        "purchaseDate": "2026-01-15",
+        "journalId": "j1",
+        "components": [
+          {
+            "id": "component-a",
+            "purposeId": "food",
+            "minor": 20000
+          }
+        ]
+      }
+    ],
+    "payments": [
+      {
+        "key": "later",
+        "id": "later",
+        "journalId": "later",
+        "cardId": "synthetic-visa-a",
+        "currency": "ARS",
+        "amountMinor": 15000,
+        "effectiveDate": "2026-03-01",
+        "recordedAt": "2026-03-01T12:00:00Z",
+        "evidenceIds": [
+          "synthetic:e1"
+        ],
+        "issuerAllocations": [
+          {
+            "componentId": "component-a",
+            "minor": 15000
+          }
+        ],
+        "unappliedMinor": 15000
+      },
+      {
+        "key": "early",
+        "id": "early",
+        "journalId": "early",
+        "cardId": "synthetic-visa-a",
+        "currency": "ARS",
+        "amountMinor": 10000,
+        "effectiveDate": "2026-02-10",
+        "recordedAt": "2026-02-10T12:00:00Z",
+        "evidenceIds": [
+          "synthetic:e1"
+        ],
+        "issuerAllocations": null,
+        "unappliedMinor": 10000
+      }
+    ],
+    "expected": [
+      {
+        "paymentId": "early",
+        "assigned": [
+          {
+            "componentId": "component-a",
+            "purposeId": "food",
+            "minor": 5000
+          }
+        ],
+        "unappliedMinor": 5000
+      },
+      {
+        "paymentId": "later",
+        "assigned": [
+          {
+            "componentId": "component-a",
+            "purposeId": "food",
+            "minor": 15000
+          }
+        ],
+        "unappliedMinor": 0
+      }
+    ]
+  },
+  "forecast": {
+    "startMonth": "2026-04",
+    "horizon": 6,
+    "upcoming": [
+      {
+        "month": "2026-04",
+        "amount": 90
+      },
+      {
+        "month": "2026-05",
+        "amount": 60
+      }
+    ],
+    "recurringMonthly": 20,
+    "variableHistory": [
+      10,
+      30
+    ],
+    "inflation": 0.1,
+    "expectedNominalFirst": {
+      "month": "2026-04",
+      "certain": 90,
+      "expected": 22,
+      "estLow": 11,
+      "estHigh": 33
+    },
+    "expectedRealFirst": {
+      "month": "2026-04",
+      "certain": 81.81818181818181,
+      "expected": 20,
+      "estLow": 10,
+      "estHigh": 30
+    },
+    "expectedNominalLast": {
+      "month": "2026-09",
+      "certain": 0,
+      "expected": 35.43122000000002,
+      "estLow": 17.71561000000001,
+      "estHigh": 53.14683000000002
+    }
+  },
+  "recurring": {
+    "merchant": "SYNTHETIC SUBSCRIPTION",
+    "months": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04"
+    ],
+    "amountMajor": 100,
+    "expected": {
+      "confidence": "high",
+      "status": "active",
+      "currency": "ARS",
+      "lastAmount": 100
+    },
+    "lapsedLatestMonth": "2026-06",
+    "lapsedStatus": "lapsed"
+  }
+}

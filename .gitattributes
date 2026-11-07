@@ -1,0 +1,6 @@
+# Preserve the rebuild handoff hashes across operating systems and Git settings.
+.gitattributes text eol=lf
+README.md text eol=lf
+docs/project-context-prompt.md text eol=lf
+docs/rebuild/** text eol=lf
+docs/rebuild/fixtures/pdf/*.pdf binary
