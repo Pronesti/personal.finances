@@ -348,6 +348,11 @@ class OwnedRecovery
             }$manifest = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
             $expected = [...array_map(fn ($name) => 'accounting.'.$name, self::FINANCIAL), ...array_map(fn ($name) => 'public.'.$name, self::PLATFORM)];
             sort($expected, SORT_STRING);
+            $migrationFiles = glob(database_path('migrations/*.php'));
+            $schemaRevision = max(array_map(fn ($file) => basename($file, '.php'), $migrationFiles));
+            if (($manifest['schemaRevision'] ?? null) !== $schemaRevision) {
+                throw new RuntimeException('recovery_schema_revision');
+            }
             if (($manifest['format'] ?? null) !== self::FORMAT || ($manifest['tables'] ?? null) !== $expected || ($manifest['appRevision'] ?? null) !== (string) config('tarjetas.revision')) {
                 throw new RuntimeException('recovery_format_revision_allowlist');
             }

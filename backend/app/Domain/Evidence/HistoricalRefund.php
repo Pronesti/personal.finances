@@ -69,7 +69,8 @@ class HistoricalRefund
             if ($result['status'] === 'review') {
                 throw new AccountingError($result['reviewCode'] ?? 'historical_refund_review');
             }
-            $repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $original->id, 'prior_decision_id' => null, 'code' => 'historical_source_classification', 'params' => LedgerRepository::json(['accountId' => $input['accountId'], 'purposeId' => $input['purposeId']]), 'source_line_ids' => LedgerRepository::json([$original->id]), 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
+            $priorClassification = $repository->query('review_events')->where('subject_id', $original->id)->where('code', 'historical_source_classification')->orderByDesc('ordinal')->value('id');
+            $repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $original->id, 'prior_decision_id' => $priorClassification, 'code' => 'historical_source_classification', 'params' => LedgerRepository::json(['accountId' => $input['accountId'], 'purposeId' => $input['purposeId']]), 'source_line_ids' => LedgerRepository::json([$original->id]), 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
             $events = $repository->query('review_events')->where('subject_id', $refund->revision_id)->get();
             foreach ($events as $event) {
                 if ($event->state === 'open' && in_array($refund->id, json_decode($event->source_line_ids, true), true) && ! $events->contains(fn ($child) => $child->prior_decision_id === $event->id)) {

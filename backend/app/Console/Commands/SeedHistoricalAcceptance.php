@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 /** Fixed synthetic factories and explicit extraction seams; never production provisioning. */
 class SeedHistoricalAcceptance extends Command
 {
-    protected $signature = 'tarjetas:acceptance:historical-refund';
+    protected $signature = 'tarjetas:acceptance:historical-refund {--fresh : Create a fresh factory pair and emit their synthetic emails as JSON}';
 
     protected $description = 'Seed two guarded synthetic opening/source/receipt cases for browser historical acceptance';
 
@@ -26,8 +26,11 @@ class SeedHistoricalAcceptance extends Command
     {
         $guard->check();
         config(['tarjetas.python' => base_path('.venv/bin/python')]);
+        $emails = [];
         foreach (['a', 'b'] as $owner) {
-            $user = User::where('email', 'synthetic-history-'.$owner.'@example.invalid')->first() ?? User::factory()->create(['name' => 'Synthetic historical '.$owner, 'email' => 'synthetic-history-'.$owner.'@example.invalid', 'password' => 'Synthetic-Acceptance-Only-2026!']);
+            $email = 'synthetic-history-'.$owner.($this->option('fresh') ? '-'.Str::uuid() : '').'@example.invalid';
+            $emails[$owner] = $email;
+            $user = User::where('email', $email)->first() ?? User::factory()->create(['name' => 'Synthetic historical '.$owner, 'email' => $email, 'password' => 'Synthetic-Acceptance-Only-2026!']);
             $ledger = $user->ledger ?? Ledger::factory()->create(['owner_user_id' => $user->id]);
             $repository = new LedgerRepository($ledger);
             app(CatalogBootstrap::class)->initialize($repository, json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/cards.json')), true));
@@ -49,7 +52,11 @@ class SeedHistoricalAcceptance extends Command
                 (new StatementImporter($repository, app(DocumentStore::class)))->import(['key' => $refund ? 'synthetic:refund-source' : 'synthetic:historical-source', 'cardId' => 'synthetic-visa-a', 'filename' => $refund ? 'synthetic_refund_2026_03.pdf' : 'synthetic_original_2026_02.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf')).($refund ? "\n% explicit synthetic refund extraction seam" : ''), 'rawJson' => json_encode($raw), 'recordedAt' => $refund ? '2026-03-31T12:00:00Z' : '2026-02-01T12:00:00Z', 'appRevision' => config('tarjetas.revision'), 'observationOnly' => ! $refund]);
             }
         }
-        $this->info('Two synthetic historical cases retained on the approved disposable target.');
+        if ($this->option('fresh')) {
+            $this->line(json_encode($emails, JSON_THROW_ON_ERROR));
+        } else {
+            $this->info('Two synthetic historical cases retained on the approved disposable target.');
+        }
 
         return self::SUCCESS;
     }

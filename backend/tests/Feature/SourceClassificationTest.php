@@ -9,6 +9,7 @@ use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Reports\ReportSnapshot;
 use App\Models\Ledger;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 use Tests\PostgresTestCase;
 
@@ -46,9 +47,17 @@ class SourceClassificationTest extends PostgresTestCase
             $this->assertSame(26000, array_sum(array_column($facts, 'minor')));
             $this->assertSame(1, $repository->query('journals')->count());
             $this->assertSame(0, $repository->query('purchases')->count());
+            try {
+                $repository->transaction(fn () => $repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $source, 'prior_decision_id' => null, 'code' => 'historical_source_classification', 'params' => '{}', 'source_line_ids' => LedgerRepository::json([$source]), 'state' => 'reviewed', 'recorded_at' => now()->toIso8601String()]));
+                $this->fail('Raw stale classification root accepted.');
+            } catch (QueryException $error) {
+                $this->assertSame('P0001', $error->errorInfo[0]);
+                $this->assertStringContainsString('stale_review_version', $error->getMessage());
+            }
+
             $sources[] = $source;
         }
         app('auth')->forgetGuards();
-        $this->actingAs($owners[0]->owner, 'web')->postJson('/api/v1/merchant-review/source-preview',['sourceLineId' => $sources[1], 'match' => 'SYNTHETIC'])->assertNotFound();
+        $this->actingAs($owners[0]->owner, 'web')->postJson('/api/v1/merchant-review/source-preview', ['sourceLineId' => $sources[1], 'match' => 'SYNTHETIC'])->assertNotFound();
     }
 }

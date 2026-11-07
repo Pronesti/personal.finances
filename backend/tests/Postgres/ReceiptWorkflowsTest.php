@@ -17,6 +17,7 @@ use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Processing\ProcessingBudget;
 use App\Domain\Reports\ReportSnapshot;
+use App\Domain\Reviews\SourceClassification;
 use App\Models\Ledger;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -277,7 +278,13 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                 $input = ['key' => 'full-refund', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'originalSourceLineId' => SourceIdentity::line($original['sourceRevisionId'], 1), 'refundSourceLineId' => SourceIdentity::line($refund['sourceRevisionId'], 1), 'accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'confirmedFullRefund' => true, 'recordedAt' => '2026-04-01T12:00:00Z'];
                 $useCase = new HistoricalRefund($service);
                 $this->rejects('full_refund_confirmation_required', fn () => $useCase->post([...$input, 'confirmedFullRefund' => false]));
+                (new SourceClassification($repository))->decide(['key' => 'pre-refund-classification', 'sourceLineId' => $input['originalSourceLineId'], 'accountId' => 'expense:home:cleaning', 'purposeId' => 'home', 'scope' => 'selected', 'match' => null, 'expectedPreviousDecisionId' => null, 'recordedAt' => '2026-03-31T13:00:00Z']);
+                $previous = $repository->query('review_events')->where('subject_id', $input['originalSourceLineId'])->where('code', 'historical_source_classification')->orderByDesc('ordinal')->value('id');
                 $this->assertSame('posted', $useCase->post($input)['status']);
+                $current = $repository->query('review_events')->where('subject_id', $input['originalSourceLineId'])->where('code', 'historical_source_classification')->orderByDesc('ordinal')->first();
+                $this->assertSame($previous, $current->prior_decision_id);
+                $this->assertSame('food', json_decode($current->params, true)['purposeId']);
+
                 $this->assertSame('duplicate', $useCase->post([...$input, 'key' => 'replay', 'recordedAt' => '2026-04-02T12:00:00Z'])['status']);
                 $this->assertSame(-13000, $this->expense($repository));
                 $this->assertSame(2, $repository->query('journals')->count());
