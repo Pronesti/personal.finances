@@ -1,0 +1,219 @@
+{
+  "/accounting": {
+    "title": "accounting.title"
+  },
+  "/accounting/evidence/[id]": {
+    "title": "accounting.source.title"
+  },
+  "/accounting/settings": {
+    "title": "accounting.catalog.title"
+  },
+  "/": {
+    "title": "overview.title",
+    "toggles": {}
+  },
+  "/anomalies": {
+    "title": "anomalies.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/bank": {
+    "title": "bank.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    }
+  },
+  "/calendar": {
+    "title": "calendar.title",
+    "toggles": {
+      "spend": false
+    }
+  },
+  "/categories": {
+    "title": "categories.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ],
+    "period": "latest"
+  },
+  "/compare": {
+    "title": "compare.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/credits": {
+    "title": "credits.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    },
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/currency": {
+    "title": "currency.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/float": {
+    "title": "float.title",
+    "basisCaption": true,
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/future": {
+    "title": "future.title",
+    "toggles": {}
+  },
+  "/habits": {
+    "title": "habits.title",
+    "toggles": {
+      "spend": false
+    }
+  },
+  "/inflation": {
+    "title": "inflation.title"
+  },
+  "/installments": {
+    "title": "installments.title",
+    "toggles": {
+      "spend": false
+    },
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/merchants": {
+    "title": "merchants.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ],
+    "period": "all-first"
+  },
+  "/movers": {
+    "title": "movers.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year"
+    ]
+  },
+  "/pace": {
+    "title": "pace.title",
+    "toggles": {
+      "spend": false
+    }
+  },
+  "/receipts": {
+    "title": "receipts.title"
+  },
+  "/receipts/[id]": {
+    "title": "receipts.detail.title"
+  },
+  "/recurring": {
+    "title": "recurring.title"
+  },
+  "/review": {
+    "title": "review.title"
+  },
+  "/sankey": {
+    "title": "sankey.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ],
+    "period": "latest"
+  },
+  "/super": {
+    "title": "super.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    }
+  },
+  "/super/categories": {
+    "title": "super.categories.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    }
+  },
+  "/super/charges": {
+    "title": "super.charges.title"
+  },
+  "/super/products": {
+    "title": "super.products.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    }
+  },
+  "/super/review": {
+    "title": "super.review.title"
+  },
+  "/taxes": {
+    "title": "taxes.title",
+    "toggles": {
+      "spend": false,
+      "tax": false
+    },
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/trends": {
+    "title": "trends.title",
+    "toggles": {},
+    "granularities": [
+      "month",
+      "quarter",
+      "year",
+      "all"
+    ]
+  },
+  "/upload": {
+    "title": "upload.title"
+  }
+}

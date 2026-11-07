@@ -29,8 +29,14 @@ class LedgerRepository
 
         return DB::transaction(function () use ($work) {
             DB::statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+            if ($this->budget !== null) {
+                $remaining = max(1, (int) floor($this->budget->remainingMs()));
+                DB::select("SELECT set_config('statement_timeout', ?, true), set_config('lock_timeout', ?, true)", [(string) $remaining, (string) $remaining]);
+            }
+            $result = $work();
+            $this->budget?->assertNonOcr();
 
-            return $work();
+            return $result;
         });
     }
 

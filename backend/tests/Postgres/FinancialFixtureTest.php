@@ -7,6 +7,7 @@ use App\Domain\Ledger\Attribution;
 use App\Domain\Ledger\CatalogBootstrap;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
+use App\Domain\Reports\ReportSnapshot;
 use App\Models\Ledger;
 use Illuminate\Support\Facades\DB;
 use Tests\PostgresTestCase;
@@ -49,6 +50,11 @@ class FinancialFixtureTest extends PostgresTestCase
                 $this->assertSame('posted', $commands->correct($correction)['status']);
                 $fresh = new LedgerRepository($ledger->fresh());
                 $this->assertSame($fixture['afterCorrection'], $this->balance($fresh));
+                $report = (new ReportSnapshot($fresh))->read();
+                $expenseFacts = array_filter($report['facts'], fn ($fact) => in_array($fact['kind'], ['purchase', 'credit', 'cost'], true));
+                $this->assertSame($fixture['afterCorrection']['expenseMinor'], array_sum(array_column($expenseFacts, 'minor')));
+                $this->assertCount(1, array_unique(array_column(array_filter($report['facts'], fn ($fact) => $fact['kind'] === 'credit'), 'journalId')));
+
                 $this->assertSame(2, $fresh->purchase($purchase['purchaseId'])['version']);
                 $this->assertSame(8, $fresh->query('journals')->count());
                 $expense = [];

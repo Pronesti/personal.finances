@@ -16,6 +16,7 @@ use App\Domain\Ledger\CatalogBootstrap;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Processing\ProcessingBudget;
+use App\Domain\Reports\ReportSnapshot;
 use App\Models\Ledger;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -119,6 +120,11 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                     }
                     $this->assertSame(1, $repository->query('purchases')->count());
                     $this->assertSame(13000, $this->expense($repository));
+                    $report = (new ReportSnapshot($repository))->read();
+                    $this->assertSame(13000, array_sum(array_column(array_filter($report['facts'], fn ($fact) => $fact['kind'] === 'purchase'), 'minor')));
+                    $this->assertSame(13000, array_sum(array_column(array_filter($report['facts'], fn ($fact) => $fact['kind'] === 'billing'), 'minor')));
+                    $this->assertSame(13000, array_sum(array_column($report['allocations'], 'netMinor')));
+
                     $balances = DB::selectOne("SELECT sum(CASE WHEN account_id='synthetic-visa-a:ARS:billed' THEN credit_minor-debit_minor ELSE 0 END) AS billed,sum(CASE WHEN account_id='synthetic-visa-a:ARS:unbilled' THEN credit_minor-debit_minor ELSE 0 END) AS unbilled FROM accounting.journal_lines WHERE ledger_id=?", [$repository->ledger->id]);
                     $this->assertSame([13000, 0], [(int) $balances->billed, (int) $balances->unbilled]);
                     $replay = $service->import($this->input(), new ProcessingBudget(719000, 0));

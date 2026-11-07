@@ -8,7 +8,7 @@ async function login(page: Page, who: string) {
 }
 test('actual Vision upload, item review, partial/full allocation and duplicate bytes',async({page})=>{
   test.setTimeout(120_000);
-  await login(page,'a'); await page.getByRole('link',{name:'Receipts',exact:true}).click();
+  await login(page,'a'); await page.getByRole('link',{name:'Receipts',exact:true}).first().click();
   await page.getByLabel('Coto receipt PDF').setInputFiles('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf');
   const upload=page.waitForResponse(response=>response.url()===`${api}/api/v1/receipts`&&response.request().method()==='POST');
   await page.getByRole('button',{name:'Import receipt',exact:true}).click();
@@ -24,10 +24,10 @@ test('actual Vision upload, item review, partial/full allocation and duplicate b
   await items.nth(0).getByLabel('Account',{exact:true}).selectOption('expense:food:groceries:pantry'); await page.getByRole('button',{name:'Apply reviewed item allocations',exact:true}).click(); await expect(page.getByRole('status').filter({hasText:'Change recorded.'})).toBeVisible();
   await items.nth(1).getByLabel('Account',{exact:true}).selectOption('expense:personal:hygiene'); await page.getByRole('button',{name:'Apply reviewed item allocations',exact:true}).click(); await expect(page.getByRole('status').filter({hasText:'Change recorded.'})).toBeVisible();
   await page.reload(); await expect(items).toHaveCount(2); await expect(items.nth(0).getByLabel('Account',{exact:true})).toHaveValue('expense:food:groceries:pantry'); await expect(items.nth(1).getByLabel('Account',{exact:true})).toHaveValue('expense:personal:hygiene');
-  await page.getByRole('link',{name:'Receipts',exact:true}).click(); await page.getByLabel('Coto receipt PDF').setInputFiles('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf'); const replay=page.waitForResponse(response=>response.url()===`${api}/api/v1/receipts`&&response.request().method()==='POST'); await page.getByRole('button',{name:'Import receipt',exact:true}).click(); const duplicate=await(await replay).json(); expect(duplicate.duplicate).toBe(true); expect(duplicate.receiptId).toBe(body.receiptId);
+  await page.getByRole('link',{name:'Receipts',exact:true}).first().click(); await page.getByLabel('Coto receipt PDF').setInputFiles('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf'); const replay=page.waitForResponse(response=>response.url()===`${api}/api/v1/receipts`&&response.request().method()==='POST'); await page.getByRole('button',{name:'Import receipt',exact:true}).click(); const duplicate=await(await replay).json(); expect(duplicate.duplicate).toBe(true); expect(duplicate.receiptId).toBe(body.receiptId);
 });
 test('retained one-cent rejection, correction history and foreign receipt access',async({page})=>{
-  await login(page,'b'); await page.getByRole('link',{name:'Receipts',exact:true}).click(); await page.getByRole('link',{name:'2026-01-15',exact:true}).first().click();
+  await login(page,'b'); await page.getByRole('link',{name:'Receipts',exact:true}).first().click(); await page.getByRole('link',{name:'2026-01-15',exact:true}).first().click();
   await expect(page.getByRole('heading',{name:'Receipt detail',exact:true})).toBeVisible(); const receiptUrl=page.url();
   await page.locator('summary').filter({hasText:'rejected'}).first().click(); await page.getByRole('button',{name:'Original OCR transcript',exact:true}).first().click(); await expect(page.getByLabel('Editable transcript')).toHaveValue(/130,01/);
   await page.getByLabel('Editable transcript').fill(readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8')); await page.getByRole('button',{name:'Verify correction',exact:true}).click(); await expect(page.getByRole('status').filter({hasText:/Evidence retained.|Change recorded./})).toBeVisible();

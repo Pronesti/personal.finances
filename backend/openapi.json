@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tarjetas API",
-    "version": "1.2.0-source-intake",
+    "version": "1.3.0-reports",
     "description": "Versioned cookie-authenticated API. Ownership resolves on server. Receipt upload and correction require trusted ingress metadata and fail closed without it. Domain errors use Error; invalid fields use Laravel 422 message/errors."
   },
   "servers": [
@@ -2612,6 +2612,436 @@
           }
         }
       }
+    },
+    "/api/v1/reports/{report}": {
+      "get": {
+        "operationId": "showOwnedReport",
+        "description": "Read-only analytical projection over the authenticated owner repeatable-read PostgreSQL snapshot. Native cents remain integers; derived display values preserve floating precision. No fixture, owner, facts, references or snapshot flag is accepted from the browser. Unknown modes normalize to purchase/real/excl/month. Route controls constrain grouping; categories/sankey invalid period defaults to latest, merchants defaults to all. Empty private ledgers return data=null and meta.empty=true without reference/helper prerequisites. Missing references on populated reports fail explicitly. Rates use constituent purchase/billing months before aggregation. Native USD is excluded from ordinary peso spending and remains visible in the special currency split. Supermarket money fields are display-restated at each receipt month for real/USD modes; quantities/tags/dates stay unchanged. The separate account allocation matrix always retains native ARS cents.",
+        "parameters": [
+          {
+            "name": "report",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "overview",
+                "anomalies",
+                "trends",
+                "categories",
+                "merchants",
+                "movers",
+                "compare",
+                "sankey",
+                "calendar",
+                "habits",
+                "pace",
+                "currency",
+                "super",
+                "super-products",
+                "super-categories",
+                "recurring",
+                "inflation",
+                "taxes",
+                "credits",
+                "float",
+                "installments",
+                "future",
+                "bank"
+              ]
+            }
+          },
+          {
+            "name": "spend",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          {
+            "name": "tax",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          {
+            "name": "g",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "merchant",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          {
+            "name": "day",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Calendar day selection; unknown valid dates select the newest available day."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner-scoped report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/ReportOverview"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportAnomalies"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportTrends"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportCategories"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportMerchants"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportMovers"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportCompare"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportSankey"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportCalendar"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportHabits"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportPace"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportCurrency"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportSuper"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportSuperProducts"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportSuperCategories"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportRecurring"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportInflation"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportTaxes"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportCredits"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportFloat"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportInstallments"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportFuture"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ReportBank"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ReportMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid owned scope/rates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query field type/length"
+          },
+          "503": {
+            "description": "Reference or private helper unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{id}/state": {
+      "post": {
+        "operationId": "reviewOwnedAlert",
+        "description": "Append a reviewed/dismissed/reopened alert annotation without changing money. Recompute the alert within the caller ledger under a transaction lock; unknown/other-owner exclusive keys return 404. Shared computed keys resolve to the caller. Expected latest decision is mandatory; stale decisions return 409. A language change does not change command semantics.",
+        "security": [
+          {
+            "session": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$"
+            },
+            "description": "Stable for one semantic command. Retry replays; changed semantics return 409. Server timestamp is excluded from digest."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "state",
+                  "expectedPreviousDecisionId"
+                ],
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "open",
+                      "reviewed",
+                      "dismissed"
+                    ]
+                  },
+                  "expectedPreviousDecisionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "decisionId",
+                    "alertId",
+                    "state",
+                    "duplicate"
+                  ],
+                  "properties": {
+                    "decisionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "alertId": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "enum": [
+                        "open",
+                        "reviewed",
+                        "dismissed"
+                      ]
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Owned resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid fields or retained receipt verification failure"
+          },
+          "503": {
+            "description": "Trusted processing boundary unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Processing budget expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3232,6 +3662,3509 @@
           },
           "recordedAt": {
             "type": "string"
+          }
+        }
+      },
+      "ReportOverview": {
+        "type": "object",
+        "required": [
+          "spentThisMonth",
+          "pctVsPrev",
+          "openAlerts",
+          "nextStatementForecast",
+          "topCategories",
+          "installmentMonths",
+          "installmentTotal",
+          "sparkline",
+          "latestClosing",
+          "nextDueDate",
+          "baseMonth"
+        ],
+        "properties": {
+          "spentThisMonth": {
+            "type": "number"
+          },
+          "pctVsPrev": {
+            "type": "number"
+          },
+          "openAlerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "source",
+                "kind",
+                "month",
+                "date",
+                "merchant",
+                "amount",
+                "message",
+                "messageKey",
+                "messageParams",
+                "state"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "month": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "messageKey": {
+                  "type": "string"
+                },
+                "messageParams": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "months": {
+                      "type": "number"
+                    },
+                    "days": {
+                      "type": "number"
+                    },
+                    "first": {
+                      "type": "string"
+                    },
+                    "second": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "state": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "nextStatementForecast": {
+            "type": "object",
+            "required": [
+              "month",
+              "certain",
+              "expected",
+              "estLow",
+              "estHigh"
+            ],
+            "properties": {
+              "month": {
+                "type": "string"
+              },
+              "certain": {
+                "type": "number"
+              },
+              "expected": {
+                "type": "number"
+              },
+              "estLow": {
+                "type": "number"
+              },
+              "estHigh": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          },
+          "topCategories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "amount"
+              ],
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "installmentMonths": {
+            "type": "number"
+          },
+          "installmentTotal": {
+            "type": "number"
+          },
+          "sparkline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "amount"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "latestClosing": {
+            "type": "string"
+          },
+          "nextDueDate": {
+            "type": "string"
+          },
+          "baseMonth": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportAnomalies": {
+        "type": "object",
+        "required": [
+          "alerts",
+          "cleared",
+          "timeline"
+        ],
+        "properties": {
+          "alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "source",
+                "kind",
+                "month",
+                "date",
+                "merchant",
+                "amount",
+                "message",
+                "messageKey",
+                "messageParams",
+                "state"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "month": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "messageKey": {
+                  "type": "string"
+                },
+                "messageParams": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                    "months": {
+                      "type": "number"
+                    },
+                    "days": {
+                      "type": "number"
+                    },
+                    "first": {
+                      "type": "string"
+                    },
+                    "second": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "state": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "cleared": {
+            "type": "number"
+          },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "amount"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportTrends": {
+        "type": "object",
+        "required": [
+          "periods",
+          "stacked",
+          "accounts",
+          "compare",
+          "movers",
+          "spending",
+          "merchants"
+        ],
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stacked": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "compare": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "amount",
+                "pctVsPrev"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "pctVsPrev": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "movers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "prev",
+                "cur",
+                "delta",
+                "pctChange"
+              ],
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "prev": {
+                  "type": "number"
+                },
+                "cur": {
+                  "type": "number"
+                },
+                "delta": {
+                  "type": "number"
+                },
+                "pctChange": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "spending": {
+            "type": "object",
+            "required": [
+              "rows",
+              "total",
+              "purchaseCount",
+              "merchantTotals"
+            ],
+            "properties": {
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "period",
+                    "accountId",
+                    "purposeId",
+                    "amount"
+                  ],
+                  "properties": {
+                    "period": {
+                      "type": "string"
+                    },
+                    "accountId": {
+                      "type": "string"
+                    },
+                    "purposeId": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "total": {
+                "type": "number"
+              },
+              "purchaseCount": {
+                "type": "integer"
+              },
+              "merchantTotals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "merchant",
+                    "amount"
+                  ],
+                  "properties": {
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
+          },
+          "merchants": {
+            "type": "object",
+            "required": [
+              "totals",
+              "novelty"
+            ],
+            "properties": {
+              "totals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "merchant",
+                    "amount",
+                    "share",
+                    "cumulativeShare"
+                  ],
+                  "properties": {
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "share": {
+                      "type": "number"
+                    },
+                    "cumulativeShare": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "novelty": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "period",
+                    "newAmount",
+                    "returningAmount"
+                  ],
+                  "properties": {
+                    "period": {
+                      "type": "string"
+                    },
+                    "newAmount": {
+                      "type": "number"
+                    },
+                    "returningAmount": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportCategories": {
+        "type": "object",
+        "required": [
+          "level",
+          "groups",
+          "rows",
+          "values",
+          "totalRows"
+        ],
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "amount"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "purchaseId",
+                "origin",
+                "cardId",
+                "merchant",
+                "description",
+                "accountId",
+                "purposeId",
+                "currency",
+                "minor",
+                "purchaseDate",
+                "cycleMonth",
+                "sourceLineId",
+                "statementId",
+                "coverage",
+                "financed",
+                "id",
+                "kind",
+                "effectiveDate",
+                "journalId"
+              ],
+              "properties": {
+                "purchaseId": {
+                  "type": "string"
+                },
+                "origin": {
+                  "type": "string"
+                },
+                "cardId": {
+                  "type": "string"
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "accountId": {
+                  "type": "string"
+                },
+                "purposeId": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "minor": {
+                  "type": "number"
+                },
+                "purchaseDate": {
+                  "type": "string"
+                },
+                "cycleMonth": {
+                  "type": "string"
+                },
+                "sourceLineId": {
+                  "type": "string"
+                },
+                "statementId": {
+                  "type": "string"
+                },
+                "coverage": {
+                  "type": "string"
+                },
+                "financed": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "effectiveDate": {
+                  "type": "string"
+                },
+                "journalId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "fact",
+                "amount",
+                "month",
+                "period"
+              ],
+              "properties": {
+                "fact": {
+                  "type": "object",
+                  "required": [
+                    "purchaseId",
+                    "origin",
+                    "cardId",
+                    "merchant",
+                    "description",
+                    "accountId",
+                    "purposeId",
+                    "currency",
+                    "minor",
+                    "purchaseDate",
+                    "cycleMonth",
+                    "sourceLineId",
+                    "statementId",
+                    "coverage",
+                    "financed",
+                    "id",
+                    "kind",
+                    "effectiveDate",
+                    "journalId"
+                  ],
+                  "properties": {
+                    "purchaseId": {
+                      "type": "string"
+                    },
+                    "origin": {
+                      "type": "string"
+                    },
+                    "cardId": {
+                      "type": "string"
+                    },
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "accountId": {
+                      "type": "string"
+                    },
+                    "purposeId": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "minor": {
+                      "type": "number"
+                    },
+                    "purchaseDate": {
+                      "type": "string"
+                    },
+                    "cycleMonth": {
+                      "type": "string"
+                    },
+                    "sourceLineId": {
+                      "type": "string"
+                    },
+                    "statementId": {
+                      "type": "string"
+                    },
+                    "coverage": {
+                      "type": "string"
+                    },
+                    "financed": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string"
+                    },
+                    "effectiveDate": {
+                      "type": "string"
+                    },
+                    "journalId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "month": {
+                  "type": "string"
+                },
+                "period": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "totalRows": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportMerchants": {
+        "type": "object",
+        "required": [
+          "totals",
+          "novelty",
+          "details",
+          "top5Share",
+          "top20Share"
+        ],
+        "properties": {
+          "totals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "merchant",
+                "amount",
+                "share",
+                "cumulativeShare"
+              ],
+              "properties": {
+                "merchant": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "share": {
+                  "type": "number"
+                },
+                "cumulativeShare": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "novelty": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "newAmount",
+                "returningAmount"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "newAmount": {
+                  "type": "number"
+                },
+                "returningAmount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "merchant",
+                "amount",
+                "total",
+                "category",
+                "count",
+                "firstMonth",
+                "lastMonth",
+                "share",
+                "cumShare"
+              ],
+              "properties": {
+                "merchant": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "firstMonth": {
+                  "type": "string"
+                },
+                "lastMonth": {
+                  "type": "string"
+                },
+                "share": {
+                  "type": "number"
+                },
+                "cumShare": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "top5Share": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "top20Share": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportMovers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "category",
+            "prev",
+            "cur",
+            "delta",
+            "pctChange"
+          ],
+          "properties": {
+            "category": {
+              "type": "string"
+            },
+            "prev": {
+              "type": "number"
+            },
+            "cur": {
+              "type": "number"
+            },
+            "delta": {
+              "type": "number"
+            },
+            "pctChange": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportCompare": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "period",
+            "amount",
+            "pctVsPrev"
+          ],
+          "properties": {
+            "period": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "pctVsPrev": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportSankey": {
+        "type": "object",
+        "required": [
+          "nodes",
+          "links"
+        ],
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "labelId"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "labelId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "sourceId",
+                "targetId",
+                "amount"
+              ],
+              "properties": {
+                "sourceId": {
+                  "type": "string"
+                },
+                "targetId": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportCalendar": {
+        "type": "object",
+        "required": [
+          "days",
+          "selectedDate",
+          "evidence"
+        ],
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "amount",
+                "count",
+                "categories",
+                "charges"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "count": {
+                  "type": "number"
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "category",
+                      "amount",
+                      "count"
+                    ],
+                    "properties": {
+                      "category": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "charges": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "brand",
+                      "month",
+                      "description",
+                      "merchant",
+                      "category",
+                      "subcategory",
+                      "amount",
+                      "usd",
+                      "installmentCount",
+                      "receiptId"
+                    ],
+                    "properties": {
+                      "brand": {
+                        "type": "string"
+                      },
+                      "month": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "merchant": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "subcategory": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "amount": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "installmentCount": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "receiptId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "selectedDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "required": [
+                "purchaseId",
+                "origin",
+                "cardId",
+                "merchant",
+                "description",
+                "accountId",
+                "purposeId",
+                "currency",
+                "minor",
+                "purchaseDate",
+                "cycleMonth",
+                "sourceLineId",
+                "statementId",
+                "coverage",
+                "financed",
+                "id",
+                "kind",
+                "effectiveDate",
+                "journalId"
+              ],
+              "properties": {
+                "purchaseId": {
+                  "type": "string"
+                },
+                "origin": {
+                  "type": "string"
+                },
+                "cardId": {
+                  "type": "string"
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "accountId": {
+                  "type": "string"
+                },
+                "purposeId": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "minor": {
+                  "type": "number"
+                },
+                "purchaseDate": {
+                  "type": "string"
+                },
+                "cycleMonth": {
+                  "type": "string"
+                },
+                "sourceLineId": {
+                  "type": "string"
+                },
+                "statementId": {
+                  "type": "string"
+                },
+                "coverage": {
+                  "type": "string"
+                },
+                "financed": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "effectiveDate": {
+                  "type": "string"
+                },
+                "journalId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "ReportHabits": {
+        "type": "object",
+        "required": [
+          "weekdays",
+          "weekdayTotals",
+          "calendar",
+          "tickets",
+          "accounts"
+        ],
+        "properties": {
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "weekdayTotals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "day",
+                "count",
+                "total"
+              ],
+              "properties": {
+                "day": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "calendar": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "amount",
+                "count",
+                "categories",
+                "charges"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "count": {
+                  "type": "number"
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "category",
+                      "amount",
+                      "count"
+                    ],
+                    "properties": {
+                      "category": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "charges": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "brand",
+                      "month",
+                      "description",
+                      "merchant",
+                      "category",
+                      "subcategory",
+                      "amount",
+                      "usd",
+                      "installmentCount",
+                      "receiptId"
+                    ],
+                    "properties": {
+                      "brand": {
+                        "type": "string"
+                      },
+                      "month": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "merchant": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "subcategory": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "amount": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "installmentCount": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "receiptId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "count",
+                "total",
+                "avgTicket",
+                "medianTicket"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number"
+                },
+                "avgTicket": {
+                  "type": "number"
+                },
+                "medianTicket": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportPace": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "cardId",
+            "cycleMonth",
+            "points",
+            "priorMedian"
+          ],
+          "properties": {
+            "cardId": {
+              "type": "string"
+            },
+            "cycleMonth": {
+              "type": "string"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "day",
+                  "cumulative"
+                ],
+                "properties": {
+                  "day": {
+                    "type": "number"
+                  },
+                  "cumulative": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "priorMedian": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "day",
+                  "cumulative"
+                ],
+                "properties": {
+                  "day": {
+                    "type": "number"
+                  },
+                  "cumulative": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportCurrency": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "period",
+            "arsBilled",
+            "usdBilled"
+          ],
+          "properties": {
+            "period": {
+              "type": "string"
+            },
+            "arsBilled": {
+              "type": "number"
+            },
+            "usdBilled": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportSuper": {
+        "type": "object",
+        "required": [
+          "periods",
+          "kpis",
+          "products",
+          "categories",
+          "index",
+          "frequency",
+          "basket",
+          "top"
+        ],
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "receiptId",
+                "date",
+                "nItems",
+                "grossCents",
+                "discountsCents",
+                "totalCents",
+                "savingsPct",
+                "mpCents",
+                "cotoCents",
+                "mixedCents"
+              ],
+              "properties": {
+                "index": {
+                  "type": "number"
+                },
+                "receiptId": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "nItems": {
+                  "type": "number"
+                },
+                "grossCents": {
+                  "type": "integer"
+                },
+                "discountsCents": {
+                  "type": "integer"
+                },
+                "totalCents": {
+                  "type": "integer"
+                },
+                "savingsPct": {
+                  "type": "number"
+                },
+                "mpCents": {
+                  "type": "integer"
+                },
+                "cotoCents": {
+                  "type": "integer"
+                },
+                "mixedCents": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "kpis": {
+            "type": "object",
+            "required": [
+              "nPeriods",
+              "lastTotalCents",
+              "prevTotalCents",
+              "deltaPct",
+              "avgTotalCents",
+              "monthlyProjectionCents",
+              "accumulatedTotalCents",
+              "accumulatedSavingsCents"
+            ],
+            "properties": {
+              "nPeriods": {
+                "type": "number"
+              },
+              "lastTotalCents": {
+                "type": "integer"
+              },
+              "prevTotalCents": {
+                "type": "integer"
+              },
+              "deltaPct": {
+                "type": "number"
+              },
+              "avgTotalCents": {
+                "type": "integer"
+              },
+              "monthlyProjectionCents": {
+                "type": "number"
+              },
+              "accumulatedTotalCents": {
+                "type": "integer"
+              },
+              "accumulatedSavingsCents": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "productId",
+                "name",
+                "category",
+                "unit",
+                "appearances",
+                "timesBought",
+                "totalQtyMilli",
+                "totalSpentCents",
+                "totalDiscountCents",
+                "lastChange"
+              ],
+              "properties": {
+                "productId": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "appearances": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "index",
+                      "date",
+                      "qtyMilli",
+                      "grossCents",
+                      "discountCents",
+                      "netCents",
+                      "unitGross",
+                      "unitNet"
+                    ],
+                    "properties": {
+                      "index": {
+                        "type": "number"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "qtyMilli": {
+                        "type": "integer"
+                      },
+                      "grossCents": {
+                        "type": "integer"
+                      },
+                      "discountCents": {
+                        "type": "integer"
+                      },
+                      "netCents": {
+                        "type": "integer"
+                      },
+                      "unitGross": {
+                        "type": "number"
+                      },
+                      "unitNet": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "timesBought": {
+                  "type": "number"
+                },
+                "totalQtyMilli": {
+                  "type": "integer"
+                },
+                "totalSpentCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "lastChange": {
+                  "type": "object",
+                  "required": [
+                    "from",
+                    "to",
+                    "grossPct",
+                    "netPct"
+                  ],
+                  "properties": {
+                    "from": {
+                      "type": "number"
+                    },
+                    "to": {
+                      "type": "number"
+                    },
+                    "grossPct": {
+                      "type": "number"
+                    },
+                    "netPct": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "perPeriod",
+                "totalNetCents",
+                "totalDiscountCents",
+                "sharePct"
+              ],
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "perPeriod": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "totalNetCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "sharePct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "index": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "date",
+                "list",
+                "effective",
+                "factorListPct",
+                "factorEffectivePct",
+                "nProducts"
+              ],
+              "properties": {
+                "index": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "list": {
+                  "type": "number"
+                },
+                "effective": {
+                  "type": "number"
+                },
+                "factorListPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "factorEffectivePct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "nProducts": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "frequency": {
+            "type": "object",
+            "required": [
+              "essentials",
+              "frequent",
+              "occasional"
+            ],
+            "properties": {
+              "essentials": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "productId",
+                    "name",
+                    "category",
+                    "unit",
+                    "appearances",
+                    "timesBought",
+                    "totalQtyMilli",
+                    "totalSpentCents",
+                    "totalDiscountCents",
+                    "lastChange"
+                  ],
+                  "properties": {
+                    "productId": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "appearances": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "index",
+                          "date",
+                          "qtyMilli",
+                          "grossCents",
+                          "discountCents",
+                          "netCents",
+                          "unitGross",
+                          "unitNet"
+                        ],
+                        "properties": {
+                          "index": {
+                            "type": "number"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "qtyMilli": {
+                            "type": "integer"
+                          },
+                          "grossCents": {
+                            "type": "integer"
+                          },
+                          "discountCents": {
+                            "type": "integer"
+                          },
+                          "netCents": {
+                            "type": "integer"
+                          },
+                          "unitGross": {
+                            "type": "number"
+                          },
+                          "unitNet": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "timesBought": {
+                      "type": "number"
+                    },
+                    "totalQtyMilli": {
+                      "type": "integer"
+                    },
+                    "totalSpentCents": {
+                      "type": "integer"
+                    },
+                    "totalDiscountCents": {
+                      "type": "integer"
+                    },
+                    "lastChange": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to",
+                        "grossPct",
+                        "netPct"
+                      ],
+                      "properties": {
+                        "from": {
+                          "type": "number"
+                        },
+                        "to": {
+                          "type": "number"
+                        },
+                        "grossPct": {
+                          "type": "number"
+                        },
+                        "netPct": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "frequent": {
+                "type": "array",
+                "items": {}
+              },
+              "occasional": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "additionalProperties": true
+          },
+          "basket": {
+            "type": "object",
+            "required": [
+              "entered",
+              "left"
+            ],
+            "properties": {
+              "entered": {
+                "type": "array",
+                "items": {}
+              },
+              "left": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "additionalProperties": true
+          },
+          "top": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "productId",
+                "name",
+                "category",
+                "unit",
+                "appearances",
+                "timesBought",
+                "totalQtyMilli",
+                "totalSpentCents",
+                "totalDiscountCents",
+                "lastChange"
+              ],
+              "properties": {
+                "productId": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "appearances": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "index",
+                      "date",
+                      "qtyMilli",
+                      "grossCents",
+                      "discountCents",
+                      "netCents",
+                      "unitGross",
+                      "unitNet"
+                    ],
+                    "properties": {
+                      "index": {
+                        "type": "number"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "qtyMilli": {
+                        "type": "integer"
+                      },
+                      "grossCents": {
+                        "type": "integer"
+                      },
+                      "discountCents": {
+                        "type": "integer"
+                      },
+                      "netCents": {
+                        "type": "integer"
+                      },
+                      "unitGross": {
+                        "type": "number"
+                      },
+                      "unitNet": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "timesBought": {
+                  "type": "number"
+                },
+                "totalQtyMilli": {
+                  "type": "integer"
+                },
+                "totalSpentCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "lastChange": {
+                  "type": "object",
+                  "required": [
+                    "from",
+                    "to",
+                    "grossPct",
+                    "netPct"
+                  ],
+                  "properties": {
+                    "from": {
+                      "type": "number"
+                    },
+                    "to": {
+                      "type": "number"
+                    },
+                    "grossPct": {
+                      "type": "number"
+                    },
+                    "netPct": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportSuperProducts": {
+        "type": "object",
+        "required": [
+          "periods",
+          "kpis",
+          "products",
+          "categories",
+          "index",
+          "frequency",
+          "basket",
+          "top"
+        ],
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "receiptId",
+                "date",
+                "nItems",
+                "grossCents",
+                "discountsCents",
+                "totalCents",
+                "savingsPct",
+                "mpCents",
+                "cotoCents",
+                "mixedCents"
+              ],
+              "properties": {
+                "index": {
+                  "type": "number"
+                },
+                "receiptId": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "nItems": {
+                  "type": "number"
+                },
+                "grossCents": {
+                  "type": "integer"
+                },
+                "discountsCents": {
+                  "type": "integer"
+                },
+                "totalCents": {
+                  "type": "integer"
+                },
+                "savingsPct": {
+                  "type": "number"
+                },
+                "mpCents": {
+                  "type": "integer"
+                },
+                "cotoCents": {
+                  "type": "integer"
+                },
+                "mixedCents": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "kpis": {
+            "type": "object",
+            "required": [
+              "nPeriods",
+              "lastTotalCents",
+              "prevTotalCents",
+              "deltaPct",
+              "avgTotalCents",
+              "monthlyProjectionCents",
+              "accumulatedTotalCents",
+              "accumulatedSavingsCents"
+            ],
+            "properties": {
+              "nPeriods": {
+                "type": "number"
+              },
+              "lastTotalCents": {
+                "type": "integer"
+              },
+              "prevTotalCents": {
+                "type": "integer"
+              },
+              "deltaPct": {
+                "type": "number"
+              },
+              "avgTotalCents": {
+                "type": "integer"
+              },
+              "monthlyProjectionCents": {
+                "type": "number"
+              },
+              "accumulatedTotalCents": {
+                "type": "integer"
+              },
+              "accumulatedSavingsCents": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": true
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "productId",
+                "name",
+                "category",
+                "unit",
+                "appearances",
+                "timesBought",
+                "totalQtyMilli",
+                "totalSpentCents",
+                "totalDiscountCents",
+                "lastChange"
+              ],
+              "properties": {
+                "productId": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "appearances": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "index",
+                      "date",
+                      "qtyMilli",
+                      "grossCents",
+                      "discountCents",
+                      "netCents",
+                      "unitGross",
+                      "unitNet"
+                    ],
+                    "properties": {
+                      "index": {
+                        "type": "number"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "qtyMilli": {
+                        "type": "integer"
+                      },
+                      "grossCents": {
+                        "type": "integer"
+                      },
+                      "discountCents": {
+                        "type": "integer"
+                      },
+                      "netCents": {
+                        "type": "integer"
+                      },
+                      "unitGross": {
+                        "type": "number"
+                      },
+                      "unitNet": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "timesBought": {
+                  "type": "number"
+                },
+                "totalQtyMilli": {
+                  "type": "integer"
+                },
+                "totalSpentCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "lastChange": {
+                  "type": "object",
+                  "required": [
+                    "from",
+                    "to",
+                    "grossPct",
+                    "netPct"
+                  ],
+                  "properties": {
+                    "from": {
+                      "type": "number"
+                    },
+                    "to": {
+                      "type": "number"
+                    },
+                    "grossPct": {
+                      "type": "number"
+                    },
+                    "netPct": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "perPeriod",
+                "totalNetCents",
+                "totalDiscountCents",
+                "sharePct"
+              ],
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "perPeriod": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "totalNetCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "sharePct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "index": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "date",
+                "list",
+                "effective",
+                "factorListPct",
+                "factorEffectivePct",
+                "nProducts"
+              ],
+              "properties": {
+                "index": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "list": {
+                  "type": "number"
+                },
+                "effective": {
+                  "type": "number"
+                },
+                "factorListPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "factorEffectivePct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "nProducts": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "frequency": {
+            "type": "object",
+            "required": [
+              "essentials",
+              "frequent",
+              "occasional"
+            ],
+            "properties": {
+              "essentials": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "productId",
+                    "name",
+                    "category",
+                    "unit",
+                    "appearances",
+                    "timesBought",
+                    "totalQtyMilli",
+                    "totalSpentCents",
+                    "totalDiscountCents",
+                    "lastChange"
+                  ],
+                  "properties": {
+                    "productId": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "appearances": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "index",
+                          "date",
+                          "qtyMilli",
+                          "grossCents",
+                          "discountCents",
+                          "netCents",
+                          "unitGross",
+                          "unitNet"
+                        ],
+                        "properties": {
+                          "index": {
+                            "type": "number"
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "qtyMilli": {
+                            "type": "integer"
+                          },
+                          "grossCents": {
+                            "type": "integer"
+                          },
+                          "discountCents": {
+                            "type": "integer"
+                          },
+                          "netCents": {
+                            "type": "integer"
+                          },
+                          "unitGross": {
+                            "type": "number"
+                          },
+                          "unitNet": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "timesBought": {
+                      "type": "number"
+                    },
+                    "totalQtyMilli": {
+                      "type": "integer"
+                    },
+                    "totalSpentCents": {
+                      "type": "integer"
+                    },
+                    "totalDiscountCents": {
+                      "type": "integer"
+                    },
+                    "lastChange": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to",
+                        "grossPct",
+                        "netPct"
+                      ],
+                      "properties": {
+                        "from": {
+                          "type": "number"
+                        },
+                        "to": {
+                          "type": "number"
+                        },
+                        "grossPct": {
+                          "type": "number"
+                        },
+                        "netPct": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "frequent": {
+                "type": "array",
+                "items": {}
+              },
+              "occasional": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "additionalProperties": true
+          },
+          "basket": {
+            "type": "object",
+            "required": [
+              "entered",
+              "left"
+            ],
+            "properties": {
+              "entered": {
+                "type": "array",
+                "items": {}
+              },
+              "left": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "additionalProperties": true
+          },
+          "top": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "productId",
+                "name",
+                "category",
+                "unit",
+                "appearances",
+                "timesBought",
+                "totalQtyMilli",
+                "totalSpentCents",
+                "totalDiscountCents",
+                "lastChange"
+              ],
+              "properties": {
+                "productId": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "appearances": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "index",
+                      "date",
+                      "qtyMilli",
+                      "grossCents",
+                      "discountCents",
+                      "netCents",
+                      "unitGross",
+                      "unitNet"
+                    ],
+                    "properties": {
+                      "index": {
+                        "type": "number"
+                      },
+                      "date": {
+                        "type": "string"
+                      },
+                      "qtyMilli": {
+                        "type": "integer"
+                      },
+                      "grossCents": {
+                        "type": "integer"
+                      },
+                      "discountCents": {
+                        "type": "integer"
+                      },
+                      "netCents": {
+                        "type": "integer"
+                      },
+                      "unitGross": {
+                        "type": "number"
+                      },
+                      "unitNet": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "timesBought": {
+                  "type": "number"
+                },
+                "totalQtyMilli": {
+                  "type": "integer"
+                },
+                "totalSpentCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "lastChange": {
+                  "type": "object",
+                  "required": [
+                    "from",
+                    "to",
+                    "grossPct",
+                    "netPct"
+                  ],
+                  "properties": {
+                    "from": {
+                      "type": "number"
+                    },
+                    "to": {
+                      "type": "number"
+                    },
+                    "grossPct": {
+                      "type": "number"
+                    },
+                    "netPct": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportSuperCategories": {
+        "type": "object",
+        "required": [
+          "categories",
+          "accounts",
+          "periods"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "perPeriod",
+                "totalNetCents",
+                "totalDiscountCents",
+                "sharePct"
+              ],
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "perPeriod": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "totalNetCents": {
+                  "type": "integer"
+                },
+                "totalDiscountCents": {
+                  "type": "integer"
+                },
+                "sharePct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {}
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "receiptId",
+                "date",
+                "nItems",
+                "grossCents",
+                "discountsCents",
+                "totalCents",
+                "savingsPct",
+                "mpCents",
+                "cotoCents",
+                "mixedCents"
+              ],
+              "properties": {
+                "index": {
+                  "type": "number"
+                },
+                "receiptId": {
+                  "type": "number"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "nItems": {
+                  "type": "number"
+                },
+                "grossCents": {
+                  "type": "integer"
+                },
+                "discountsCents": {
+                  "type": "integer"
+                },
+                "totalCents": {
+                  "type": "integer"
+                },
+                "savingsPct": {
+                  "type": "number"
+                },
+                "mpCents": {
+                  "type": "integer"
+                },
+                "cotoCents": {
+                  "type": "integer"
+                },
+                "mixedCents": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportRecurring": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "merchant",
+            "currency",
+            "currencies",
+            "occurrences",
+            "firstMonth",
+            "lastMonth",
+            "lastAmount",
+            "prevAmount",
+            "pctChange",
+            "monthsSinceLast",
+            "status",
+            "confidence",
+            "priceRegime",
+            "nextExpectedMonth"
+          ],
+          "properties": {
+            "merchant": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "currencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "occurrences": {
+              "type": "number"
+            },
+            "firstMonth": {
+              "type": "string"
+            },
+            "lastMonth": {
+              "type": "string"
+            },
+            "lastAmount": {
+              "type": "number"
+            },
+            "prevAmount": {
+              "type": "number"
+            },
+            "pctChange": {
+              "type": "number"
+            },
+            "monthsSinceLast": {
+              "type": "number"
+            },
+            "status": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string"
+            },
+            "priceRegime": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextExpectedMonth": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportInflation": {
+        "type": "object",
+        "required": [
+          "points",
+          "basket"
+        ],
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "personal",
+                "official"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "personal": {
+                  "type": "number"
+                },
+                "official": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "basket": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportTaxes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "period",
+            "rg5617",
+            "iva",
+            "iibb",
+            "stampDuty",
+            "interest",
+            "other",
+            "total",
+            "ratePct"
+          ],
+          "properties": {
+            "period": {
+              "type": "string"
+            },
+            "rg5617": {
+              "type": "number"
+            },
+            "iva": {
+              "type": "number"
+            },
+            "iibb": {
+              "type": "number"
+            },
+            "stampDuty": {
+              "type": "number"
+            },
+            "interest": {
+              "type": "number"
+            },
+            "other": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            },
+            "ratePct": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportCredits": {
+        "type": "object",
+        "required": [
+          "periods",
+          "top"
+        ],
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "promo",
+                "refund",
+                "taxback",
+                "total",
+                "pctOfSpend"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "promo": {
+                  "type": "number"
+                },
+                "refund": {
+                  "type": "number"
+                },
+                "taxback": {
+                  "type": "number"
+                },
+                "total": {
+                  "type": "number"
+                },
+                "pctOfSpend": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "top": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "date",
+                "merchant",
+                "description",
+                "kind",
+                "amount"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportFloat": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "period",
+            "avgDays",
+            "avgDaysOneOff",
+            "avgDaysInstallment",
+            "gainOneOff",
+            "gainInstallment",
+            "gain",
+            "gainPct",
+            "recordedInterest"
+          ],
+          "properties": {
+            "period": {
+              "type": "string"
+            },
+            "avgDays": {
+              "type": "number"
+            },
+            "avgDaysOneOff": {
+              "type": "number"
+            },
+            "avgDaysInstallment": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gainOneOff": {
+              "type": "number"
+            },
+            "gainInstallment": {
+              "type": "number"
+            },
+            "gain": {
+              "type": "number"
+            },
+            "gainPct": {
+              "type": "number"
+            },
+            "recordedInterest": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "ReportInstallments": {
+        "type": "object",
+        "required": [
+          "burden",
+          "plans"
+        ],
+        "properties": {
+          "burden": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "period",
+                "installment",
+                "oneOff",
+                "plans",
+                "sharePct"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string"
+                },
+                "installment": {
+                  "type": "number"
+                },
+                "oneOff": {
+                  "type": "number"
+                },
+                "plans": {
+                  "type": "number"
+                },
+                "sharePct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "plans": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportFuture": {
+        "type": "object",
+        "required": [
+          "forecast",
+          "coverage"
+        ],
+        "properties": {
+          "forecast": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "certain",
+                "expected",
+                "estLow",
+                "estHigh"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "certain": {
+                  "type": "number"
+                },
+                "expected": {
+                  "type": "number"
+                },
+                "estLow": {
+                  "type": "number"
+                },
+                "estHigh": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "coverage": {
+            "type": "object",
+            "required": [
+              "cards",
+              "scheduleCards",
+              "uncertain"
+            ],
+            "properties": {
+              "cards": {
+                "type": "number"
+              },
+              "scheduleCards": {
+                "type": "number"
+              },
+              "uncertain": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportBank": {
+        "type": "object",
+        "required": [
+          "bank",
+          "realBank"
+        ],
+        "properties": {
+          "bank": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "limit",
+                "limitByBrand",
+                "temByBrand",
+                "balance",
+                "utilizationPct",
+                "minPaymentPct",
+                "temPct",
+                "temBrand",
+                "inflationPct",
+                "realTemPct"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "limit": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "limitByBrand": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "temByBrand": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "balance": {
+                  "type": "number"
+                },
+                "utilizationPct": {
+                  "type": "number"
+                },
+                "minPaymentPct": {
+                  "type": "number"
+                },
+                "temPct": {
+                  "type": "number"
+                },
+                "temBrand": {
+                  "type": "string"
+                },
+                "inflationPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "realTemPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "realBank": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "month",
+                "limit",
+                "limitByBrand",
+                "temByBrand",
+                "balance",
+                "utilizationPct",
+                "minPaymentPct",
+                "temPct",
+                "temBrand",
+                "inflationPct",
+                "realTemPct"
+              ],
+              "properties": {
+                "month": {
+                  "type": "string"
+                },
+                "limit": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "limitByBrand": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "temByBrand": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "balance": {
+                  "type": "number"
+                },
+                "utilizationPct": {
+                  "type": "number"
+                },
+                "minPaymentPct": {
+                  "type": "number"
+                },
+                "temPct": {
+                  "type": "number"
+                },
+                "temBrand": {
+                  "type": "string"
+                },
+                "inflationPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "realTemPct": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "ReportMeta": {
+        "type": "object",
+        "required": [
+          "report",
+          "scope",
+          "months",
+          "periods",
+          "controls",
+          "cards",
+          "accounts",
+          "empty",
+          "alertVersions"
+        ],
+        "properties": {
+          "report": {
+            "enum": [
+              "overview",
+              "anomalies",
+              "trends",
+              "categories",
+              "merchants",
+              "movers",
+              "compare",
+              "sankey",
+              "calendar",
+              "habits",
+              "pace",
+              "currency",
+              "super",
+              "super-products",
+              "super-categories",
+              "recurring",
+              "inflation",
+              "taxes",
+              "credits",
+              "float",
+              "installments",
+              "future",
+              "bank"
+            ]
+          },
+          "scope": {
+            "type": "object",
+            "required": [
+              "basis",
+              "value",
+              "tax",
+              "granularity",
+              "period"
+            ],
+            "properties": {
+              "basis": {
+                "enum": [
+                  "purchase",
+                  "billed"
+                ]
+              },
+              "value": {
+                "enum": [
+                  "real",
+                  "nominal",
+                  "usd"
+                ]
+              },
+              "tax": {
+                "enum": [
+                  "incl",
+                  "excl"
+                ]
+              },
+              "granularity": {
+                "enum": [
+                  "month",
+                  "quarter",
+                  "year",
+                  "all"
+                ]
+              },
+              "period": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "months": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "controls": {
+            "type": "object"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "displayName"
+              ]
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "empty": {
+            "type": "boolean"
+          },
+          "references": {
+            "type": "object",
+            "required": [
+              "cpiLatestMonth",
+              "mepLatestMonth",
+              "stale"
+            ],
+            "properties": {
+              "cpiLatestMonth": {
+                "type": "string"
+              },
+              "mepLatestMonth": {
+                "type": "string"
+              },
+              "stale": {
+                "type": "boolean"
+              }
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "required": [
+                "purchaseId",
+                "origin",
+                "cardId",
+                "merchant",
+                "description",
+                "accountId",
+                "purposeId",
+                "currency",
+                "minor",
+                "purchaseDate",
+                "cycleMonth",
+                "sourceLineId",
+                "statementId",
+                "coverage",
+                "financed",
+                "id",
+                "kind",
+                "effectiveDate",
+                "journalId"
+              ],
+              "properties": {
+                "purchaseId": {
+                  "type": "string"
+                },
+                "origin": {
+                  "type": "string"
+                },
+                "cardId": {
+                  "type": "string"
+                },
+                "merchant": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "accountId": {
+                  "type": "string"
+                },
+                "purposeId": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "minor": {
+                  "type": "number"
+                },
+                "purchaseDate": {
+                  "type": "string"
+                },
+                "cycleMonth": {
+                  "type": "string"
+                },
+                "sourceLineId": {
+                  "type": "string"
+                },
+                "statementId": {
+                  "type": "string"
+                },
+                "coverage": {
+                  "type": "string"
+                },
+                "financed": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "effectiveDate": {
+                  "type": "string"
+                },
+                "journalId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "evidenceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "alertVersions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       }

@@ -10,10 +10,12 @@ export function apiBase(value: string | undefined): string {
 }
 
 export const baseURL = apiBase(import.meta.env.VITE_API_BASE_URL);
-const headers = { Accept: 'application/json' };
+const headers = { Accept: 'application/json', 'Accept-Language': document.cookie.split('; ').find(row => row.startsWith('lang='))?.split('=')[1] === 'es' ? 'es' : 'en' };
 export const api = axios.create({ baseURL, headers, withCredentials: true, withXSRFToken: true, timeout: 30_000 });
 export const csrf = axios.create({ baseURL: new URL(baseURL).origin, headers, withCredentials: true, withXSRFToken: true, timeout: 30_000 });
 export const publicApi = axios.create({ baseURL, headers, withCredentials: false, withXSRFToken: false, timeout: 10_000 });
+
+export function setRequestLocale(locale: 'en' | 'es') { for (const client of [api, csrf, publicApi]) client.defaults.headers.common['Accept-Language'] = locale; }
 
 export type Session = { user: { id: number; name: string; email: string }; ledger: { id: string } };
 export async function login(email: string, password: string): Promise<Session> {

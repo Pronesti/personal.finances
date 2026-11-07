@@ -44,7 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->render(function (AccountingError $exception) {
             $status = match ($exception->errorCode) {
-                'deadline_metadata_invalid', 'python_missing', 'ocr_unavailable' => 503,
+                'deadline_metadata_invalid', 'python_missing', 'ocr_unavailable', 'references_unavailable' => 503,
                 'processing_timeout', 'non_ocr_budget_exceeded', 'ocr_attempt_timeout' => 504,
                 'command_conflict', 'stale_purchase_version', 'stale_review_version', 'stale_receipt_link', 'stale_historical_association' => 409,
                 'verification_failed' => 422,

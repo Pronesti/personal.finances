@@ -49,6 +49,7 @@ test('direct health, cookies, real cross-subdomain CSRF, reload and logout', asy
 
 test('owner documents, forged owner rejection and credentialed PDF button', async ({ page }) => {
   await signIn(page);
+  await page.goto('/accounting/documents');
   await expect(page.getByText('a-only-pdf', { exact: true })).toBeVisible();
   await expect(page.getByText('b-only-pdf', { exact: true })).toHaveCount(0);
   const results = await page.evaluate(async ({ api, bHash }) => {
@@ -71,6 +72,7 @@ test('owner documents, forged owner rejection and credentialed PDF button', asyn
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect.poll(() => popup.isClosed()).toBe(true);
   await signIn(page, 'b');
+  await page.goto('/accounting/documents');
   await expect(page.getByText('b-only-pdf', { exact: true })).toBeVisible();
   await expect(page.getByText('a-only-pdf', { exact: true })).toHaveCount(0);
 });
@@ -88,6 +90,7 @@ test('popup blocked fallback and retained bilingual form on failed login', async
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Private ledger', exact: true })).toBeVisible();
+  await page.goto('/accounting/documents');
   await page.evaluate(() => { window.open = () => null; });
   await page.getByRole('button', { name: 'Original PDF' }).first().click();
   await expect(page.getByRole('link', { name: 'Open / download' })).toHaveAttribute('href', /^blob:/);
