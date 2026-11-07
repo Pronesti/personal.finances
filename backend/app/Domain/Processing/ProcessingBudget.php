@@ -57,7 +57,28 @@ class ProcessingBudget
             throw new AccountingError('deadline_metadata_invalid');
         }
 
-        $budget = new self($deadline - $now - 1000, max(0, $now - $start));
+        $uncertainty = abs((int) $metadata['CLOCK_SKEW_MS']);
+        $consumed = max(0, $now - $start) + $uncertainty;
+        $remaining = $deadline - $now - 1000 - $uncertainty;
+        $monotonicStart = $request->server->get('TARJETAS_INGRESS_MONOTONIC_START_MS');
+        if ($monotonicStart !== null) {
+            if ($request->server->get('TARJETAS_INGRESS_CLOCK_DOMAIN') !== 'same-host-monotonic-v1' || ! is_string($monotonicStart) || ! preg_match('/^\d{1,15}\.\d{1,6}$/D', $monotonicStart)) {
+                throw new AccountingError('deadline_metadata_invalid');
+            }
+            $monotonicStart = (float) $monotonicStart;
+            $elapsed = hrtime(true) / 1_000_000 - $monotonicStart;
+            if (! is_finite($elapsed) || $elapsed < 0 || abs($elapsed - ($now - $start)) > 1000) {
+                throw new AccountingError('deadline_metadata_invalid');
+            }
+            $consumed = max($consumed, ceil($elapsed));
+            $remaining = min($remaining, 719000 - $elapsed - $uncertainty);
+        }
+        $budget = new self($remaining, $consumed);
+        if ($monotonicStart !== null) {
+            $budget->deadline = min($budget->deadline, $monotonicStart + 719000 - $uncertainty);
+            $budget->nonOcr = max($budget->nonOcr, $budget->last - $monotonicStart);
+            $budget->check();
+        }
         $context = $request->server->get('TARJETAS_INGRESS_CONTEXT');
         if (is_string($context)) {
             $budget->context = $context;

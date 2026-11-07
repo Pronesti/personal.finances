@@ -15,7 +15,7 @@ class ProductReviewController extends Controller
 {
     private function repository(Request $request): LedgerRepository
     {
-        return new LedgerRepository($request->attributes->get('ledger'));
+        return new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget'));
     }
 
     public function index(Request $request): JsonResponse

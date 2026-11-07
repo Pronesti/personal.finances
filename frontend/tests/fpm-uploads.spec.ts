@@ -1,0 +1,45 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync,existsSync} from 'node:fs';
+import {execFileSync,spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const enabled=process.env.TARJETAS_FPM_LOCAL_ACCEPTANCE==='1';const app='https://app.tarjetas-browser.test:8450';const api='https://api.tarjetas-browser.test:8449';let users:Record<string,string>;
+function padded(filename:string,size:number){const pdf=readFileSync(filename);if(pdf.length+2>size)throw new Error('Fixture too large');return Buffer.concat([pdf,Buffer.from('\n%'),Buffer.alloc(size-pdf.length-2,32)]);}
+test.describe('dedicated local FPM upload acceptance',()=>{
+ test.skip(!enabled,'Requires the explicitly configured guarded local FPM pool and built SPA.');
+ test.beforeAll(()=>{const cwd=fileURLToPath(new URL('../../backend/',import.meta.url));execFileSync('php',['artisan','tarjetas:test-target:check','--env=fpm-browser-testing'],{cwd,stdio:'pipe'});users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd,encoding:'utf8'}));});
+ test('built SPA imports exact 10 MiB statement and 40 MiB receipt; plus-one, malformed and oversized bodies post no additional money',async({page})=>{
+  test.setTimeout(180000);await page.goto(app+'/login');await page.getByLabel('Email',{exact:true}).fill(users.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+  await page.goto(app+'/upload');await page.getByLabel('Actual card',{exact:true}).selectOption('synthetic-visa-a');const statement=padded('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf',10*1024*1024);await page.getByLabel('Statement PDF (max. 10 MiB)',{exact:true}).setInputFiles({name:'synthetic_visa_2026_02.pdf',mimeType:'application/pdf',buffer:statement});let response=page.waitForResponse(response=>response.url()===api+'/api/v1/statements'&&response.request().method()==='POST');await page.getByRole('button',{name:'Import statement',exact:true}).click();let result=await response;expect(result.status(),await result.text()).toBe(200);expect((await result.json()).postedJournalIds).toHaveLength(4);
+  await page.goto(app+'/receipts');const receipt=padded('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf',40*1024*1024);await page.getByLabel('Coto receipt PDF (max. 40 MiB)',{exact:true}).setInputFiles({name:'synthetic_coto.pdf',mimeType:'application/pdf',buffer:receipt});response=page.waitForResponse(response=>response.url()===api+'/api/v1/receipts'&&response.request().method()==='POST');await page.getByRole('button',{name:'Import receipt',exact:true}).click();result=await response;expect(result.status()).toBe(200);await expect(page.getByRole('link',{name:'Open retained receipt',exact:true})).toBeVisible();const retained=await page.evaluate(async api=>(await(await fetch(api+'/api/v1/receipts',{credentials:'include',headers:{Accept:'application/json'}})).json()).data,api);expect(retained[0].totalMinor).toBe(13000);expect(retained[0].report.ok).toBe(true);
+  const failures=await page.evaluate(async({api,statementLimit,receiptLimit})=>{
+   const token=()=>decodeURIComponent(document.cookie.split('; ').find(row=>row.startsWith('XSRF-TOKEN='))!.split('=')[1]);
+   const post=async(endpoint:string,size:number)=>{const bytes=new Uint8Array(size);bytes.set(new TextEncoder().encode('%PDF-1.4\n% synthetic oversized test'));const body=new FormData();body.append('file',new Blob([bytes],{type:'application/pdf'}),'synthetic_visa_2026_02.pdf');body.append('cardId','synthetic-visa-a');const result=await fetch(api+'/api/v1/'+endpoint,{method:'POST',credentials:'include',headers:{Accept:'application/json','Idempotency-Key':crypto.randomUUID(),'X-XSRF-TOKEN':token()},body});return {status:result.status,body:await result.json()};};
+   const statement=await post('statements',statementLimit+1);const receipt=await post('receipts',receiptLimit+1);const malformed=await post('statements',128);
+   const tooLarge=await fetch(api+'/api/v1/statements',{method:'POST',credentials:'include',headers:{Accept:'application/json','Content-Type':'application/octet-stream','Idempotency-Key':crypto.randomUUID(),'X-XSRF-TOKEN':token()},body:new Uint8Array(48*1024*1024+1)});
+   const accounting=await(await fetch(api+'/api/v1/accounting',{credentials:'include',headers:{Accept:'application/json'}})).json();return {statement,receipt,malformed,tooLarge:{status:tooLarge.status,body:await tooLarge.json()},journals:accounting.meta.total};
+  },{api,statementLimit:10*1024*1024,receiptLimit:40*1024*1024});
+  expect(failures.statement).toMatchObject({status:400,body:{error:{code:'too_large'}}});expect(failures.receipt).toMatchObject({status:400,body:{error:{code:'too_large'}}});expect(failures.malformed).toMatchObject({status:400,body:{error:{code:'parser_read_error'}}});expect(failures.tooLarge).toMatchObject({status:413,body:{error:{code:'too_large'}}});expect(failures.journals).toBe(4);
+ });
+ test('aborting a correction while PostgreSQL is locked prevents a late financial commit',async({page})=>{
+  test.setTimeout(40000);const cwd=fileURLToPath(new URL('../../backend/',import.meta.url));
+  await page.goto(app+'/login');await page.getByLabel('Email',{exact:true}).fill(users.a);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();
+  const before=await page.evaluate(async api=>{const get=async(path:string)=>(await(await fetch(api+'/api/v1/'+path,{credentials:'include',headers:{Accept:'application/json'}})).json());return {review:await get('merchant-review'),accounting:await get('accounting')};},api);
+  const selected=before.review.purchases[0];expect(selected).toBeTruthy();
+  const marker='/Users/pronestivm/.local/share/tarjetas-rebuild-acceptance/browser/temp/hold-'+crypto.randomUUID()+'.json';
+  const child=spawn('php',['artisan','tarjetas:acceptance:hold-ledger',users.a,marker,'--env=browser-testing'],{cwd,stdio:['ignore','pipe','pipe']});let failure='';child.stderr.on('data',bytes=>failure+=bytes.toString());
+  try{
+   await expect.poll(()=>existsSync(marker),{timeout:4000}).toBe(true);
+   await page.evaluate(({api,selected})=>{
+    const controller=new AbortController();const token=decodeURIComponent(document.cookie.split('; ').find(row=>row.startsWith('XSRF-TOKEN='))!.split('=')[1]);
+    Object.assign(window,{abortCorrection:()=>controller.abort(),correctionDone:false});
+    void fetch(api+'/api/v1/merchant-review',{method:'POST',credentials:'include',signal:controller.signal,headers:{Accept:'application/json','Content-Type':'application/json','X-XSRF-TOKEN':token,'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({kind:'purchase_classification',purchaseId:selected.id,cardId:selected.cardId,accountId:'expense:home:cleaning',purposeId:'home',scope:'selected',match:null,expectedVersion:selected.purchase.version})}).catch(()=>{}).finally(()=>Object.assign(window,{correctionDone:true}));
+   },{api,selected});
+   await expect.poll(()=>JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:hold-ledger',users.a,'--status','--env=browser-testing'],{cwd,encoding:'utf8'})).waiting,{timeout:4000}).toBeGreaterThan(0);
+   await page.evaluate(()=>{(window as unknown as {abortCorrection:()=>void}).abortCorrection();});
+   await expect.poll(()=>child.exitCode,{timeout:10000}).toBe(0);expect(failure).toBe('');
+   const after=await page.evaluate(async api=>{const get=async(path:string)=>(await(await fetch(api+'/api/v1/'+path,{credentials:'include',headers:{Accept:'application/json'}})).json());return {review:await get('merchant-review'),accounting:await get('accounting')};},api);
+   expect(after.review.purchases.find((p:{id:string})=>p.id===selected.id).purchase).toEqual(selected.purchase);expect(after.accounting.meta.total).toBe(before.accounting.meta.total);
+  }finally{if(child.exitCode===null)await new Promise<void>(resolve=>child.once('exit',()=>resolve()));}
+ });
+
+});

@@ -36,6 +36,13 @@ class VerifyPrivateIngress
         foreach (['REQUEST_ID' => $data['id'], 'STARTED_AT_UNIX_MS' => (string) $data['start'], 'DEADLINE_UNIX_MS' => (string) $data['deadline'], 'CLOCK_SKEW_MS' => '0', 'CONTEXT' => $context] as $name => $value) {
             $request->server->set('TARJETAS_INGRESS_'.$name, $value);
         }
+        if (array_key_exists('monotonicStartMs', $data)) {
+            if (($data['clockDomain'] ?? null) !== 'same-host-monotonic-v1' || (! is_int($data['monotonicStartMs']) && ! is_float($data['monotonicStartMs'])) || ! is_finite((float) $data['monotonicStartMs'])) {
+                throw new AccountingError('deadline_metadata_invalid');
+            }
+            $request->server->set('TARJETAS_INGRESS_MONOTONIC_START_MS', sprintf('%.6F', $data['monotonicStartMs']));
+            $request->server->set('TARJETAS_INGRESS_CLOCK_DOMAIN', $data['clockDomain']);
+        }
         try {
             $budget = ProcessingBudget::fromIngress($request);
             $response = $next($request);

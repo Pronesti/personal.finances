@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
+import { command } from '../receipts/api';
 import { useSession } from '../../auth/SessionProvider';
 import { useLocale } from '../../i18n/LocaleProvider';
 
@@ -20,9 +21,10 @@ export function Settings() {
   async function save(event: FormEvent, kind: 'account' | 'group', reset = false) {
     event.preventDefault(); setBusy(true); setError('');
     try {
-      await api.post(`/accounting/settings/${kind === 'account' ? 'account-name' : 'groups'}`, kind === 'account' ? { accountId, customName: reset ? null : name, expectedVersion: account?.version } : { groupId: groupId || null, customName: reset ? null : groupName, accountIds: group?.builtin ? group.accountIds : members, expectedVersion: group?.version ?? 0 }, { headers: { 'Idempotency-Key': crypto.randomUUID() } });
+      const body = kind === 'account' ? { accountId, customName: reset ? null : name, expectedVersion: account?.version } : { groupId: groupId || null, customName: reset ? null : groupName, accountIds: group?.builtin ? group.accountIds : members, expectedVersion: group?.version ?? 0 };
+      await command(`/accounting/settings/${kind === 'account' ? 'account-name' : 'groups'}`, body, JSON.stringify({kind,body}));
       await load();
-    } catch (failure) { const status = (failure as { response?: { status?: number } }).response?.status; setError(status === 409 ? (es ? 'La versión cambió. Recargá y revisá tus cambios.' : 'The version changed. Reload and review your changes.') : t.unavailable); }
+    } catch (failure) { const status = (failure as { response?: { status?: number } }).response?.status; setError(status === 419 ? t.csrf_mismatch : status === 409 ? (es ? 'La versión cambió. Recargá y revisá tus cambios.' : 'The version changed. Reload and review your changes.') : t.unavailable); }
     finally { setBusy(false); }
   }
   return <section className="financial-page"><Link to="/accounting">{tr('accounting.title')}</Link><h1>{es ? 'Configuración de cuentas y grupos' : 'Account and group settings'}</h1><p>{es ? 'Los nombres personalizados son literales en ambos idiomas. Las modificaciones conservan el historial contable.' : 'Custom names stay literal in both languages. Changes preserve accounting history.'}</p>

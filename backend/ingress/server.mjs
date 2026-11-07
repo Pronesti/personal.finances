@@ -27,9 +27,10 @@ export function createIngress(config) {
     if (!state || request.headers.host !== new URL(config.origin).host) { response.writeHead(400).end(); return; }
     const id = randomUUID(), directory = `${root}/${id}`;
     mkdirSync(directory, { mode: 0o700 });
-    const stamp = JSON.stringify({ id, start: state.wall, deadline: state.wall + LIMITS.total });
+    const stamp = JSON.stringify({ id, start: state.wall, deadline: state.wall + LIMITS.total, clockDomain: 'same-host-monotonic-v1', monotonicStartMs: state.mono });
     writeFileSync(`${directory}/origin.json`, stamp, { mode: 0o600, flag: 'wx' });
-    let uploaded = false, upstream = null, dispatched = false, complete = false, cancelled = false;
+    let uploaded = false, upstream = null, dispatched = false, complete = false, cancelled = false, cleanup = null, upstreamConnected = false;
+    function releaseContext() { if (cleanup !== null) { clearInterval(cleanup); cleanup = null; } rmSync(directory, { recursive: true, force: true }); }
     const chunks = []; let length = 0;
     const headers = { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json', Connection: 'close' };
     if (request.headers.origin === config.frontend) Object.assign(headers, { 'Access-Control-Allow-Origin': config.frontend, 'Access-Control-Allow-Credentials': 'true', Vary: 'Origin' });
@@ -42,10 +43,10 @@ export function createIngress(config) {
       else response.destroy();
       // Keep the upstream socket alive until PHP acknowledges cancellation/cleanup.
       chunks.length = 0;
-      if (!dispatched) { request.resume(); rmSync(directory, { recursive: true }); }
+      if (!dispatched) { request.resume(); releaseContext(); }
       else {
-        const cleanup = setInterval(() => {
-          if (existsSync(`${directory}/backend.done`)) { clearInterval(cleanup); upstream?.destroy(); rmSync(directory, { recursive: true }); }
+        cleanup = setInterval(() => {
+          if (existsSync(`${directory}/backend.done`)) { upstream?.destroy(); releaseContext(); }
         }, 50);
         cleanup.unref();
       }
@@ -72,19 +73,21 @@ export function createIngress(config) {
       Object.assign(clean, { host: new URL(config.origin).host, connection: 'close', 'content-length': length, 'x-forwarded-proto': 'https', 'x-tarjetas-deadline': stamp, 'x-tarjetas-signature': createHmac('sha256', config.key).update(`${request.method}\n${request.url}\n${stamp}`).digest('hex') });
       dispatched = true;
       upstream = http.request({ hostname: '127.0.0.1', port: config.upstreamPort, method: request.method, path: request.url, headers: clean }, result => {
-        if (cancelled) { result.resume(); return; }
+        if (cancelled) { result.on('end', releaseContext); result.resume(); return; }
         // Buffer bounded API responses so an expired response never becomes a success.
         const output = []; let size = 0;
         result.on('data', chunk => { size += chunk.length; if (size > 64 * 1024 * 1024) cancel(502,'upstream_response_limit'); else output.push(chunk); });
         result.on('end', () => {
-          if (cancelled || poll()) return;
+          if (cancelled) { releaseContext(); return; }
+          if (poll()) { releaseContext(); return; }
           complete = true; clearInterval(timer);
           const replyHeaders = { ...result.headers, connection: 'close' }; delete replyHeaders['transfer-encoding'];
           response.writeHead(result.statusCode, replyHeaders).end(Buffer.concat(output));
-          rmSync(directory, { recursive: true });
+          releaseContext();
         });
       });
-      upstream.on('error', () => cancel(502, 'upstream_unavailable'));
+      upstream.on('socket', socket => { if (!socket.connecting) upstreamConnected = true; else socket.once('connect', () => { upstreamConnected = true; }); });
+      upstream.on('error', () => { cancel(502, 'upstream_unavailable'); if (!upstreamConnected) releaseContext(); });
       upstream.end(Buffer.concat(chunks)); chunks.length = 0;
     });
     request.on('aborted', () => cancel(499,'client_disconnected'));

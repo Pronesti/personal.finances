@@ -86,4 +86,19 @@ class ProcessingBudgetTest extends TestCase
         $this->expectExceptionMessage('non_ocr_budget_exceeded');
         $budget->leaveOcr(900);
     }
+
+    public function test_clock_uncertainty_shortens_the_non_ocr_allowance(): void
+    {
+        $request = Request::create('/api/v1/receipts', 'POST', server: ['TARJETAS_INGRESS_REQUEST_ID' => '11111111-1111-4111-8111-111111111111', 'TARJETAS_INGRESS_STARTED_AT_UNIX_MS' => (string) ($start = (int) floor(microtime(true) * 1000) - 179100), 'TARJETAS_INGRESS_DEADLINE_UNIX_MS' => (string) ($start + 720000), 'TARJETAS_INGRESS_CLOCK_SKEW_MS' => '900']);
+        $this->expectExceptionMessage('non_ocr_budget_exceeded');
+        ProcessingBudget::fromIngress($request);
+    }
+
+    public function test_authenticated_monotonic_origin_does_not_lose_wall_clock_slew_time(): void
+    {
+        $request = Request::create('/api/v1/receipts', 'POST', server: ['TARJETAS_INGRESS_REQUEST_ID' => '11111111-1111-4111-8111-111111111111', 'TARJETAS_INGRESS_STARTED_AT_UNIX_MS' => (string) ($start = (int) floor(microtime(true) * 1000) - 179000), 'TARJETAS_INGRESS_DEADLINE_UNIX_MS' => (string) ($start + 720000), 'TARJETAS_INGRESS_CLOCK_SKEW_MS' => '0', 'TARJETAS_INGRESS_MONOTONIC_START_MS' => sprintf('%.6F', hrtime(true) / 1000000 - 179500), 'TARJETAS_INGRESS_CLOCK_DOMAIN' => 'same-host-monotonic-v1']);
+        $budget = ProcessingBudget::fromIngress($request);
+        $this->assertLessThanOrEqual(500, $budget->remainingMs());
+        $this->assertGreaterThan(350, $budget->remainingMs());
+    }
 }

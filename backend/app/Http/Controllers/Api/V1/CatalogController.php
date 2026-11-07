@@ -12,7 +12,7 @@ class CatalogController extends Controller
 {
     private function settings(Request $request): CatalogSettings
     {
-        return new CatalogSettings(new LedgerRepository($request->attributes->get('ledger')));
+        return new CatalogSettings(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget')));
     }
 
     public function show(Request $request): JsonResponse

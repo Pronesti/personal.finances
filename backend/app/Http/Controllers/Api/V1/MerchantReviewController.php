@@ -14,18 +14,18 @@ class MerchantReviewController extends Controller
 {
     private function service(Request $request): MerchantReviews
     {
-        return new MerchantReviews(new LedgerRepository($request->attributes->get('ledger')));
+        return new MerchantReviews(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget')));
     }
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json([...$this->service($request)->read(), 'historical' => (new SourceClassification(new LedgerRepository($request->attributes->get('ledger'))))->eligible()]);
+        return response()->json([...$this->service($request)->read(), 'historical' => (new SourceClassification(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget'))))->eligible()]);
     }
 
     public function preview(Request $request): JsonResponse
     {
         $input = $request->validate(['cardId' => ['required', 'string', 'max:200'], 'match' => ['required', 'string', 'min:3', 'max:300']]);
-        abort_unless((new LedgerRepository($request->attributes->get('ledger')))->query('cards')->where('id', $input['cardId'])->exists(), 404);
+        abort_unless((new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget')))->query('cards')->where('id', $input['cardId'])->exists(), 404);
 
         return response()->json($this->service($request)->preview($input['cardId'], $input['match']));
     }
@@ -50,7 +50,7 @@ class MerchantReviewController extends Controller
     {
         $input = $request->validate(['sourceLineId' => ['required', 'string', 'max:400'], 'match' => ['required', 'string', 'min:3', 'max:300']]);
 
-        return response()->json((new SourceClassification(new LedgerRepository($request->attributes->get('ledger'))))->preview($input['sourceLineId'], $input['match']));
+        return response()->json((new SourceClassification(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget'))))->preview($input['sourceLineId'], $input['match']));
     }
 
     public function sourceClassification(Request $request): JsonResponse
@@ -59,6 +59,6 @@ class MerchantReviewController extends Controller
         $key = $request->header('Idempotency-Key');
         validator(['key' => $key], ['key' => ['required', 'string', 'max:200', 'regex:/^[A-Za-z0-9._:-]+$/D']])->validate();
 
-        return response()->json((new SourceClassification(new LedgerRepository($request->attributes->get('ledger'))))->decide([...$input, 'key' => $key, 'recordedAt' => now()->toIso8601String()]));
+        return response()->json((new SourceClassification(new LedgerRepository($request->attributes->get('ledger'), $request->attributes->get('processing_budget'))))->decide([...$input, 'key' => $key, 'recordedAt' => now()->toIso8601String()]));
     }
 }
