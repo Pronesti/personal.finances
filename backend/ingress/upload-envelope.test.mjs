@@ -17,6 +17,7 @@ test('single PDF limits stay inclusive and framing has an independent exact 1 Mi
 });
 test('extra/duplicate/nested file parts and excessive field counts fail before PHP truncation',()=>{
  for(const parts of [[['file','a',true],['extra','b',true]],[['file','a',true],['file','b',true]],[['file[]','a',true]],Array.from({length:33},(_,i)=>['field'+i,'x'])])assert.deepEqual(check(parts),{status:400,code:'invalid_upload_envelope'});
+ for(const path of ['//api/v1/receipts','/%61pi/v1/receipts/import','/api//v1/receipts'])assert.deepEqual(check([['file','a',true],['extra','b',true]],path),{status:400,code:'invalid_upload_envelope'});
  assert.equal(check([['file','%PDF-1.4\r\n--'+boundary+'not-a-boundary',true]]),null);
  assert.deepEqual(uploadEnvelope('POST','/api/v1/%72eceipts','multipart/form-data; boundary=missing',multipart([['file','x',true]])),{status:400,code:'invalid_upload_envelope'});
  assert.equal(uploadEnvelope('POST','/api/v1/receipts/corrections','application/json',Buffer.from('{}')),null);

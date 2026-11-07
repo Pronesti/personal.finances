@@ -41,9 +41,10 @@ test('real TLS client disconnect cancels and reaps private PHP worker descendant
   rmSync(config.root+'/'+marker);
 });
 test('real slow body expires at the independent 180-second upload guard before PHP dispatch',{timeout:190000},async()=>{
-  const begin=Date.now();
+  const begin=Number(process.hrtime.bigint())/1e6, wallBegin=Date.now();
   const result=await new Promise((resolve,reject)=>{
     const req=https.request(config.origin+'/stamp',{method:'POST',ca,headers:{'Content-Length':2}},res=>{let body='';res.on('data',chunk=>body+=chunk);res.on('end',()=>{resolve({status:res.statusCode,body:JSON.parse(body)});req.destroy();});});req.on('error',reject);req.flushHeaders();req.write('a');
   });
-  assert.equal(result.status,408);assert.equal(result.body.error.code,'upload_timeout');assert.ok(Date.now()-begin>=180000);assert.ok(Date.now()-begin<182000);
+  const elapsed=Number(process.hrtime.bigint())/1e6-begin;process.stdout.write(JSON.stringify({scenario:'real_slow_upload',monotonicElapsedMs:elapsed,wallElapsedMs:Date.now()-wallBegin})+'\n');
+  assert.equal(result.status,408);assert.equal(result.body.error.code,'upload_timeout');assert.ok(elapsed>=180000);assert.ok(elapsed<182000);
 });

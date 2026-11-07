@@ -255,7 +255,7 @@ class OwnedRecovery
                 throw new RuntimeException('recovery_reference_lock');
             }
             $referenceLock = fopen($referenceRoot.'/.publication.lock', 'c');
-            if ($referenceLock === false || ! chmod($referenceRoot.'/.publication.lock', 0600) || ! flock($referenceLock, LOCK_SH | LOCK_NB)) {
+            if ($referenceLock === false || ! chmod($referenceRoot.'/.publication.lock', 0600) || filesize($referenceRoot.'/.publication.lock') !== 0 || ! flock($referenceLock, LOCK_SH | LOCK_NB)) {
                 throw new RuntimeException('recovery_reference_lock');
             }
             $manifest = DB::transaction(function () use ($scratch, $key, $bin, $output, $zip) {
@@ -603,6 +603,13 @@ class OwnedRecovery
                 throw new RuntimeException('recovery_reset_changed_object');
             }
             $expectedPaths[] = $path;
+        }
+        if (file_exists($references.'/.publication.lock') || is_link($references.'/.publication.lock')) {
+            $lockPath = $this->privateFile($references, '.publication.lock');
+            if (filesize($lockPath) !== 0) {
+                throw new RuntimeException('recovery_reset_changed_lock');
+            }
+            $expectedPaths[] = $lockPath;
         }
         $actualPaths = [];
         foreach ([$documents, $references] as $root) {

@@ -5,7 +5,7 @@ const MAX_HEADERS = 16384;
 /** Check raw framing before PHP can truncate extra files or silently discard fields. */
 export function uploadEnvelope(method, url, contentType, body) {
   let path;
-  try { path = decodeURIComponent(new URL(url, 'https://private.invalid').pathname); }
+  try { path = decodeURIComponent(url.startsWith('/') ? url.split(/[?#]/, 1)[0] : new URL(url).pathname).replace(/\/+/g, '/'); }
   catch { return {status: 400, code: 'invalid_upload_envelope'}; }
   if (method !== 'POST' || !/^\/api\/v1\/(statements|receipts)(\/import)?\/?$/.test(path) || !/^multipart\/form-data(?:;|$)/i.test(contentType ?? '')) return null;
   const boundary = /;\s*boundary=(?:"([^"\r\n]+)"|([^;\s]+))/i.exec(contentType);
