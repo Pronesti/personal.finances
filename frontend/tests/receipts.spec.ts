@@ -37,7 +37,7 @@ test('retained one-cent rejection, correction history and foreign receipt access
   await expect(page.getByRole('heading',{name:'Receipt detail',exact:true})).toBeVisible(); const receiptUrl=page.url();
   await page.locator('summary').filter({hasText:'rejected'}).first().click(); await page.getByRole('button',{name:'Original OCR transcript',exact:true}).first().click(); await expect(page.getByLabel('Editable transcript')).toHaveValue(/130,01/);
   await page.getByLabel('Editable transcript').fill(readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8')); await page.getByRole('button',{name:'Verify correction',exact:true}).click(); await expect(page.getByRole('status').filter({hasText:/Evidence retained.|Change recorded./})).toBeVisible();
-  await page.locator('summary').filter({hasText:'accepted'}).last().click(); const transcriptResponse=page.waitForResponse(r=>r.url().includes('/api/v1/documents/')&&r.request().method()==='GET'); await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click(); const retainedRows=await(await transcriptResponse).text(); await expect(page.getByLabel('Editable transcript')).toHaveValue(retainedRows.replace(/\r\n?/g,'\n'));
+  await page.locator('summary').filter({hasText:'accepted'}).last().click(); const transcriptResponse=page.waitForResponse(r=>r.url().includes('/api/v1/documents/')&&r.request().method()==='GET'); await page.getByRole('button',{name:'Corrected transcript',exact:true}).click(); const retainedRows=await(await transcriptResponse).text(); await expect(page.getByLabel('Editable transcript')).toHaveValue(retainedRows.replace(/\r\n?/g,'\n'));
   const rows=await page.getByLabel('Editable transcript').inputValue();const history=page.locator('summary').filter({hasText:/ · (accepted|rejected|pending)$/});const historyCount=await history.count();const keys:string[]=[];const payloads:string[]=[];let lost=false;
   await page.route('**/api/v1/receipts/corrections',async route=>{if(route.request().method()!=='POST'){await route.continue();return;}keys.push(route.request().headers()['idempotency-key']);payloads.push(route.request().postDataJSON().rowsText);const headers={...route.request().headers(),'idempotency-key':'synthetic-duplicate-correction'};if(!lost){lost=true;const response=await route.fetch({headers});expect(response.status()).toBe(200);expect((await response.json()).duplicate).toBe(true);await route.abort('failed');}else{await route.continue({headers});}});
   await page.getByRole('button',{name:'Verify correction',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(rows.trimEnd());
@@ -75,7 +75,7 @@ test('missing fiscal number retains correction history and the accepted receipt'
     await page.reload();
     await expect(history).toHaveCount(2+index);
     await page.locator('summary').filter({hasText:/ · accepted$/}).click();
-    await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click();
+    await page.getByRole('button',{name:'Corrected transcript',exact:true}).click();
     await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(valid.trimEnd());
     const result=await correct(rowsText,index===1?200:422);
     expect(result.receiptId).toBe(accepted.receiptId);
@@ -90,8 +90,16 @@ test('missing fiscal number retains correction history and the accepted receipt'
   await expect(history).toHaveCount(5);
   await expect(history.filter({hasText:/ · rejected$/})).toHaveCount(3);
   await expect(history.filter({hasText:/ · pending$/})).toHaveCount(1);
+  const rejectedSummary=history.filter({hasText:/ · rejected$/}).last();
+  await rejectedSummary.click();
+  const rejectedEntry=page.locator('details').filter({has:rejectedSummary});
+  await expect(rejectedEntry.getByRole('button',{name:'Accepted corrected transcript',exact:true})).toHaveCount(0);
+  await rejectedEntry.getByRole('button',{name:'Corrected transcript',exact:true}).click();
+  await expect(page.getByLabel('Editable transcript')).toHaveValue(/SYNTHETIC RICE RETRY/);
+  await expect(rejectedSummary).toContainText('rejected');
+  await rejectedSummary.click();
   await page.locator('summary').filter({hasText:/ · accepted$/}).click();
-  await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click();
+  await page.getByRole('button',{name:'Corrected transcript',exact:true}).click();
   await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(valid.trimEnd());
 });
 

@@ -86,7 +86,7 @@ it('corrects the selected history PDF and retains its identity after rejection',
  fireEvent.change(editor,{target:{value:'Corrected B'}});await user.click(screen.getByRole('button',{name:'Verify correction'}));
  await waitFor(()=>expect(mocks.command).toHaveBeenCalledWith('/receipts/corrections',{sha256:'pdf-b',rowsText:'Corrected B'},expect.any(String),true));
  await user.click(screen.getByRole('button',{name:'Verify correction'}));expect(mocks.command.mock.calls[1][1]).toEqual({sha256:'pdf-b',rowsText:'Corrected B'});
- await user.click(screen.getByRole('button',{name:'Accepted corrected transcript'}));await waitFor(()=>expect(screen.getByLabelText('Editable transcript')).toHaveValue('Stored corrected B'));await user.click(screen.getByRole('button',{name:'Verify correction'}));expect(mocks.command.mock.calls[2][1]).toEqual({sha256:'pdf-b',rowsText:'Stored corrected B'});
+ await user.click(screen.getByRole('button',{name:'Corrected transcript'}));await waitFor(()=>expect(screen.getByLabelText('Editable transcript')).toHaveValue('Stored corrected B'));await user.click(screen.getByRole('button',{name:'Verify correction'}));expect(mocks.command.mock.calls[2][1]).toEqual({sha256:'pdf-b',rowsText:'Stored corrected B'});
  await user.click(screen.getByText('2026-01-16 · accepted'));await user.click(within(screen.getByText('2026-01-16 · accepted').parentElement!).getByRole('button',{name:'Original OCR transcript'}));
  await waitFor(()=>expect(screen.getByLabelText('Editable transcript')).toHaveValue('Original A'));
  await user.click(screen.getByRole('button',{name:'Verify correction'}));expect(mocks.command.mock.calls[3][1]).toEqual({sha256:'pdf-a',rowsText:'Original A'});
@@ -107,4 +107,26 @@ it('ignores a superseded history transcript response and submits the latest sele
  await waitFor(()=>expect(screen.getByLabelText('Editable transcript')).toHaveValue('Original A'));expect(oldSignal?.aborted).toBe(true);
  await act(async()=>resolveOld({data:'Late B'}));expect(screen.getByLabelText('Editable transcript')).toHaveValue('Original A');
  await user.click(screen.getByRole('button',{name:'Verify correction'}));expect(mocks.command.mock.calls[0][1]).toEqual({sha256:'pdf-a',rowsText:'Original A'});
+});
+
+
+it.each([
+ ['en','rejected','Corrected transcript','Editable transcript'],
+ ['en','accepted','Corrected transcript','Editable transcript'],
+ ['es','rejected','Transcripción corregida','Transcripción editable'],
+ ['es','accepted','Transcripción corregida','Transcripción editable'],
+])('labels %s %s correction history without implying admission',async(locale,admission,label,editorLabel)=>{
+ document.cookie=`lang=${locale}; Path=/`;
+ const history=[{facts:{revisionId:'correction-1',originalRowsObject:{sha256:'original-rows'},correctedRowsObject:{sha256:'corrected-rows'}},source:{admission,recordedAt:'2026-01-17',documentHash:'original-pdf'}}];
+ receipt('link',7,false,false,history);
+ const get=mocks.get.getMockImplementation()!;
+ mocks.get.mockImplementation((path:string,...args:unknown[])=>path==='/documents/corrected-rows'?Promise.resolve({data:'Retained corrected evidence'}):get(path,...args));
+ const summary=await screen.findByText(`2026-01-17 · ${admission}`);
+ const user=userEvent.setup();await user.click(summary);
+ const entry=within(summary.parentElement!);
+ expect(entry.queryByRole('button',{name:/Accepted corrected transcript|Transcripción corregida aceptada/})).not.toBeInTheDocument();
+ await user.click(entry.getByRole('button',{name:label}));
+ await waitFor(()=>expect(screen.getByLabelText(editorLabel)).toHaveValue('Retained corrected evidence'));
+ expect(mocks.get).toHaveBeenCalledWith('/documents/corrected-rows',expect.objectContaining({responseType:'text'}));
+ expect(summary).toHaveTextContent(admission);
 });
