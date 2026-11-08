@@ -110,12 +110,12 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                     }
                     $allocation = [['sourceLineId' => SourceIdentity::line($revision, 1), 'accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'minor' => 8000]];
                     $base = ['receiptRevisionId' => $revision, 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'allocation' => null, 'recordedAt' => '2026-01-18T12:00:00Z'];
-                    $partial = $reconciliation->reconcile([...$base, 'key' => 'partial', 'itemAllocations' => $allocation]);
+                    $partial = $reconciliation->reconcile([...$base, 'key' => 'partial', 'expectedPurchaseVersion' => $repository->purchase($reconciliation->latest($receipt['receiptId'])['purchaseId'])['version'], 'itemAllocations' => $allocation]);
                     $purchase = $repository->purchase($partial['purchaseIds'][0]);
                     $this->assertSame([8000, 5000], array_column($purchase['allocations'], 'minor'));
                     $this->assertSame('expense:unallocated', $purchase['allocations'][1]['accountId']);
                     $allocation[] = ['sourceLineId' => SourceIdentity::line($revision, 2), 'accountId' => 'expense:personal:hygiene', 'purposeId' => 'personal', 'minor' => 5000];
-                    $reconciliation->reconcile([...$base, 'key' => 'full', 'itemAllocations' => $allocation]);
+                    $reconciliation->reconcile([...$base, 'key' => 'full', 'expectedPurchaseVersion' => $purchase['version'], 'itemAllocations' => $allocation]);
                     if ($order === 'receipt-first') {
                         $this->statement($repository);
                     }
@@ -136,6 +136,86 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         } finally {
             DB::rollBack();
         }
+    }
+
+    private function allocatedReceipt(): array
+    {
+        [$repository, $service, $links] = $this->setupLedger();
+        $receipt = $service->import($this->input(), new ProcessingBudget(719000, 0));
+        $revision = $receipt['sourceRevisionId'];
+        $base = ['receiptRevisionId' => $revision, 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'allocation' => null, 'recordedAt' => '2026-01-18T12:00:00Z'];
+        $funded = $links->reconcile([...$base, 'key' => 'fund']);
+        $products = new ReceiptProducts($repository);
+        $items = [];
+        foreach ([1, 2] as $position) {
+            $line = SourceIdentity::line($revision, $position);
+            $match = $products->latest('product_match_revisions', 'id', $line);
+            $product = $products->product($match['productId']);
+            $products->decide(['key' => 'product:'.$position, 'kind' => 'product_update', 'subjectId' => $product['id'], 'payload' => ['name' => $product['name'], 'category' => 'pantry', 'unit' => 'un'], 'recordedAt' => $base['recordedAt']]);
+            $products->decide(['key' => 'approve:'.$position, 'kind' => 'product_match', 'subjectId' => $line, 'payload' => ['productId' => $product['id']], 'recordedAt' => $base['recordedAt']]);
+            $items[] = ['sourceLineId' => $line, 'accountId' => $position === 1 ? 'expense:food:groceries:pantry' : 'expense:personal:hygiene', 'purposeId' => $position === 1 ? 'food' : 'personal', 'minor' => $position === 1 ? 8000 : 5000];
+        }
+        $links->reconcile([...$base, 'key' => 'allocate', 'expectedPurchaseVersion' => 1, 'itemAllocations' => $items]);
+
+        return [$repository, $service, $links, $receipt, $base, $items, $funded['purchaseIds'][0]];
+    }
+
+    public function test_item_allocations_survive_unlink_relink_and_legacy_empty_decisions(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+            $journals = $repository->query('journals')->get()->all();
+            $active = $links->latest($receipt['receiptId']);
+            $links->unlink(['key' => 'unlink', 'receiptRevisionId' => $base['receiptRevisionId'], 'expectedPreviousDecisionId' => $active['id'], 'recordedAt' => $base['recordedAt']]);
+            $links->reconcile([...$base, 'key' => 'relink', 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id']]);
+            $this->assertEquals($items, $links->latest($receipt['receiptId'])['itemAllocations']);
+            $this->assertEquals($items, $service->detail($receipt['receiptId'])['link']['itemAllocations']);
+            $this->assertEquals($journals, $repository->query('journals')->get()->all());
+
+            // Old installations can already have empty association-only link payloads.
+            $legacy = [...$links->latest($receipt['receiptId']), 'id' => (string) Str::uuid(), 'key' => 'legacy-empty', 'previousDecisionId' => $links->latest($receipt['receiptId'])['id'], 'allocation' => null, 'itemAllocations' => []];
+            $repository->transaction(fn () => $repository->insert('receipt_link_decisions', ['id' => $legacy['id'], 'key' => $legacy['key'], 'receipt_id' => $legacy['receiptId'], 'receipt_revision_id' => $legacy['receiptRevisionId'], 'purchase_id' => $legacy['purchaseId'], 'card_id' => $legacy['cardId'], 'action' => 'link', 'previous_decision_id' => $legacy['previousDecisionId'], 'recorded_at' => $legacy['recordedAt'], 'payload' => LedgerRepository::json($legacy)]));
+            $this->assertEquals($items, $service->detail($receipt['receiptId'])['link']['itemAllocations']);
+            $snapshot = (new ReportSnapshot($repository))->read();
+            $this->assertSame(array_column($items, 'accountId'), array_column($snapshot['allocations'], 'accountId'));
+            $this->assertSame([8000, 5000], array_column($snapshot['allocations'], 'netMinor'));
+            $this->assertEquals($journals, $repository->query('journals')->get()->all());
+            $this->assertSame([], json_decode($repository->query('receipt_link_decisions')->where('id', $legacy['id'])->value('payload'), true)['itemAllocations']);
+
+            $links->reconcile([...$base, 'key' => 'aggregate-reset', 'expectedPurchaseVersion' => 2, 'allocation' => [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]]]);
+            $this->assertSame([], $links->latest($receipt['receiptId'])['itemAllocations']);
+            $this->assertSame('expense:unallocated', $repository->purchase($purchaseId)['allocations'][0]['accountId']);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_stale_or_missing_purchase_version_cannot_overwrite_merchant_classification(): void
+    {
+        [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+        app('auth')->forgetGuards();
+        $this->actingAs($repository->ledger->owner, 'web');
+        $detail = $this->getJson('/api/v1/receipts/'.$receipt['receiptId'])->assertOk()->assertJsonPath('purchaseVersion', 2)->json();
+        $this->postJson('/api/v1/merchant-review', ['kind' => 'purchase_classification', 'purchaseId' => $purchaseId, 'cardId' => 'synthetic-visa-a', 'accountId' => 'expense:home:cleaning', 'purposeId' => 'home', 'scope' => 'selected', 'match' => null, 'expectedVersion' => 2], ['Idempotency-Key' => 'other-tab'])->assertOk();
+        $this->assertSame($detail['link']['id'], $links->latest($receipt['receiptId'])['id']);
+        $journals = $repository->query('journals')->count();
+        $decisions = $repository->query('receipt_link_decisions')->count();
+        $body = [...$base, 'purchaseId' => $purchaseId, 'itemAllocations' => $items, 'expectedPreviousDecisionId' => $detail['link']['id'], 'expectedPurchaseVersion' => $detail['purchaseVersion']];
+        $url = '/api/v1/receipts/'.$receipt['receiptId'].'/reconciliation';
+        $this->postJson($url, $body, ['Idempotency-Key' => 'stale-form'])->assertConflict()->assertJsonPath('error.code', 'stale_purchase_version');
+        unset($body['expectedPurchaseVersion']);
+        $this->postJson($url, $body, ['Idempotency-Key' => 'missing-version'])->assertConflict()->assertJsonPath('error.code', 'stale_purchase_version');
+        $this->assertSame($journals, $repository->query('journals')->count());
+        $this->assertSame($decisions, $repository->query('receipt_link_decisions')->count());
+        $this->assertSame('expense:home:cleaning', $repository->purchase($purchaseId)['allocations'][0]['accountId']);
+        $fresh = $this->getJson('/api/v1/receipts/'.$receipt['receiptId'])->assertOk()->assertJsonPath('purchaseVersion', 3)->json();
+        $body['expectedPurchaseVersion'] = $fresh['purchaseVersion'];
+        $this->postJson($url, $body, ['Idempotency-Key' => 'fresh-form'])->assertOk();
+        $this->assertSame(4, $repository->purchase($purchaseId)['version']);
+        $journals = $repository->query('journals')->count();
+        $this->postJson($url, $body, ['Idempotency-Key' => 'fresh-form'])->assertOk()->assertJsonPath('duplicate', true);
+        $this->assertSame($journals, $repository->query('journals')->count());
     }
 
     private function rejects(string $code, callable $work): void

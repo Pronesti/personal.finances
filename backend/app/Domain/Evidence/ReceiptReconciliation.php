@@ -32,7 +32,24 @@ class ReceiptReconciliation
     {
         $row = $this->repository->query('receipt_link_decisions')->where('receipt_id', $receiptId)->orderByDesc('ordinal')->first();
 
-        return $row === null ? null : [...json_decode($row->payload, true), 'id' => $row->id];
+        return $row === null ? null : $this->withRetainedAllocations([...json_decode($row->payload, true), 'id' => $row->id]);
+    }
+
+    /** Association-only decisions preserve the last explicit financial item split. */
+    private function withRetainedAllocations(array $link): array
+    {
+        $current = $link;
+        $seen = [];
+        while ($current !== null && $link['purchaseId'] !== null && $current['purchaseId'] === $link['purchaseId'] && $current['receiptRevisionId'] === $link['receiptRevisionId'] && ! isset($seen[$current['id']])) {
+            $seen[$current['id']] = true;
+            if (($current['allocation'] ?? null) !== null || ($current['itemAllocations'] ?? []) !== []) {
+                return [...$link, 'itemAllocations' => $current['itemAllocations'] ?? []];
+            }
+            $previous = $this->repository->query('receipt_link_decisions')->where('receipt_id', $link['receiptId'])->where('id', $current['previousDecisionId'])->first();
+            $current = $previous === null ? null : [...json_decode($previous->payload, true), 'id' => $previous->id];
+        }
+
+        return [...$link, 'itemAllocations' => []];
     }
 
     public function active(): array
@@ -42,7 +59,7 @@ class ReceiptReconciliation
             $latest[$row->receipt_id] = [...json_decode($row->payload, true), 'id' => $row->id];
         }
 
-        return array_values(array_filter($latest, fn ($row) => $row['action'] === 'link'));
+        return array_map(fn ($row) => $this->withRetainedAllocations($row), array_values(array_filter($latest, fn ($row) => $row['action'] === 'link')));
     }
 
     private function candidates(array $receipt, ?string $card): array
@@ -261,6 +278,7 @@ class ReceiptReconciliation
                 $target = null;
             }
             $commands = new FinancialCommands($this->repository);
+            $existingPurchase = $target !== null;
             if ($target === null && $result['reviews'] === []) {
                 $opening = $input['cardId'] === null ? null : $this->repository->query('journals')->where('card_id', $input['cardId'])->where('currency', 'ARS')->where('kind', 'opening')->orderBy('effective_date')->value('effective_date');
                 $header = $receipt['parsed']['header'];
@@ -296,7 +314,7 @@ class ReceiptReconciliation
                 }
             }
             if ($target !== null && $result['reviews'] === []) {
-                if (isset($input['expectedPurchaseVersion']) && $target['version'] !== $input['expectedPurchaseVersion']) {
+                if (($existingPurchase && $allocation !== null && ! isset($input['expectedPurchaseVersion'])) || (isset($input['expectedPurchaseVersion']) && $target['version'] !== $input['expectedPurchaseVersion'])) {
                     throw new AccountingError('stale_purchase_version');
                 }
                 if ($allocation !== null && $allocation !== $target['allocations']) {
@@ -308,7 +326,8 @@ class ReceiptReconciliation
                     }
                 }
                 if ($result['reviews'] === []) {
-                    $link = ['id' => Str::uuid()->toString(), 'key' => $key, 'receiptId' => $receipt['receiptId'], 'receiptRevisionId' => $receipt['revisionId'], 'purchaseId' => $target['purchaseId'], 'cardId' => $target['cardId'], 'paymentVerified' => $input['paymentVerified'] || (($previous['purchaseId'] ?? null) === $target['purchaseId'] && ($previous['paymentVerified'] ?? false)), 'action' => 'link', 'recordedAt' => $input['recordedAt'], 'previousDecisionId' => $previous['id'] ?? null, 'allocation' => $allocation, 'itemAllocations' => $input['itemAllocations'] ?? ($previous['itemAllocations'] ?? [])];
+                    $retainedItems = ($input['allocation'] ?? null) === null && ($previous['purchaseId'] ?? null) === $target['purchaseId'] && ($previous['receiptRevisionId'] ?? null) === $receipt['revisionId'] ? ($previous['itemAllocations'] ?? []) : [];
+                    $link = ['id' => Str::uuid()->toString(), 'key' => $key, 'receiptId' => $receipt['receiptId'], 'receiptRevisionId' => $receipt['revisionId'], 'purchaseId' => $target['purchaseId'], 'cardId' => $target['cardId'], 'paymentVerified' => $input['paymentVerified'] || (($previous['purchaseId'] ?? null) === $target['purchaseId'] && ($previous['paymentVerified'] ?? false)), 'action' => 'link', 'recordedAt' => $input['recordedAt'], 'previousDecisionId' => $previous['id'] ?? null, 'allocation' => $allocation, 'itemAllocations' => $input['itemAllocations'] ?? $retainedItems];
                     $this->appendLink($link);
                     $result['purchaseIds'][] = $target['purchaseId'];
                     $history = $this->repository->query('review_events')->where('subject_id', $receipt['revisionId'])->get();

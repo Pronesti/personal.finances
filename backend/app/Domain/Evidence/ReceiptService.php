@@ -69,9 +69,10 @@ class ReceiptService
             return ['id' => $row->id, 'item' => json_decode($row->payload, true), 'match' => $match, 'product' => $match === null ? null : $products->product($match['productId'])];
         })->all();
         $history = $this->repository->query('receipt_facts')->where('receipt_id', $id)->get()->map(fn ($row) => ['facts' => json_decode($row->payload, true), 'source' => $this->source($row->revision_id)])->all();
-        $link = $this->repository->query('receipt_link_decisions')->where('receipt_id', $id)->orderByDesc('ordinal')->first();
+        $link = (new ReceiptReconciliation($this))->latest($id);
+        $purchase = ($link['purchaseId'] ?? null) === null ? null : $this->repository->purchase($link['purchaseId']);
 
-        return [...$facts, 'items' => $lines, 'history' => $history, 'link' => $link === null ? null : [...json_decode($link->payload, true), 'id' => $link->id], 'documentHash' => $this->source($facts['revisionId'])['documentHash']];
+        return [...$facts, 'items' => $lines, 'history' => $history, 'link' => $link, 'purchaseVersion' => $purchase['version'] ?? null, 'documentHash' => $this->source($facts['revisionId'])['documentHash']];
     }
 
     private function object(array $object): void

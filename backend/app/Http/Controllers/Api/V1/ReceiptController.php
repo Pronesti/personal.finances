@@ -96,7 +96,7 @@ class ReceiptController extends Controller
         $input = $request->validate([
             'receiptRevisionId' => ['required', 'string', 'max:300'], 'cardId' => ['present', 'nullable', 'string', 'max:200'],
             'paymentVerified' => ['required', 'boolean'], 'purchaseId' => ['present', 'nullable', 'string', 'max:300'],
-            'expectedPreviousDecisionId' => ['present', 'nullable', 'uuid'], 'expectedPurchaseVersion' => ['sometimes', 'integer', 'min:1'],
+            'expectedPreviousDecisionId' => ['present', 'nullable', 'uuid'], 'expectedPurchaseVersion' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'allocation' => ['sometimes', 'nullable', 'array', 'max:500'], 'itemAllocations' => ['sometimes', 'array', 'max:500'],
             'allocation.*.accountId' => ['required', 'string', 'max:200'], 'allocation.*.purposeId' => ['required', 'string', 'max:200'], 'allocation.*.minor' => ['required', 'integer', 'min:1', 'max:9007199254740991'],
             'itemAllocations.*.sourceLineId' => ['required', 'string', 'max:400'], 'itemAllocations.*.accountId' => ['required', 'string', 'max:200'], 'itemAllocations.*.purposeId' => ['required', 'string', 'max:200'], 'itemAllocations.*.minor' => ['required', 'integer', 'min:1', 'max:9007199254740991'],
