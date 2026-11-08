@@ -33,3 +33,10 @@ it('keeps retained item selections when reopening unlinked evidence and relinks 
  await user.click(screen.getByRole('checkbox'));await user.click(screen.getByRole('button',{name:'Record supported purchase'}));
  await waitFor(()=>expect(mocks.command).toHaveBeenCalled());const body=mocks.command.mock.calls[0][1];expect(body).toMatchObject({expectedPurchaseVersion:8,purchaseId:null,allocation:null});expect(body).not.toHaveProperty('itemAllocations');
 });
+
+it('can explicitly reset the final allocated item to Unallocated with the displayed purchase version',async()=>{
+ mocks.command.mockRejectedValue(new Error('stop after submission'));receipt('link',7);const user=userEvent.setup();
+ await user.selectOptions(await screen.findByRole('combobox',{name:'Account'}),'expense:unallocated');
+ const apply=screen.getByRole('button',{name:'Apply reviewed item allocations'});expect(apply).toBeEnabled();await user.click(apply);
+ await waitFor(()=>expect(mocks.command).toHaveBeenCalled());expect(mocks.command.mock.calls[0][1]).toMatchObject({expectedPurchaseVersion:7,allocation:[{accountId:'expense:unallocated',purposeId:'unallocated',minor:8000}],itemAllocations:[]});
+});

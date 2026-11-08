@@ -138,6 +138,42 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_unlink_before_statement_requires_review_then_explicit_relink_bills_original_purchase(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                $active = $links->latest($receipt['receiptId']);
+                $links->unlink(['key' => 'unlink-before-statement', 'receiptRevisionId' => $base['receiptRevisionId'], 'expectedPreviousDecisionId' => $active['id'], 'recordedAt' => $base['recordedAt']]);
+                $unlinked = $links->latest($receipt['receiptId']);
+                $journals = $repository->query('journals')->count();
+                $statement = $this->statement($repository);
+                $this->assertContains('receipt_purchase_unlinked', array_column($statement['reviews'], 'code'));
+                $this->assertSame(1, $repository->query('purchases')->count());
+                $this->assertSame(13000, $this->expense($repository));
+                $this->assertSame($journals, $repository->query('journals')->count());
+                $this->assertSame($unlinked['id'], $links->latest($receipt['receiptId'])['id']);
+                $this->assertTrue($this->statement($repository)['duplicate']);
+                $relinked = $links->reconcile([...$base, 'key' => 'explicit-relink', 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2]);
+                $this->assertSame([$purchaseId], $relinked['purchaseIds']);
+                $this->assertEquals($items, $links->latest($receipt['receiptId'])['itemAllocations']);
+                $this->assertSame($purchaseId, $repository->query('source_purchase_identities')->value('purchase_id'));
+                $this->assertSame($journals + 1, $repository->query('journals')->count());
+                $this->assertSame(13000, $this->expense($repository));
+                $billed = DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id]);
+                $unbilled = DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:unbilled'", [$repository->ledger->id]);
+                $this->assertSame(13000, (int) $billed->minor);
+                $this->assertSame(0, (int) $unbilled->minor);
+                $this->assertSame('reviewed', $repository->query('review_events')->where('code', 'receipt_purchase_unlinked')->orderByDesc('ordinal')->value('state'));
+                $this->assertTrue($links->reconcile([...$base, 'key' => 'explicit-relink', 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2])['duplicate']);
+                $this->assertSame($journals + 1, $repository->query('journals')->count());
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     private function allocatedReceipt(): array
     {
         [$repository, $service, $links] = $this->setupLedger();

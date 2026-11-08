@@ -6,6 +6,7 @@ use App\Domain\Ledger\AccountingError;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Ledger\Money;
+use App\Domain\Reviews\MerchantReviews;
 use Brick\Math\BigInteger;
 use Illuminate\Support\Str;
 
@@ -52,14 +53,19 @@ class ReceiptReconciliation
         return [...$link, 'itemAllocations' => []];
     }
 
-    public function active(): array
+    private function latestDecisions(): array
     {
         $latest = [];
         foreach ($this->repository->query('receipt_link_decisions')->orderBy('ordinal')->get() as $row) {
             $latest[$row->receipt_id] = [...json_decode($row->payload, true), 'id' => $row->id];
         }
 
-        return array_map(fn ($row) => $this->withRetainedAllocations($row), array_values(array_filter($latest, fn ($row) => $row['action'] === 'link')));
+        return array_values($latest);
+    }
+
+    public function active(): array
+    {
+        return array_map(fn ($row) => $this->withRetainedAllocations($row), array_values(array_filter($this->latestDecisions(), fn ($row) => $row['action'] === 'link')));
     }
 
     private function candidates(array $receipt, ?string $card): array
@@ -212,6 +218,32 @@ class ReceiptReconciliation
         return array_values($combined);
     }
 
+    private function adoptStatements(array $rows, array $receipt, array $purchase, array $input, array &$result, callable $review): void
+    {
+        $commands = new FinancialCommands($this->repository);
+        foreach ($rows as $observation) {
+            $line = $observation['line'];
+            $billing = $commands->bill(['key' => 'receipt:'.$receipt['revisionId'].':adopt:'.$observation['lineId'], 'purchaseId' => $purchase['purchaseId'], 'cardId' => $input['cardId'], 'currency' => 'ARS', 'installment' => $line['installment_number'] ?? 1, 'amountMinor' => Money::source($line['ars']), 'effectiveDate' => $observation['closingDate'], 'recordedAt' => $input['recordedAt'], 'evidenceIds' => [$observation['lineId'], $receipt['revisionId']]]);
+            if ($billing['status'] === 'review') {
+                $review($billing['reviewCode']);
+
+                continue;
+            }
+            if ($billing['status'] === 'posted') {
+                array_push($result['postedJournalIds'], ...$billing['journalIds']);
+            }
+            $identity = ['sourceLineId' => $observation['lineId'], 'purchaseId' => $purchase['purchaseId'], 'cardId' => $input['cardId'], 'currency' => 'ARS', 'purchaseDate' => $line['date'], 'voucher' => $line['voucher'] ?? null, 'installment' => $line['installment_number'] ?? null, 'installmentCount' => $line['installment_count'] ?? null, 'amountMinor' => Money::source($line['ars'])];
+            $this->repository->insert('source_purchase_identities', ['source_line_id' => $observation['lineId'], 'currency' => 'ARS', 'purchase_id' => $purchase['purchaseId'], 'card_id' => $input['cardId'], 'purchase_date' => $line['date'], 'payload' => LedgerRepository::json($identity)], false);
+            (new MerchantReviews($this->repository))->register($purchase['purchaseId'], $input['cardId'], $line['description'], $observation['lineId']);
+            $history = $this->repository->query('review_events')->where('subject_id', $observation['revisionId'])->where('code', 'receipt_purchase_unlinked')->get();
+            foreach ($history as $event) {
+                if ($event->state === 'open' && ! $history->contains(fn ($child) => $child->prior_decision_id === $event->id) && in_array($observation['lineId'], json_decode($event->source_line_ids, true), true)) {
+                    $this->repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $observation['revisionId'], 'prior_decision_id' => $event->id, 'code' => $event->code, 'params' => $event->params, 'source_line_ids' => $event->source_line_ids, 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
+                }
+            }
+        }
+    }
+
     public function reconcile(array $input): array
     {
         return $this->repository->transaction(function () use ($input) {
@@ -255,7 +287,7 @@ class ReceiptReconciliation
                     $review('receipt_amount_mismatch');
                 }
             }
-            $unposted = $target === null && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
+            $unposted = ($target === null || (($previous['action'] ?? null) === 'unlink' && $input['paymentVerified'] && $input['cardId'] !== null)) && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
             if ($unposted['ambiguous']) {
                 $review('multiple_statement_candidates', ['count' => count($unposted['rows'])]);
             }
@@ -296,20 +328,6 @@ class ReceiptReconciliation
                     } else {
                         $result['postedJournalIds'] = $posted['status'] === 'posted' ? $posted['journalIds'] : [];
                         $target = $this->repository->purchase($id);
-                        foreach ($unposted['rows'] as $observation) {
-                            $line = $observation['line'];
-                            $billing = $commands->bill(['key' => 'receipt:'.$receipt['revisionId'].':adopt:'.$observation['lineId'], 'purchaseId' => $id, 'cardId' => $input['cardId'], 'currency' => 'ARS', 'installment' => $line['installment_number'] ?? 1, 'amountMinor' => Money::source($line['ars']), 'effectiveDate' => $observation['closingDate'], 'recordedAt' => $input['recordedAt'], 'evidenceIds' => [$observation['lineId'], $receipt['revisionId']]]);
-                            if ($billing['status'] === 'review') {
-                                $review($billing['reviewCode']);
-
-                                continue;
-                            }
-                            if ($billing['status'] === 'posted') {
-                                array_push($result['postedJournalIds'], ...$billing['journalIds']);
-                            }
-                            $identity = ['sourceLineId' => $observation['lineId'], 'purchaseId' => $id, 'cardId' => $input['cardId'], 'currency' => 'ARS', 'purchaseDate' => $line['date'], 'voucher' => $line['voucher'] ?? null, 'installment' => $line['installment_number'] ?? null, 'installmentCount' => $line['installment_count'] ?? null, 'amountMinor' => Money::source($line['ars'])];
-                            $this->repository->insert('source_purchase_identities', ['source_line_id' => $observation['lineId'], 'currency' => 'ARS', 'purchase_id' => $id, 'card_id' => $input['cardId'], 'purchase_date' => $line['date'], 'payload' => LedgerRepository::json($identity)], false);
-                        }
                     }
                 }
             }
@@ -317,6 +335,7 @@ class ReceiptReconciliation
                 if (($existingPurchase && $allocation !== null && ! isset($input['expectedPurchaseVersion'])) || (isset($input['expectedPurchaseVersion']) && $target['version'] !== $input['expectedPurchaseVersion'])) {
                     throw new AccountingError('stale_purchase_version');
                 }
+                $this->adoptStatements($unposted['rows'], $receipt, $target, $input, $result, $review);
                 if ($allocation !== null && $allocation !== $target['allocations']) {
                     $post = $commands->correct(['key' => 'receipt:'.$receipt['revisionId'].':allocation:'.$input['key'], 'cardId' => $target['cardId'], 'purchaseId' => $target['purchaseId'], 'expectedVersion' => $target['version'], 'replacement' => [...$target, 'allocations' => $allocation, 'evidenceIds' => array_values(array_unique([...$target['evidenceIds'], $receipt['revisionId']]))], 'recordedAt' => $input['recordedAt'], 'reason' => 'reviewed receipt item allocation']);
                     if ($post['status'] === 'review') {
@@ -381,8 +400,10 @@ class ReceiptReconciliation
             return ['purchaseId' => null, 'reviewCode' => null];
         }
         $candidates = [];
-        foreach ($this->active() as $link) {
-            if ($link['cardId'] !== $input['cardId'] || ! $link['paymentVerified']) {
+        $unlinked = false;
+        foreach ($this->latestDecisions() as $link) {
+            $detached = $link['action'] === 'unlink';
+            if ($link['cardId'] !== $input['cardId'] || (! $detached && ! $link['paymentVerified']) || ($detached && ($link['purchaseId'] !== 'receipt-purchase:'.$link['receiptId'] || $this->repository->query('source_purchase_identities')->where('purchase_id', $link['purchaseId'])->exists()))) {
                 continue;
             }
             $receipt = $this->receipts->facts($link['receiptRevisionId']);
@@ -404,7 +425,12 @@ class ReceiptReconciliation
             $sameOccurrence = $this->repository->query('source_purchase_identities')->where('purchase_id', $purchase['purchaseId'])->get()->contains(fn ($identity) => json_decode($identity->source_line_id, true)[0] === $revision && $identity->source_line_id !== $input['sourceLineId']);
             if (! $sameOccurrence) {
                 $candidates[$purchase['purchaseId']] = true;
+                $unlinked = $unlinked || $detached;
             }
+        }
+
+        if ($unlinked) {
+            return ['purchaseId' => null, 'reviewCode' => 'receipt_purchase_unlinked'];
         }
 
         return ['purchaseId' => count($candidates) === 1 ? array_key_first($candidates) : null, 'reviewCode' => count($candidates) > 1 ? 'multiple_receipt_candidates' : null];

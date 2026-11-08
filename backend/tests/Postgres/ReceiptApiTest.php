@@ -37,8 +37,10 @@ class ReceiptApiTest extends PostgresTestCase
         $this->withServerVariables(['TARJETAS_INGRESS_REQUEST_ID' => (string) Str::uuid(), 'TARJETAS_INGRESS_STARTED_AT_UNIX_MS' => $now, 'TARJETAS_INGRESS_DEADLINE_UNIX_MS' => (string) ((int) $now + 720000), 'TARJETAS_INGRESS_CLOCK_SKEW_MS' => '0']);
         $this->withHeader('Idempotency-Key', 'correction')->postJson('/api/v1/receipts/corrections/'.$hash, ['rowsText' => file_get_contents(base_path('../docs/rebuild/fixtures/receipt-one-cent-error.rows.txt'))])->assertUnprocessable()->assertJsonPath('error.code', 'verification_failed')->assertJsonPath('receiptId', $id)->assertJsonPath('report.ok', false)->assertJsonPath('sha256', $hash);
         $this->withHeader('Idempotency-Key', 'corrected')->postJson('/api/v1/receipts/corrections', ['sha256' => $hash, 'rowsText' => file_get_contents(base_path('../docs/rebuild/fixtures/receipt-corrected.rows.txt'))])->assertOk()->assertJsonPath('receiptId', $id);
-        $this->getJson('/api/v1/receipts/'.$id)->assertOk()->assertJsonPath('report.ok', true)->assertJsonCount(3, 'history');
+        $detail = $this->getJson('/api/v1/receipts/'.$id)->assertOk()->assertJsonPath('report.ok', true)->assertJsonPath('purchaseVersion', null)->assertJsonCount(3, 'history')->json();
         $this->assertSame(0, $repository->query('journals')->count());
+        $this->withHeader('Idempotency-Key', 'initial-funding')->postJson('/api/v1/receipts/'.$id.'/reconciliation', ['receiptRevisionId' => $detail['revisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'expectedPreviousDecisionId' => null, 'expectedPurchaseVersion' => null, 'allocation' => null])->assertOk();
+        $this->getJson('/api/v1/receipts/'.$id)->assertOk()->assertJsonPath('purchaseVersion', 1);
         app('auth')->forgetGuards();
         $this->actingAs($other->owner, 'web')->getJson('/api/v1/receipts/'.$id)->assertNotFound();
         $this->getJson('/api/v1/documents/'.$hash)->assertNotFound();

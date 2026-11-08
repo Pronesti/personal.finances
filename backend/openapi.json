@@ -1394,9 +1394,13 @@
                     "format": "uuid"
                   },
                   "expectedPurchaseVersion": {
-                    "type": "integer",
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
                     "minimum": 1,
-                    "maximum": 9007199254740991
+                    "maximum": 9007199254740991,
+                    "description": "Observed purchaseVersion from receipt detail. Required and non-null when applying allocation or nonempty itemAllocations to an existing purchase. Missing or stale versions return HTTP 409 stale_purchase_version. Initial funding may use null. When non-null for association-only reconciliation, it must match the selected purchase."
                   },
                   "allocation": {
                     "type": [
@@ -1424,7 +1428,8 @@
                         "purposeId",
                         "minor"
                       ]
-                    }
+                    },
+                    "description": "Explicit aggregate correction. To reset all items to Unallocated, submit the full receipt total to expense:unallocated with purpose unallocated, and itemAllocations: []. Null without nonempty itemAllocations makes no financial correction."
                   },
                   "itemAllocations": {
                     "type": "array",
@@ -5147,6 +5152,15 @@
           },
           "documentHash": {
             "type": "string"
+          },
+          "purchaseVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Current version of the linked or previously unlinked purchase; null when none exists. Return this observed value as expectedPurchaseVersion for allocation corrections."
           }
         },
         "required": [
@@ -5157,7 +5171,8 @@
           "items",
           "history",
           "link",
-          "documentHash"
+          "documentHash",
+          "purchaseVersion"
         ]
       },
       "ReceiptRejected": {
