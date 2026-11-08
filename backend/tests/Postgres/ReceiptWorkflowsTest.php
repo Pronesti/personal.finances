@@ -221,6 +221,78 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_fiscal_parse_failures_keep_a_linear_owned_receipt_correction_history(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['accepted', 'rejected'] as $initial) {
+                [$repository, $service, $links] = $this->setupLedger();
+                $valid = $this->input();
+                $missing = str_replace(' NRO.T.:9999-00000001', '', $valid['rowsText']);
+                $input = [...$valid, 'rowsText' => $initial === 'accepted' ? $valid['rowsText'] : $missing];
+                try {
+                    $first = $service->import($input, new ProcessingBudget(719000, 0));
+                } catch (ReceiptRejected $error) {
+                    $first = $error->receiptPayload;
+                }
+                $receiptId = $first['receiptId'];
+                $accepted = $initial === 'accepted' ? $first['sourceRevisionId'] : null;
+                $previous = $first['sourceRevisionId'];
+                if ($initial === 'accepted') {
+                    $links->reconcile(['key' => 'fund', 'receiptRevisionId' => $accepted, 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'allocation' => null, 'recordedAt' => '2026-01-17T12:00:00Z']);
+                    $copy = $service->import([...$valid, 'key' => 'same-fiscal-other-pdf', 'bytes' => $valid['bytes']."\n% synthetic same fiscal evidence"], new ProcessingBudget(719000, 0));
+                    $this->assertSame($receiptId, $copy['receiptId']);
+                    $previous = $copy['sourceRevisionId'];
+                }
+                $journals = $repository->query('journals')->get()->all();
+                $hash = hash('sha256', $input['bytes']);
+                $rows = [$missing, $this->input('receipt-one-cent-error.rows.txt')['rowsText'], str_replace('SYNTHETIC RICE', 'SYNTHETIC RICE RETRY', $missing), $valid['rowsText'], str_replace('SYNTHETIC RICE', 'SYNTHETIC RICE LATER', $missing), str_replace('SYNTHETIC RICE', 'SYNTHETIC RICE REVIEW', $valid['rowsText'])];
+                foreach ($rows as $index => $text) {
+                    $validCorrection = in_array($index, [3, 5], true);
+                    try {
+                        $result = $service->correction($hash, $text, 'fiscal-correction-'.$index, '2026-02-01T12:00:00Z', new ProcessingBudget(719000, 0));
+                        $this->assertTrue($validCorrection);
+                    } catch (ReceiptRejected $error) {
+                        $this->assertFalse($validCorrection);
+                        $result = $error->receiptPayload;
+                        $this->assertFalse($result['report']['ok']);
+                    }
+                    $this->assertSame($receiptId, $result['receiptId']);
+                    $source = $service->source($result['sourceRevisionId']);
+                    $this->assertSame($previous, $source['previousRevisionId']);
+                    $this->assertSame($validCorrection ? ($accepted === null ? 'accepted' : 'pending') : 'rejected', $source['admission']);
+                    $facts = $service->facts($result['sourceRevisionId']);
+                    $this->assertSame($input['rowsText'], $service->readObject($facts['originalRowsObject']['sha256']));
+                    $this->assertSame($text, $service->readObject($facts['correctedRowsObject']['sha256']));
+                    $this->assertSame($input['bytes'], $service->readObject($hash));
+                    if ($source['admission'] === 'accepted') {
+                        $accepted = $result['sourceRevisionId'];
+                    }
+                    if ($accepted !== null) {
+                        $this->assertSame($accepted, $service->detail($receiptId)['revisionId']);
+                    }
+                    $previous = $result['sourceRevisionId'];
+                    if ($initial === 'rejected' && $index === 3) {
+                        $copy = $service->import([...$valid, 'key' => 'recovered-fiscal-other-pdf', 'bytes' => $valid['bytes']."\n% synthetic recovered fiscal evidence"], new ProcessingBudget(719000, 0));
+                        $this->assertSame($receiptId, $copy['receiptId']);
+                        $this->assertSame('pending', $service->source($copy['sourceRevisionId'])['admission']);
+                        $this->assertSame($previous, $service->source($copy['sourceRevisionId'])['previousRevisionId']);
+                        $previous = $copy['sourceRevisionId'];
+                    }
+                }
+                $count = $repository->query('source_revisions')->count();
+                $this->assertTrue($service->correction($hash, $rows[5], 'fiscal-correction-5', '2026-02-02T12:00:00Z', new ProcessingBudget(719000, 0))['duplicate']);
+                $this->assertSame($count, $repository->query('source_revisions')->count());
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+                [$other, $otherService] = $this->setupLedger();
+                $this->assertNull($otherService->detail($receiptId));
+                $this->assertNull($otherService->source($previous));
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_duplicate_corrections_reserve_keys_without_new_evidence_and_isolate_owners(): void
     {
         DB::beginTransaction();

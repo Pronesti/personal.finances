@@ -48,6 +48,12 @@ class ReceiptApiTest extends PostgresTestCase
         $this->assertSame(0, $repository->query('journals')->count());
         $this->withHeader('Idempotency-Key', 'initial-funding')->postJson('/api/v1/receipts/'.$id.'/reconciliation', ['receiptRevisionId' => $detail['revisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'expectedPreviousDecisionId' => null, 'expectedPurchaseVersion' => null, 'allocation' => null])->assertOk();
         $this->getJson('/api/v1/receipts/'.$id)->assertOk()->assertJsonPath('purchaseVersion', 1);
+        $missingFiscal = str_replace(' NRO.T.:9999-00000001', '', $rows);
+        $failed = $this->withHeader('Idempotency-Key', 'missing-fiscal')->postJson('/api/v1/receipts/corrections', ['sha256' => $hash, 'rowsText' => $missingFiscal])->assertUnprocessable()->assertJsonPath('error.code', 'verification_failed')->assertJsonPath('receiptId', $id)->assertJsonPath('report.ok', false)->json();
+        $this->withHeader('Idempotency-Key', 'missing-fiscal')->postJson('/api/v1/receipts/corrections', ['sha256' => $hash, 'rowsText' => $missingFiscal])->assertUnprocessable()->assertJsonPath('sourceRevisionId', $failed['sourceRevisionId']);
+        $this->withHeader('Idempotency-Key', 'repair-fiscal')->postJson('/api/v1/receipts/corrections', ['sha256' => $hash, 'rowsText' => str_replace('SYNTHETIC RICE', 'SYNTHETIC RICE REPAIRED', $rows)])->assertOk()->assertJsonPath('receiptId', $id);
+        $this->getJson('/api/v1/receipts/'.$id)->assertOk()->assertJsonCount(5, 'history')->assertJsonPath('revisionId', $detail['revisionId'])->assertJsonPath('purchaseVersion', 1);
+        $this->assertSame(1, $repository->query('journals')->count());
         app('auth')->forgetGuards();
         $this->actingAs($other->owner, 'web')->getJson('/api/v1/receipts/'.$id)->assertNotFound();
         $this->getJson('/api/v1/documents/'.$hash)->assertNotFound();

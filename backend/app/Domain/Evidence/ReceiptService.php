@@ -236,9 +236,19 @@ class ReceiptService
 
                 return $result;
             }
-            $previous = $this->repository->query('source_revisions')->where('source_key', $sourceKey)->orderByDesc('ordinal')->first();
-            if ($previous === null && ($input['correctedRowsText'] ?? null) !== null) {
-                $previous = $this->repository->query('source_revisions')->where('kind', 'receipt')->where('document_hash', $hash)->orderByDesc('ordinal')->first();
+            $identityKeys = ['sha256:'.$hash];
+            if ($report['ok'] && $fiscal !== null) {
+                $identityKeys[] = 'fiscal:'.$fiscal;
+            }
+            $receiptIds = $this->repository->query('receipt_entity_keys')->where('chain', 'coto')->whereIn('identity_key', $identityKeys)->distinct()->pluck('receipt_id')->all();
+            if (count($receiptIds) > 1) {
+                throw new AccountingError('receipt_identity_conflict');
+            }
+            $previous = $receiptIds === [] ? null : $this->repository->query('source_revisions')->where('kind', 'receipt')->whereIn('id', $this->repository->query('receipt_facts')->where('receipt_id', $receiptIds[0])->select('revision_id'))->orderByDesc('ordinal')->first();
+            if ($previous !== null) {
+                $sourceKey = $previous->source_key;
+            } else {
+                $previous = $this->repository->query('source_revisions')->where('kind', 'receipt')->where('source_key', $sourceKey)->orderByDesc('ordinal')->first();
             }
             $priorAccepted = $this->repository->query('source_revisions')->where('source_key', $sourceKey)->whereRaw("payload->>'admission'='accepted'")->first();
             $admission = ! $report['ok'] ? 'rejected' : (($priorAccepted !== null || ($parsed['footer']['totalCents'] ?? 0) <= 0) ? 'pending' : 'accepted');

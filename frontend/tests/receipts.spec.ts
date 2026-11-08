@@ -36,7 +36,7 @@ test('retained one-cent rejection, correction history and foreign receipt access
   await expect(page.getByRole('heading',{name:'Receipt detail',exact:true})).toBeVisible(); const receiptUrl=page.url();
   await page.locator('summary').filter({hasText:'rejected'}).first().click(); await page.getByRole('button',{name:'Original OCR transcript',exact:true}).first().click(); await expect(page.getByLabel('Editable transcript')).toHaveValue(/130,01/);
   await page.getByLabel('Editable transcript').fill(readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8')); await page.getByRole('button',{name:'Verify correction',exact:true}).click(); await expect(page.getByRole('status').filter({hasText:/Evidence retained.|Change recorded./})).toBeVisible();
-  await page.locator('summary').filter({hasText:'accepted'}).last().click(); await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click(); await expect(page.getByLabel('Editable transcript')).toHaveValue(/130,00/);
+  await page.locator('summary').filter({hasText:'accepted'}).last().click(); const transcriptResponse=page.waitForResponse(r=>r.url().includes('/api/v1/documents/')&&r.request().method()==='GET'); await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click(); const retainedRows=await(await transcriptResponse).text(); await expect(page.getByLabel('Editable transcript')).toHaveValue(retainedRows.replace(/\r\n?/g,'\n'));
   const rows=await page.getByLabel('Editable transcript').inputValue();const history=page.locator('summary').filter({hasText:/ · (accepted|rejected|pending)$/});const historyCount=await history.count();const keys:string[]=[];const payloads:string[]=[];let lost=false;
   await page.route('**/api/v1/receipts/corrections',async route=>{if(route.request().method()!=='POST'){await route.continue();return;}keys.push(route.request().headers()['idempotency-key']);payloads.push(route.request().postDataJSON().rowsText);const headers={...route.request().headers(),'idempotency-key':'synthetic-duplicate-correction'};if(!lost){lost=true;const response=await route.fetch({headers});expect(response.status()).toBe(200);expect((await response.json()).duplicate).toBe(true);await route.abort('failed');}else{await route.continue({headers});}});
   await page.getByRole('button',{name:'Verify correction',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(rows.trimEnd());
@@ -44,4 +44,52 @@ test('retained one-cent rejection, correction history and foreign receipt access
   await page.getByLabel('Editable transcript').fill(rows.replace('SYNTHETIC RICE','SYNTHETIC ALTERED RICE'));response=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');await page.getByRole('button',{name:'Verify correction',exact:true}).click();const conflict=await response;expect(conflict.status()).toBe(409);expect((await conflict.json()).error.code).toBe('command_conflict');await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(rows.replace('SYNTHETIC RICE','SYNTHETIC ALTERED RICE').trimEnd());await page.reload();await expect(history).toHaveCount(historyCount);
   await page.setViewportSize({width:390,height:844}); expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.goto('/'); await page.getByRole('button',{name:'Sign out',exact:true}).click(); await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible(); await login(page,'a'); await page.goto(receiptUrl); await expect(page.getByRole('alert')).toHaveText('Receipt not found.');
+});
+
+test('missing fiscal number retains correction history and the accepted receipt', async ({page}) => {
+  test.setTimeout(120000);
+  users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:receipt-rejection','--fresh','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));
+  await login(page,'b');
+  await page.getByRole('link',{name:'Receipts',exact:true}).first().click();
+  await page.getByRole('link',{name:'2026-01-15',exact:true}).first().click();
+  await page.locator('summary').filter({hasText:'rejected'}).first().click();
+  await page.getByRole('button',{name:'Original OCR transcript',exact:true}).first().click();
+  const valid=readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8');
+  async function correct(rowsText:string, status:number) {
+    await page.getByLabel('Editable transcript').fill(rowsText);
+    const response=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');
+    await page.getByRole('button',{name:'Verify correction',exact:true}).click();
+    const result=await response;
+    expect(result.status(),await result.text()).toBe(status);
+    return result.json();
+  }
+  const accepted=await correct(valid,200);
+  const history=page.locator('summary').filter({hasText:/ · (accepted|rejected|pending)$/});
+  await expect(history).toHaveCount(2);
+  for (const [index,rowsText] of [
+    valid.replace(' NRO.T.:9999-00000001',''),
+    valid.replace('SYNTHETIC RICE','SYNTHETIC RICE REPAIRED'),
+    valid.replace(' NRO.T.:9999-00000001','').replace('SYNTHETIC RICE','SYNTHETIC RICE RETRY'),
+  ].entries()) {
+    await page.reload();
+    await expect(history).toHaveCount(2+index);
+    await page.locator('summary').filter({hasText:/ · accepted$/}).click();
+    await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click();
+    await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(valid.trimEnd());
+    const result=await correct(rowsText,index===1?200:422);
+    expect(result.receiptId).toBe(accepted.receiptId);
+    if(index!==1) {
+      expect(result.error.code).toBe('verification_failed');
+      expect(result.report.ok).toBe(false);
+      expect(result.rowsText.trimEnd()).toBe(rowsText.trimEnd());
+      await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(rowsText.trimEnd());
+    }
+  }
+  await page.reload();
+  await expect(history).toHaveCount(5);
+  await expect(history.filter({hasText:/ · rejected$/})).toHaveCount(3);
+  await expect(history.filter({hasText:/ · pending$/})).toHaveCount(1);
+  await page.locator('summary').filter({hasText:/ · accepted$/}).click();
+  await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click();
+  await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(valid.trimEnd());
 });
