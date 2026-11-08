@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { resetSyntheticRateLimits } from './target';
 test.beforeEach(resetSyntheticRateLimits);
 import { readFileSync } from 'node:fs';
+import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 let users:Record<string,string>;
@@ -92,4 +93,39 @@ test('missing fiscal number retains correction history and the accepted receipt'
   await page.locator('summary').filter({hasText:/ · accepted$/}).click();
   await page.getByRole('button',{name:'Accepted corrected transcript',exact:true}).click();
   await expect.poll(async()=>(await page.getByLabel('Editable transcript').inputValue()).trimEnd()).toBe(valid.trimEnd());
+});
+
+test('correction from a second history PDF retains that PDF and its original OCR',async({page})=>{
+  test.setTimeout(120000);
+  users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));
+  await login(page,'a');
+  const bytesA=readFileSync('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf');
+  const bytesB=Buffer.from(bytesA.toString('latin1').replaceAll('SYNTHETIC RICE','SYNTHETIC BEAN'),'latin1');
+  expect(bytesB.length).toBe(bytesA.length);expect(bytesB.equals(bytesA)).toBe(false);
+  const hashA=createHash('sha256').update(bytesA).digest('hex');const hashB=createHash('sha256').update(bytesB).digest('hex');
+  async function upload(buffer:Buffer,name:string) {
+    await page.goto('/receipts');await page.getByLabel('Coto receipt PDF').setInputFiles({name,mimeType:'application/pdf',buffer});
+    const posted=page.waitForResponse(r=>r.url()===api+'/api/v1/receipts'&&r.request().method()==='POST');
+    await page.getByRole('button',{name:'Import receipt',exact:true}).click();const response=await posted;expect(response.status(),await response.text()).toBe(200);return response.json();
+  }
+  const first=await upload(bytesA,'synthetic-a.pdf');const second=await upload(bytesB,'synthetic-b.pdf');expect(second.receiptId).toBe(first.receiptId);
+  await page.getByRole('link',{name:'Open retained receipt',exact:true}).click();
+  const receiptUrl=page.url();
+  await page.locator('summary').filter({hasText:/ · pending$/}).last().click();
+  await page.getByRole('button',{name:'Original OCR transcript',exact:true}).last().click();
+  const editor=page.getByLabel('Editable transcript');await expect(editor).toHaveValue(/SYNTHETIC BEAN/);const originalB=await editor.inputValue();
+  const rows=originalB.replace('SYNTHETIC BEAN','SYNTHETIC BEAN REVIEWED');await editor.fill(rows);
+  const posted=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');
+  await page.getByRole('button',{name:'Verify correction',exact:true}).click();const response=await posted;
+  expect(response.request().postDataJSON().sha256).toBe(hashB);expect(response.status(),await response.text()).toBe(200);const result=await response.json();
+  await page.reload();await expect(page.locator('summary').filter({hasText:/ · (accepted|rejected|pending)$/})).toHaveCount(3);
+  const retained=await page.evaluate(async({api,id,revision})=>{
+    const get=async(path:string)=>{const response=await fetch(api+'/api/v1/'+path,{credentials:'include'});if(!response.ok)throw new Error(path+':'+response.status);return response;};
+    const detail=await(await get('receipts/'+id)).json();const history=detail.history.find((row:any)=>row.facts.revisionId===revision);
+    return {detail,history,original:await(await get('documents/'+history.facts.originalRowsObject.sha256)).text(),corrected:await(await get('documents/'+history.facts.correctedRowsObject.sha256)).text()};
+  },{api,id:first.receiptId,revision:result.sourceRevisionId});
+  expect(retained.detail.revisionId).toBe(first.sourceRevisionId);expect(retained.detail.documentHash).toBe(hashA);
+  expect(retained.history.source.documentHash).toBe(hashB);expect(retained.history.source.previousRevisionId).toBe(second.sourceRevisionId);
+  expect(retained.original.replace(/\r\n?/g,'\n').trimEnd()).toBe(originalB.trimEnd());expect(retained.corrected.trimEnd()).toBe(rows.trimEnd());
+  await page.goto('/');await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();await login(page,'b');await page.goto(receiptUrl);await expect(page.getByRole('alert')).toHaveText('Receipt not found.');
 });

@@ -221,6 +221,93 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_distinct_rejected_pdfs_do_not_share_unverified_fiscal_identity(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service] = $this->setupLedger();
+            $invalid = $this->input('receipt-one-cent-error.rows.txt');
+            $rejected = [];
+            foreach (['a', 'b'] as $name) {
+                $input = [...$invalid, 'key' => 'reject-'.$name, 'bytes' => $invalid['bytes']."\n% synthetic distinct receipt ".$name];
+                try {
+                    $service->import($input, new ProcessingBudget(719000, 0));
+                    $this->fail('Invalid receipt accepted');
+                } catch (ReceiptRejected $error) {
+                    $rejected[$name] = $error->receiptPayload;
+                }
+            }
+            $this->assertNotSame($rejected['a']['receiptId'], $rejected['b']['receiptId']);
+            $this->assertSame(2, $repository->query('receipt_entities')->count());
+            $this->assertSame(0, $repository->query('receipt_entity_keys')->where('identity_key', 'like', 'fiscal:%')->count());
+            foreach (['a' => '9999-00000001', 'b' => '9999-00000002'] as $name => $fiscal) {
+                $rows = str_replace('9999-00000001', $fiscal, $this->input()['rowsText']);
+                $corrected = $service->correction($rejected[$name]['sha256'], $rows, 'correct-'.$name, '2026-02-01T12:00:00Z', new ProcessingBudget(719000, 0));
+                $this->assertSame($rejected[$name]['receiptId'], $corrected['receiptId']);
+                $source = $service->source($corrected['sourceRevisionId']);
+                $this->assertSame('accepted', $source['admission']);
+                $this->assertSame($rejected[$name]['sourceRevisionId'], $source['previousRevisionId']);
+                $detail = $service->detail($corrected['receiptId']);
+                $this->assertSame('coto:'.$fiscal, $detail['fiscalId']);
+                $this->assertCount(2, $detail['history']);
+                $this->assertSame($invalid['rowsText'], $service->readObject($detail['originalRowsObject']['sha256']));
+                $this->assertSame($rows, $service->readObject($detail['correctedRowsObject']['sha256']));
+                $this->assertTrue($service->correction($rejected[$name]['sha256'], $rows, 'correct-'.$name, '2026-02-02T12:00:00Z', new ProcessingBudget(719000, 0))['duplicate']);
+            }
+            $this->assertSame(0, $repository->query('journals')->count());
+            [$other, $otherService] = $this->setupLedger();
+            foreach ($rejected as $result) {
+                $this->assertNull($otherService->detail($result['receiptId']));
+                $this->assertNull($otherService->source($result['sourceRevisionId']));
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_historical_unverified_fiscal_key_does_not_bind_a_new_pdf(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service] = $this->setupLedger();
+            $input = $this->input('receipt-one-cent-error.rows.txt');
+            $store = app(DocumentStore::class);
+            $pdf = $store->put($repository->ledger, $input['bytes']);
+            $rows = $store->put($repository->ledger, $input['rowsText']);
+            $sourceKey = LedgerRepository::json(['receipt', 'fiscal', 'coto:9999-00000001']);
+            $source = ['id' => 'legacy-rejected', 'kind' => 'receipt', 'documentHash' => $pdf['sha256'], 'sourceKey' => $sourceKey, 'previousRevisionId' => null, 'recordedAt' => $input['recordedAt'], 'admission' => 'rejected', 'appRevision' => 'legacy-acceptance'];
+            $repository->transaction(function () use ($repository, $pdf, $rows, $source, $sourceKey, $input) {
+                $repository->insert('source_documents', $pdf);
+                $repository->insert('source_documents', $rows);
+                $rowId = Str::uuid()->toString();
+                $repository->insert('receipt_entities', ['row_id' => $rowId, 'chain' => 'coto', 'fiscal_id' => null]);
+                $id = (int) $repository->query('receipt_entities')->where('row_id', $rowId)->value('id');
+                $repository->insert('receipt_entity_keys', ['chain' => 'coto', 'identity_key' => 'sha256:'.$pdf['sha256'], 'receipt_id' => $id], false);
+                $repository->insert('evidence', ['id' => $source['id'], 'kind' => 'receipt', 'metadata' => LedgerRepository::json($source)]);
+                $repository->insert('source_revisions', ['id' => $source['id'], 'source_key' => $sourceKey, 'kind' => 'receipt', 'document_hash' => $pdf['sha256'], 'previous_revision_id' => null, 'recorded_at' => $input['recordedAt'], 'payload_digest' => hash('sha256', 'legacy rejected receipt'), 'app_revision' => 'legacy-acceptance', 'payload' => LedgerRepository::json($source)]);
+                $facts = ['revisionId' => $source['id'], 'receiptId' => $id, 'chain' => 'coto', 'fiscalId' => 'coto:9999-00000001', 'date' => '2026-01-15', 'totalMinor' => 13001, 'scale' => 3, 'originalRowsObject' => $rows, 'correctedRowsObject' => null, 'report' => ['ok' => false]];
+                $repository->insert('receipt_facts', ['revision_id' => $source['id'], 'receipt_id' => $id, 'chain' => 'coto', 'fiscal_id' => $facts['fiscalId'], 'receipt_date' => $facts['date'], 'total_minor' => $facts['totalMinor'], 'original_rows_hash' => $rows['sha256'], 'payload' => LedgerRepository::json($facts)]);
+            });
+            $legacyId = $service->facts($source['id'])['receiptId'];
+            $legacySource = $service->source($source['id']);
+            $valid = $this->input();
+            $new = $service->import([...$valid, 'key' => 'new-valid-pdf', 'bytes' => $valid['bytes']."\n% synthetic different history PDF"], new ProcessingBudget(719000, 0));
+            $this->assertNotSame($legacyId, $new['receiptId']);
+            $newSource = $service->source($new['sourceRevisionId']);
+            $this->assertSame('accepted', $newSource['admission']);
+            $this->assertNull($newSource['previousRevisionId']);
+            $repaired = $service->correction($pdf['sha256'], str_replace('9999-00000001', '9999-00000002', $valid['rowsText']), 'repair-legacy', '2026-02-01T12:00:00Z', new ProcessingBudget(719000, 0));
+            $this->assertSame($legacyId, $repaired['receiptId']);
+            $this->assertSame('accepted', $service->source($repaired['sourceRevisionId'])['admission']);
+            $this->assertSame($source['id'], $service->source($repaired['sourceRevisionId'])['previousRevisionId']);
+            $this->assertSame($legacySource, $service->source($source['id']));
+            $this->assertSame(2, $repository->query('receipt_entities')->count());
+            $this->assertSame(0, $repository->query('journals')->count());
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_fiscal_parse_failures_keep_a_linear_owned_receipt_correction_history(): void
     {
         DB::beginTransaction();

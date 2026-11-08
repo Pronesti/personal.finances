@@ -62,6 +62,45 @@ class ReceiptApiTest extends PostgresTestCase
         $this->getJson('/api/v1/receipt-charges')->assertOk()->assertJsonCount(0, 'receipts')->assertJsonCount(0, 'charges')->assertJsonCount(0, 'historicalHistory')->assertJsonCount(0, 'financialHistory');
     }
 
+    public function test_history_pdf_correction_retains_its_own_document_original_transcript_and_scale(): void
+    {
+        config(['tarjetas.python' => base_path('.venv/bin/python'), 'tarjetas.revision' => 'receipt-history-acceptance']);
+        $ledger = Ledger::factory()->create();
+        $repository = new LedgerRepository($ledger);
+        app(CatalogBootstrap::class)->initialize($repository, json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/cards.json')), true));
+        $service = new ReceiptService($repository, app(DocumentStore::class));
+        $bytes = file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf'));
+        $rowsA = file_get_contents(base_path('../docs/rebuild/fixtures/receipt-valid.rows.txt'));
+        $rowsB = str_replace('SYNTHETIC RICE', 'SYNTHETIC BEAN', $rowsA);
+        $input = ['key' => 'pdf-a', 'bytes' => $bytes, 'rowsText' => $rowsA, 'scale' => 3, 'recordedAt' => '2026-01-16T12:00:00Z', 'appRevision' => 'receipt-history-acceptance'];
+        $a = $service->import($input, new ProcessingBudget(719000, 0));
+        $bytesB = $bytes."\n% synthetic history PDF B";
+        $hashB = hash('sha256', $bytesB);
+        $b = $service->import([...$input, 'key' => 'pdf-b', 'bytes' => $bytesB, 'rowsText' => $rowsB, 'scale' => 2], new ProcessingBudget(719000, 0));
+        $this->assertSame($a['receiptId'], $b['receiptId']);
+        $this->assertSame('pending', $service->source($b['sourceRevisionId'])['admission']);
+        $now = (string) (int) floor(microtime(true) * 1000);
+        $this->withServerVariables(['TARJETAS_INGRESS_REQUEST_ID' => (string) Str::uuid(), 'TARJETAS_INGRESS_STARTED_AT_UNIX_MS' => $now, 'TARJETAS_INGRESS_DEADLINE_UNIX_MS' => (string) ((int) $now + 720000), 'TARJETAS_INGRESS_CLOCK_SKEW_MS' => '0']);
+        $correctedRows = trim(str_replace('SYNTHETIC BEAN', 'SYNTHETIC BEAN REVIEWED', $rowsB));
+        $result = $this->actingAs($ledger->owner, 'web')->withHeader('Idempotency-Key', 'correct-pdf-b')->postJson('/api/v1/receipts/corrections', ['sha256' => $hashB, 'rowsText' => $correctedRows])->assertOk()->assertJsonPath('receiptId', $a['receiptId'])->json();
+        $source = $service->source($result['sourceRevisionId']);
+        $facts = $service->facts($result['sourceRevisionId']);
+        $this->assertSame($hashB, $source['documentHash']);
+        $this->assertSame($b['sourceRevisionId'], $source['previousRevisionId']);
+        $this->assertSame('pending', $source['admission']);
+        $this->assertSame(2, $facts['scale']);
+        $this->assertSame($rowsB, $service->readObject($facts['originalRowsObject']['sha256']));
+        $this->assertSame($correctedRows, $service->readObject($facts['correctedRowsObject']['sha256']));
+        $this->assertSame($bytesB, $service->readObject($hashB));
+        $this->getJson('/api/v1/documents/'.$facts['originalRowsObject']['sha256'])->assertOk()->assertContent($rowsB);
+        $this->getJson('/api/v1/receipts/'.$a['receiptId'])->assertOk()->assertJsonPath('revisionId', $a['sourceRevisionId'])->assertJsonPath('documentHash', hash('sha256', $bytes))->assertJsonCount(3, 'history');
+        $this->withHeader('Idempotency-Key', 'correct-pdf-b')->postJson('/api/v1/receipts/corrections', ['sha256' => $hashB, 'rowsText' => $correctedRows])->assertOk()->assertJsonPath('duplicate', true)->assertJsonPath('sourceRevisionId', $result['sourceRevisionId']);
+        $this->assertSame(0, $repository->query('journals')->count());
+        app('auth')->forgetGuards();
+        $this->actingAs(Ledger::factory()->create()->owner, 'web')->withHeader('Idempotency-Key', 'foreign-history')->postJson('/api/v1/receipts/corrections', ['sha256' => $hashB, 'rowsText' => $correctedRows])->assertNotFound();
+        $this->getJson('/api/v1/documents/'.$facts['originalRowsObject']['sha256'])->assertNotFound();
+    }
+
     public function test_upload_refuses_client_deadlines_before_starting_any_private_worker(): void
     {
         $ledger = Ledger::factory()->create();

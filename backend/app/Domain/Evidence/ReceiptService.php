@@ -207,7 +207,7 @@ class ReceiptService
         $fiscal = $parsed['header']['fiscalNumber'] ? 'coto:'.$parsed['header']['fiscalNumber'] : null;
         $rawPayload = ['parsed' => $parsed, 'report' => $report, 'scale' => $input['scale'], 'originalRowsText' => $input['rowsText'], 'correctedRowsText' => $corrected];
         $digest = SourceIdentity::payloadDigest((object) $rawPayload);
-        $sourceKey = LedgerRepository::json($fiscal !== null ? ['receipt', 'fiscal', $fiscal] : ['receipt', 'sha256', $hash]);
+        $sourceKey = LedgerRepository::json($report['ok'] && $fiscal !== null ? ['receipt', 'fiscal', $fiscal] : ['receipt', 'sha256', $hash]);
         $revisionId = 'source:receipt:'.$hash.':'.$digest;
         $objects = [
             'document' => $this->documents->put($this->repository->ledger, $input['bytes']),
@@ -247,8 +247,9 @@ class ReceiptService
             $previous = $receiptIds === [] ? null : $this->repository->query('source_revisions')->where('kind', 'receipt')->whereIn('id', $this->repository->query('receipt_facts')->where('receipt_id', $receiptIds[0])->select('revision_id'))->orderByDesc('ordinal')->first();
             if ($previous !== null) {
                 $sourceKey = $previous->source_key;
-            } else {
-                $previous = $this->repository->query('source_revisions')->where('kind', 'receipt')->where('source_key', $sourceKey)->orderByDesc('ordinal')->first();
+            } elseif ($this->repository->query('source_revisions')->where('kind', 'receipt')->where('source_key', $sourceKey)->exists()) {
+                // Historical unverified fiscal keys cannot bind a different PDF to an existing receipt.
+                $sourceKey = LedgerRepository::json(['receipt', 'sha256', $hash]);
             }
             $priorAccepted = $this->repository->query('source_revisions')->where('source_key', $sourceKey)->whereRaw("payload->>'admission'='accepted'")->first();
             $admission = ! $report['ok'] ? 'rejected' : (($priorAccepted !== null || ($parsed['footer']['totalCents'] ?? 0) <= 0) ? 'pending' : 'accepted');
