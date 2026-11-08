@@ -138,6 +138,11 @@ class ReceiptReconciliation
         return ['rows' => $rows, 'ambiguous' => $ambiguous];
     }
 
+    private function requiresPaymentVerification(?array $link, int $receiptId): bool
+    {
+        return ($link['action'] ?? null) === 'unlink' || (($link['purchaseId'] ?? null) === 'receipt-purchase:'.$receiptId && ! ($link['paymentVerified'] ?? false));
+    }
+
     private function allocations(array $receipt, array $input): ?array
     {
         $items = $input['itemAllocations'] ?? [];
@@ -188,8 +193,11 @@ class ReceiptReconciliation
                 $allocation[] = ['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => $receipt['totalMinor'] - $covered];
             }
         } elseif ($allocation !== null) {
-            foreach ($receipt['parsed']['items'] as $index => $item) {
-                $verify(SourceIdentity::line($receipt['revisionId'], $index + 1), $item['lineTotalCents']);
+            $clearing = count($allocation) === 1 && ($allocation[0]['accountId'] ?? null) === 'expense:unallocated' && ($allocation[0]['purposeId'] ?? null) === 'unallocated' && ($allocation[0]['minor'] ?? null) === $receipt['totalMinor'];
+            if (! $clearing) {
+                foreach ($receipt['parsed']['items'] as $index => $item) {
+                    $verify(SourceIdentity::line($receipt['revisionId'], $index + 1), $item['lineTotalCents']);
+                }
             }
         } else {
             return null;
@@ -266,6 +274,10 @@ class ReceiptReconciliation
             if (array_key_exists('expectedPreviousDecisionId', $input) && $input['expectedPreviousDecisionId'] !== ($previous['id'] ?? null)) {
                 throw new AccountingError('stale_receipt_link');
             }
+            $needsPaymentVerification = $this->requiresPaymentVerification($previous, $receipt['receiptId']);
+            if ($needsPaymentVerification && (! $input['paymentVerified'] || $input['cardId'] === null)) {
+                throw new AccountingError('receipt_payment_unresolved');
+            }
             $result = ['sourceRevisionId' => $receipt['revisionId'], 'purchaseIds' => [], 'postedJournalIds' => [], 'reviews' => [], 'duplicate' => false];
             $review = function (string $code, array $params = []) use (&$result, $receipt, $input): void {
                 $this->receipts->appendReview($receipt['revisionId'], $code, $input['recordedAt'], $params);
@@ -287,7 +299,7 @@ class ReceiptReconciliation
                     $review('receipt_amount_mismatch');
                 }
             }
-            $unposted = ($target === null || (($previous['action'] ?? null) === 'unlink' && $input['paymentVerified'] && $input['cardId'] !== null)) && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
+            $unposted = ($target === null || ($needsPaymentVerification && $input['paymentVerified'] && $input['cardId'] !== null)) && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
             if ($unposted['ambiguous']) {
                 $review('multiple_statement_candidates', ['count' => count($unposted['rows'])]);
             }
@@ -402,7 +414,7 @@ class ReceiptReconciliation
         $candidates = [];
         $unlinked = false;
         foreach ($this->latestDecisions() as $link) {
-            $detached = $link['action'] === 'unlink';
+            $detached = $this->requiresPaymentVerification($link, $link['receiptId']);
             if ($link['cardId'] !== $input['cardId'] || (! $detached && ! $link['paymentVerified']) || ($detached && ($link['purchaseId'] !== 'receipt-purchase:'.$link['receiptId'] || $this->repository->query('source_purchase_identities')->where('purchase_id', $link['purchaseId'])->exists()))) {
                 continue;
             }
@@ -440,7 +452,7 @@ class ReceiptReconciliation
     {
         $results = [];
         foreach ($this->receipts->currentReceipts() as $receipt) {
-            if ($receipt['admission'] !== 'accepted' || ($this->latest($receipt['receiptId'])['action'] ?? null) === 'unlink') {
+            if ($receipt['admission'] !== 'accepted' || $this->requiresPaymentVerification($this->latest($receipt['receiptId']), $receipt['receiptId'])) {
                 continue;
             }
             $results[] = $this->reconcile(['key' => $key, 'receiptRevisionId' => $receipt['revisionId'], 'cardId' => null, 'paymentVerified' => false, 'purchaseId' => null, 'allocation' => null, 'recordedAt' => $recordedAt]);

@@ -1378,7 +1378,8 @@
                     ]
                   },
                   "paymentVerified": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Explicit verification of full payment with the selected actual card. Reconciliation that would relink an unlinked receipt or resume an unverified receipt-funded link requires true and a non-null cardId; otherwise HTTP 400 receipt_payment_unresolved is returned without changing finances or link history."
                   },
                   "purchaseId": {
                     "type": [
@@ -1429,7 +1430,7 @@
                         "minor"
                       ]
                     },
-                    "description": "Explicit aggregate correction. To reset all items to Unallocated, submit the full receipt total to expense:unallocated with purpose unallocated, and itemAllocations: []. Null without nonempty itemAllocations makes no financial correction."
+                    "description": "Explicit aggregate correction. To reset all items to Unallocated, submit the full receipt total to expense:unallocated with purpose unallocated, and itemAllocations: []. Null without nonempty itemAllocations makes no financial correction. A full reset to Unallocated does not require approving untouched product identities and does not change their review status; other aggregate classifications require all item identities reviewed."
                   },
                   "itemAllocations": {
                     "type": "array",

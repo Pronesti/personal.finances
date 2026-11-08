@@ -174,7 +174,70 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
-    private function allocatedReceipt(): array
+    public function test_allocation_only_relink_is_rejected_before_or_after_statement_without_financial_changes(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach ([[false, false], [true, false], [false, true], [true, true]] as [$statementFirst, $legacy]) {
+                [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                $links->unlink(['key' => 'unlink', 'receiptRevisionId' => $base['receiptRevisionId'], 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id'], 'recordedAt' => $base['recordedAt']]);
+                $unlinked = $links->latest($receipt['receiptId']);
+                if ($statementFirst) {
+                    $this->statement($repository);
+                }
+                if ($legacy) {
+                    $old = [...$unlinked, 'id' => (string) Str::uuid(), 'key' => 'legacy-unverified', 'previousDecisionId' => $unlinked['id'], 'action' => 'link', 'paymentVerified' => false];
+                    $repository->transaction(fn () => $repository->insert('receipt_link_decisions', ['id' => $old['id'], 'key' => $old['key'], 'receipt_id' => $old['receiptId'], 'receipt_revision_id' => $old['receiptRevisionId'], 'purchase_id' => $old['purchaseId'], 'card_id' => $old['cardId'], 'action' => $old['action'], 'previous_decision_id' => $old['previousDecisionId'], 'recorded_at' => $old['recordedAt'], 'payload' => LedgerRepository::json($old)]));
+                    $unlinked = $links->latest($receipt['receiptId']);
+                }
+                $journals = $repository->query('journals')->get()->all();
+                $this->rejects('receipt_payment_unresolved', fn () => $links->reconcile([...$base, 'key' => 'unverified-allocation', 'paymentVerified' => false, 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2, 'itemAllocations' => $items]));
+                $this->rejects('receipt_payment_unresolved', fn () => $links->reconcile([...$base, 'key' => 'unverified-card', 'cardId' => null, 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2, 'itemAllocations' => $items]));
+                $this->assertSame($unlinked['id'], $links->latest($receipt['receiptId'])['id']);
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+                if (! $statementFirst) {
+                    $this->statement($repository);
+                }
+                $this->assertSame(1, $repository->query('purchases')->count());
+                $this->assertSame(13000, $this->expense($repository));
+                $linked = $links->reconcile([...$base, 'key' => 'verified-relink', 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2]);
+                $this->assertSame([$purchaseId], $linked['purchaseIds']);
+                $this->assertCount(1, $linked['postedJournalIds']);
+                $this->assertTrue($links->latest($receipt['receiptId'])['paymentVerified']);
+                $this->assertSame($purchaseId, $repository->query('source_purchase_identities')->value('purchase_id'));
+                $this->assertSame(13000, $this->expense($repository));
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_partially_reviewed_receipt_can_reset_to_unallocated_without_approving_other_items(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt(true);
+            $detail = $service->detail($receipt['receiptId']);
+            $this->assertFalse($detail['items'][1]['match']['reviewed']);
+            $body = [...$base, 'paymentVerified' => false, 'expectedPreviousDecisionId' => $detail['link']['id'], 'allocation' => [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]], 'itemAllocations' => []];
+            $journals = $repository->query('journals')->count();
+            $this->rejects('stale_purchase_version', fn () => $links->reconcile([...$body, 'key' => 'stale-reset', 'expectedPurchaseVersion' => 1]));
+            $this->assertSame($journals, $repository->query('journals')->count());
+            $reset = $links->reconcile([...$body, 'key' => 'reset', 'expectedPurchaseVersion' => 2]);
+            $this->assertEquals([['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]], $repository->purchase($purchaseId)['allocations']);
+            $this->assertFalse($service->detail($receipt['receiptId'])['items'][1]['match']['reviewed']);
+            $this->assertSame([], $links->latest($receipt['receiptId'])['itemAllocations']);
+            $this->assertSame(13000, $this->expense($repository));
+            $this->assertTrue($links->reconcile([...$body, 'key' => 'reset', 'expectedPurchaseVersion' => 2])['duplicate']);
+            $this->assertCount(2, $reset['postedJournalIds']);
+            $this->assertSame($journals + 2, $repository->query('journals')->count());
+            $this->rejects('product_identity_unreviewed', fn () => $links->reconcile([...$base, 'key' => 'unreviewed-classification', 'expectedPurchaseVersion' => 3, 'allocation' => [['accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'minor' => 13000]]]));
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    private function allocatedReceipt(bool $partial = false): array
     {
         [$repository, $service, $links] = $this->setupLedger();
         $receipt = $service->import($this->input(), new ProcessingBudget(719000, 0));
@@ -183,7 +246,7 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         $funded = $links->reconcile([...$base, 'key' => 'fund']);
         $products = new ReceiptProducts($repository);
         $items = [];
-        foreach ([1, 2] as $position) {
+        foreach ($partial ? [1] : [1, 2] as $position) {
             $line = SourceIdentity::line($revision, $position);
             $match = $products->latest('product_match_revisions', 'id', $line);
             $product = $products->product($match['productId']);
