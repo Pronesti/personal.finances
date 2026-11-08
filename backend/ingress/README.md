@@ -1,0 +1,37 @@
+# Local trusted ingress acceptance
+
+This standalone TLS adapter exists for local synthetic acceptance. Production hosting, process supervision and macOS host placement remain deferred. It does not change Yerd's existing services or select a production platform. An ordinary buffering proxy in front of it would invalidate its first-ingress guarantee.
+
+The adapter listens on loopback and directly terminates TLS. Its first decrypted HTTP byte starts the immutable 720-second request clock and independent 180-second upload limit, before headers/body are buffered. Upload completion at the exact expiry loses to the upload timer. Headers and multipart bodies have bounded sizes. Each connection handles one request. The adapter discards all caller deadline and forwarding headers.
+
+After upload, an authenticated loopback-only hop carries a signed method/path/start/deadline/request ID. PHP verifies the signature and a private request context before admitting processing. Upload and queue time consume the original non-OCR allowance. PHP and the edge share monotonic phase snapshots; only active private OCR pauses non-OCR accounting. Each of three attempts retains its own cumulative 180-second allowance across slices. No production or request setting disables any budget.
+
+A client disconnect or edge expiry writes cancellation into that private context. PHP polls it while supervising private process groups, kills/reaps descendants and refuses precommit work. Database statement/lock timeouts use the remaining original budget, and command transactions check the budget before commit. Contexts are removed after PHP cleanup acknowledgement, including cancellation before dispatch. Abandoned contexts from a crashed process require operator inspection; never remove a live context as routine cleanup.
+
+Use a private JSON config outside the checkout, mode 0600, with `root` (existing canonical 0700 directory), a random `key` (at least 64 characters), `origin`, `frontend`, `port`, `upstreamPort`, `tlsKey`, and `tlsCert`. PHP needs matching `TARJETAS_INGRESS_KEY` and `TARJETAS_INGRESS_ROOT`, plus private processing temp root and the supported Python runtime. Do not put secrets in frontend config or Git. The API remains `/api/v1`; cookies retain the environment's disjoint parent domain. The local acceptance API uses `https://api.tarjetas-browser.test:8445` and SPA uses `https://app.tarjetas-browser.test`.
+
+Run `node ingress/server.mjs /absolute/private/config.json` from `backend/`. Keep PHP's upstream private. The frontend's ignored browser-test environment points directly to this TLS port. Tests in `ingress/server.test.mjs` use a separate guarded PHP harness and private configuration (`TARJETAS_INGRESS_TEST_CONFIG`), including `ca`. They execute the real 180-second slow-upload guard and client-disconnect cancellation through the PHP/private-worker boundary. Exact phase-boundary policy tests are separate from those HTTP tests. These tests do not establish production FPM/deployment acceptance or all frozen deadline-fixture scenarios. There is no externally selectable watchdog fault-injection mode; any isolated watchdog harness must remain outside the production adapter.
+
+`spa-preview.mjs` serves an independently built frontend artifact over task-local loopback TLS for acceptance. It requires a private config containing the canonical build `root`, exact HTTPS `origin`, `apiOrigin`, `port`, `tlsKey` and `tlsCert`. It provides SPA history fallback, MIME/nosniff checks, no-store HTML, immutable hashed assets and a deliberate CSP allowing the configured API and authenticated blob viewers. It reads no backend/frontend source or secrets into the browser and is not a production hosting selection. Recovery acceptance uses separate `app.tarjetas-recovery.test:8448` / `api.tarjetas-recovery.test:8447` origins and `.tarjetas-recovery.test` cookies without changing global Yerd proxies, DNS or runtimes.
+
+
+The dedicated local FPM pool (`php-fpm.pool.example.conf`) and `fastcgi-bridge.mjs` additionally exercise actual FastCGI PHP input settings with an independently built TLS SPA. The bridge fixes the PHP script/document root, uses a private Unix socket and preserves repeated cookies/UTF-8 parameters; it is a local adapter, not a selected production hosting service. `health-fpm.test.mjs` uses a separate temporary local fault pool with an unreachable database endpoint: stateless public health/CORS/preflight remain available and a protected route fails. It never stops or modifies PostgreSQL.
+
+`deadline-wire.test.mjs` requires a newly seeded approved integration fixture root. It runs the actual 640-second buffered success and 719-second normal processing timeout through dedicated FPM pools/private workers, alongside a separate 720-second outer-watchdog fault adapter under `tests/Support`. The final PostgreSQL audit expects one/zero/zero postings, identical original deadline propagation and no active worker descendants. Only the isolated test adapter omits the non-OCR guard. `DeadlineAdmissionTest` separately checks all 16 normal frozen cases using exact injected clocks and PostgreSQL admission; these exact semantics tests are not wall-clock/browser proof. The four fault-mode fixture expectations run separately against the isolated adapter policy and guarded PostgreSQL admission; the just-below upload fault success is also rejected by the unchanged normal production guard. Real outer-watchdog and normal upload guard tests provide complementary integration evidence. Production supervision, remote processing transport and production domain/cookie/CORS smoke remain deferred.
+
+
+Only the authenticated financial ZIP export route can stream past the 64 MiB buffered JSON limit. Both adapters require fixed Content-Length and private ZIP/attachment/no-store/nosniff headers, propagate backpressure and reject byte-count mismatch. Command JSON stays buffered, so a late expired command response cannot become a success. A built-SPA/FPM journey verifies a larger-than-64-MiB owned export with full hash/CRC, scope/auth exclusions and temporary-file cleanup. This does not change any request/upload/phase timer or introduce a production guard switch.
+
+
+Task-local recovery TLS acceptance also verifies strict X.509 chains and both API/SPA hostnames. A manually issued leaf without an authority-key identifier passed Chromium but failed Python 3.14 strict verification. Its private extension configuration was corrected and only that local leaf was reissued using the existing key; the CA and global trust were unchanged. Local certificate issuance must include the intended SANs and a complete leaf profile, for example:
+
+```ini
+subjectAltName=DNS:api.tarjetas-recovery.test,DNS:app.tarjetas-recovery.test
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+```
+
+Use operator-controlled CA material, an explicit fresh serial without changing global CA serial state, and private local output paths. Verify with `openssl verify -x509_strict -purpose sslserver -verify_hostname HOST -CAfile CA_CERT LEAF_CERT`, then use the normal client verification settings. The executed check also retains Python's default strict TLS flags. This is local acceptance configuration; production certificates/hosting remain deferred.

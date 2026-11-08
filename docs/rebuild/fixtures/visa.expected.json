@@ -1,0 +1,98 @@
+{
+  "file": "synthetic_visa_2026_02.pdf",
+  "brand": "visa",
+  "product": "Visa Gold",
+  "account": "99000001",
+  "cardholder": "SYNTHETIC PERSON",
+  "period": {
+    "closing_date": "2026-02-01",
+    "due_date": "2026-02-10",
+    "previous_closing_date": "2026-01-01",
+    "previous_due_date": "2026-01-10",
+    "next_closing_date": "2026-03-01",
+    "next_due_date": "2026-03-10"
+  },
+  "balances": {
+    "previous_ars": 0,
+    "previous_usd": 0,
+    "current_ars": 100,
+    "current_usd": 5,
+    "minimum_payment_ars": 10
+  },
+  "limits": {
+    "purchase": 10000,
+    "financing": 10000,
+    "cash_advance": 10000,
+    "installments": 10000
+  },
+  "rates": {
+    "annual_nominal_ars": 60,
+    "annual_nominal_usd": 10,
+    "monthly_effective_ars": 5,
+    "monthly_effective_usd": 1
+  },
+  "account_summary": [
+    {
+      "concept": "SALDO ANTERIOR",
+      "ars": 0,
+      "usd": 0
+    },
+    {
+      "concept": "SALDO ACTUAL",
+      "ars": 100,
+      "usd": 5
+    }
+  ],
+  "upcoming_installments": [
+    {
+      "month": "2026-03",
+      "amount_ars": 30
+    },
+    {
+      "month": "2026-04",
+      "amount_ars": 20
+    }
+  ],
+  "transactions": [
+    {
+      "section": "purchases",
+      "block": 1,
+      "block_cardholder": "SYNTHETIC PERSON",
+      "date": "2026-01-15",
+      "description": "SYNTHETIC SHOP",
+      "voucher": "990001",
+      "ars": 100,
+      "usd": null,
+      "installment_number": null,
+      "installment_count": null,
+      "raw_line": "15-ene-26 SYNTHETIC SHOP 990001 100,00"
+    },
+    {
+      "section": "purchases",
+      "block": 1,
+      "block_cardholder": "SYNTHETIC PERSON",
+      "date": "2026-01-16",
+      "description": "SYNTHETIC USD SHOP",
+      "voucher": "990002",
+      "ars": null,
+      "usd": 5,
+      "installment_number": null,
+      "installment_count": null,
+      "raw_line": "16-ene-26 SYNTHETIC USD SHOP 990002 5,00"
+    }
+  ],
+  "declared_totals": [
+    {
+      "concept": "TOTAL CONSUMOS DE SYNTHETIC PERSON",
+      "block": 1,
+      "ars": 100,
+      "usd": 5
+    },
+    {
+      "concept": "SALDO ACTUAL",
+      "block": 1,
+      "ars": 100,
+      "usd": 5
+    }
+  ]
+}

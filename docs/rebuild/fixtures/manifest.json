@@ -1,0 +1,211 @@
+{
+  "format": "tarjetas-rebuild-fixtures",
+  "version": 1,
+  "source_revision": "c3ad289",
+  "scope": "PostgreSQL-only Laravel API and React/TypeScript/Vite SPA; Sanctum cookie sessions; isolated per-user ledgers; registration/provisioning outside scope",
+  "context_sha256": "ed9f30d758509572ea01f4a4b1d78a18137cde1bfa8c4080688ebf25ed8e5821",
+  "files": {
+    "algorithm-cases.json": {
+      "bytes": 5616,
+      "sha256": "f1e20da3ada55774fb27f4e3808b8393681a77ec86329c0b4e0fdfa747a2ce2f"
+    },
+    "cards.json": {
+      "bytes": 418,
+      "sha256": "bb97ba01f77a61e80dd85f58de86d1b52159813d931b78574819011375cff441"
+    },
+    "catalog.json": {
+      "bytes": 30417,
+      "sha256": "acc16546d9a35950a32819187520f6fa068cccae4f64e2dedffdcc2b98ddd281"
+    },
+    "chart-colors.json": {
+      "bytes": 2179,
+      "sha256": "6db4236c0e762dd4224993c764301ae8569a0ebd00cdbbbce20471d7b114fe2f"
+    },
+    "formatting.json": {
+      "bytes": 592,
+      "sha256": "b141bdc80235080c2dadac3fd6970341b59b76b7c2cd736d65ddd9b1c600eaf3"
+    },
+    "identity-vectors.json": {
+      "bytes": 752,
+      "sha256": "15a49d0260c567289335b0dd22c1910d8325ce2db405697cded2a93587fbfde4"
+    },
+    "localization.json": {
+      "bytes": 184653,
+      "sha256": "06d20745f3bcb1d6446ecc1f67f19e693a26438f5e2a9897d9c99dc3cde2abcb"
+    },
+    "mastercard.expected.json": {
+      "bytes": 2149,
+      "sha256": "114497f8be8805a1cf2d5837b3a95fd0939e94ec4e5958c3792e4ac334cc7134"
+    },
+    "mercadopago.expected.json": {
+      "bytes": 1712,
+      "sha256": "02549bef16302521058f90ef3c5c4bd885099fb2503bfd513b8f90ac2cad3dac"
+    },
+    "outcomes.json": {
+      "bytes": 5534,
+      "sha256": "a5cc6dbcb3c0705aa79edc8f87cdd1a17e37e90c0d311579aed3e8f83b00c7c3"
+    },
+    "pdf/synthetic_coto.pdf": {
+      "bytes": 2700,
+      "sha256": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852"
+    },
+    "pdf/synthetic_mastercard_2026_02.pdf": {
+      "bytes": 5019,
+      "sha256": "61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623"
+    },
+    "pdf/synthetic_mercadopago_2026_02.pdf": {
+      "bytes": 3347,
+      "sha256": "c0c9560d554c6137a76473eeba12b11b2fa9641de8387c9a6a897961d35941bc"
+    },
+    "pdf/synthetic_visa_2026_02.pdf": {
+      "bytes": 5013,
+      "sha256": "37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d"
+    },
+    "pdf/unsupported-layout.pdf": {
+      "bytes": 1396,
+      "sha256": "44c43f7a82ab7f6ca478c346a9e3bba2cfbaa826091d048b58afd90ed4efe8b2"
+    },
+    "receipt-corrected.rows.txt": {
+      "bytes": 449,
+      "sha256": "d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0"
+    },
+    "receipt-one-cent-error.rows.txt": {
+      "bytes": 449,
+      "sha256": "4469f75235ac461dd4d094d7649d99c453516db001de026c58dae3fc079e5862"
+    },
+    "receipt-valid.rows.txt": {
+      "bytes": 449,
+      "sha256": "d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0"
+    },
+    "references.json": {
+      "bytes": 156,
+      "sha256": "7b2b987cfd08e975c5ab1fb678d92b821264bb7547a29b9926a5d52148891aed"
+    },
+    "report-input.json": {
+      "bytes": 48317,
+      "sha256": "24e0d6bf1f98dea0da8fbe9a2e0ff4b48c2ccbcf485c84258f86f72fe6225e5f"
+    },
+    "reports.expected.json": {
+      "bytes": 122532,
+      "sha256": "98d66efef3537ef6099dfc4bef301302dc0d67aebee388166adba49669ffb081"
+    },
+    "routes.json": {
+      "bytes": 3625,
+      "sha256": "b4d707c381106ad74e2948d82c8d328e259f47e8f36d3c5cd0ef146d80567368"
+    },
+    "schemas/statement-extraction.schema.json": {
+      "bytes": 7145,
+      "sha256": "7784fe4d046ac8b5a8cf56de99be9451a636f3d02b43a7bbac66d8267c69c3da"
+    },
+    "supermarket.json": {
+      "bytes": 1841,
+      "sha256": "b69984e418021c8c19c3b79cef3585af9cd7578da20db39ace8346d17a921366"
+    },
+    "theme.css": {
+      "bytes": 5385,
+      "sha256": "4a51d12c6afbad130eb488d12440eb93a80f8c5c0838981e65afbcb637dcaca9"
+    },
+    "visa.expected.json": {
+      "bytes": 2131,
+      "sha256": "09dbc00368a64ae1fa164dc6db021a04bae56929777fd7d362910efc411f3ee9"
+    }
+  },
+  "documents": {
+    "README.md": {
+      "bytes": 49702,
+      "sha256": "823e500626fda02b3b9138102ecd29df952220cdf585bc80fd2747d4ac0eb4e4"
+    },
+    "START-HERE.md": {
+      "bytes": 7957,
+      "sha256": "a18ecd84de29974c8c864510ce1c3025cedf47b516d219bd917597386d480e04"
+    },
+    "architecture-contract.json": {
+      "bytes": 8176,
+      "sha256": "207007954472446fe617c0a7740210d60ce4ba68aea4d87de7fb3b78d329310d"
+    },
+    "architecture.md": {
+      "bytes": 35771,
+      "sha256": "0f6599352dbd3620da2dfeef70a469208545d6eed8734912bcf2a9d3a03bbc52"
+    },
+    "backend.browser-testing.env.example": {
+      "bytes": 1153,
+      "sha256": "d00be21d648fb9cf00851c4c364612e76242809bc629e12bc808cdc38239b72d"
+    },
+    "backend.env.example": {
+      "bytes": 842,
+      "sha256": "8aeaa9d2d48dde8f1ff1311bbcffa2874d62e67adc5c78beb610cf5656623425"
+    },
+    "backend.testing.env.example": {
+      "bytes": 1177,
+      "sha256": "8aae7e85c427fbd66261dd70231b1e73a46940141a148fc29ef6d797593ca6c4"
+    },
+    "check-rebuild-results.py": {
+      "bytes": 1923,
+      "sha256": "a115ec26aae797b34e261bc917819b211c94f8b55bc53601464de86ba2549137"
+    },
+    "deadline-fixtures.json": {
+      "bytes": 25080,
+      "sha256": "4ce66f7c7e702ce21546ea5920f603364a4fc756557388875170e806e49bc681"
+    },
+    "frontend.env.example": {
+      "bytes": 134,
+      "sha256": "8877f5f33bdeebac86bcb700e150f4d3106fb54bd469163b4da9d19b056ecf09"
+    },
+    "generate-fixtures.py": {
+      "bytes": 6789,
+      "sha256": "4befcb5ef79378c7c7dd946beae2248f4f46267af7b0f6cc37dfb74ee5be0c18"
+    },
+    "implementation-safeguards.md": {
+      "bytes": 32798,
+      "sha256": "ac651afe8650cff33d9b6dc0eef442803a44d9c8200f7f3e90d34a516bdb951c"
+    },
+    "isolation/receipt-b-only.rows.txt": {
+      "bytes": 451,
+      "sha256": "71538a62de2a7e791ca0896f1728c42092a0e1e78e49901f3764e58ccc452213"
+    },
+    "isolation-fixtures.json": {
+      "bytes": 13537,
+      "sha256": "db6e10021873534e265e722c38161aa3043cef1555ec309832e0698d15ac885c"
+    },
+    "report-contract.ts": {
+      "bytes": 1886,
+      "sha256": "2b405f07cc660007eb193b3c5bf8e61b2b113abaa4662486d8bd7997874021f4"
+    },
+    "validation.json": {
+      "bytes": 48313,
+      "sha256": "dfa39343617d2bf9ebb7b4d22fd330deab3211c91892fdcc95590a06792ba3e3"
+    },
+    "verify-architecture-negative.py": {
+      "bytes": 10970,
+      "sha256": "c5e95b3a9461dddd999dd6208caf1804d19e02c2d7c8b1fd15dec47019f555ba"
+    },
+    "verify-architecture-plan.py": {
+      "bytes": 15094,
+      "sha256": "d090b6e7d5b5960c75e39ec577c74dc77adac9921c913626063addc9c6c81a37"
+    },
+    "verify-current.mjs": {
+      "bytes": 1175,
+      "sha256": "98c98404fac6a6e75a02b9aa1cf77d0fa4294d8eb028c14555e27257993c41b5"
+    },
+    "verify-current.ts": {
+      "bytes": 31645,
+      "sha256": "718811856bfedd8dd51a76485e3811f0abdc94287340526e8a13ecb40acb989e"
+    },
+    "verify-ocr.mjs": {
+      "bytes": 2150,
+      "sha256": "07c0a5afe420ca4af401ae7f43854a62a03df4ca14e5c73e611bb4f677860ec7"
+    },
+    "verify-package.py": {
+      "bytes": 4796,
+      "sha256": "69cf77cc4469cd6f40c9bc3984eb65d00b8dba58872c24861dd655f5e0ab3f42"
+    },
+    "verify-parsers.py": {
+      "bytes": 1437,
+      "sha256": "28686e447405df84a9d3d7588b2a04a8de35b1b2c9597ec41b913a9b7ba05abe"
+    },
+    "verify-plan-boundaries.py": {
+      "bytes": 19336,
+      "sha256": "02474b810ec76d54b49eea845f154bc5bbccb697f05d634d8336e560e78e3fa9"
+    }
+  }
+}

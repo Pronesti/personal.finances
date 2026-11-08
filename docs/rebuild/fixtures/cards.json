@@ -1,0 +1,22 @@
+[
+  {
+    "id": "synthetic-visa-a",
+    "displayName": "Synthetic Visa A",
+    "brand": "visa"
+  },
+  {
+    "id": "synthetic-visa-b",
+    "displayName": "Synthetic Visa B",
+    "brand": "visa"
+  },
+  {
+    "id": "synthetic-mp",
+    "displayName": "Synthetic Mercado Pago",
+    "brand": "mercadopago"
+  },
+  {
+    "id": "synthetic-mastercard",
+    "displayName": "Synthetic Mastercard",
+    "brand": "mastercard"
+  }
+]

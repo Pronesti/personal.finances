@@ -1,0 +1,391 @@
+{
+  "version": 2,
+  "purpose": "Separate ownership scenario; original financial suite runs unchanged inside each ledger first. These are synthetic domain/factory inputs, not unchecked SQL or new production marker columns.",
+  "identities": [
+    {
+      "id": "user-a",
+      "email": "synthetic-a@example.invalid",
+      "ledger_id": "11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "id": "user-b",
+      "email": "synthetic-b@example.invalid",
+      "ledger_id": "22222222-2222-4222-8222-222222222222"
+    }
+  ],
+  "purchases": [
+    {
+      "user_id": "user-a",
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "logical_id": "purchase:shared",
+      "amount_cents": 10500,
+      "currency": "ARS",
+      "merchant_label": "SYNTHETIC A SHARED"
+    },
+    {
+      "user_id": "user-b",
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "logical_id": "purchase:shared",
+      "amount_cents": 20300,
+      "currency": "ARS",
+      "merchant_label": "SYNTHETIC B SHARED"
+    },
+    {
+      "user_id": "user-a",
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "logical_id": "purchase:a-only",
+      "amount_cents": 1700,
+      "currency": "ARS",
+      "merchant_label": "SYNTHETIC A EXCLUSIVE"
+    },
+    {
+      "user_id": "user-b",
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "logical_id": "purchase:b-only",
+      "amount_cents": 2900,
+      "currency": "ARS",
+      "merchant_label": "SYNTHETIC B EXCLUSIVE"
+    }
+  ],
+  "shared_account_id": "expense:food:groceries:pantry",
+  "shared_command_key": "synthetic:shared-command",
+  "references": [
+    {
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "kind": "object",
+      "reference_id": "shared-pdf",
+      "fixture": "fixtures/pdf/synthetic_coto.pdf",
+      "relative_path": "ledgers/11111111-1111-4111-8111-111111111111/objects/95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "sha256": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "bytes": 2700
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "kind": "object",
+      "reference_id": "shared-pdf",
+      "fixture": "fixtures/pdf/synthetic_coto.pdf",
+      "relative_path": "ledgers/22222222-2222-4222-8222-222222222222/objects/95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "sha256": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "bytes": 2700
+    },
+    {
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "kind": "object",
+      "reference_id": "a-only-pdf",
+      "fixture": "fixtures/pdf/synthetic_visa_2026_02.pdf",
+      "relative_path": "ledgers/11111111-1111-4111-8111-111111111111/objects/37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d",
+      "sha256": "37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d",
+      "bytes": 5013
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "kind": "object",
+      "reference_id": "b-only-pdf",
+      "fixture": "fixtures/pdf/synthetic_mastercard_2026_02.pdf",
+      "relative_path": "ledgers/22222222-2222-4222-8222-222222222222/objects/61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623",
+      "sha256": "61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623",
+      "bytes": 5019
+    },
+    {
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "kind": "pending",
+      "reference_id": "shared-pending",
+      "fixture": "fixtures/receipt-valid.rows.txt",
+      "relative_path": "ledgers/11111111-1111-4111-8111-111111111111/pending/shared-pending/d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0",
+      "sha256": "d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0",
+      "bytes": 449,
+      "source_object_reference_id": "shared-pdf",
+      "source_revision_logical_id": "receipt:shared:retained-shared-pending"
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "kind": "pending",
+      "reference_id": "shared-pending",
+      "fixture": "fixtures/receipt-valid.rows.txt",
+      "relative_path": "ledgers/22222222-2222-4222-8222-222222222222/pending/shared-pending/d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0",
+      "sha256": "d43f210d512049ac5b5c34cdae98e6035f4a778069296ea3896f457112d2cfd0",
+      "bytes": 449,
+      "source_object_reference_id": "shared-pdf",
+      "source_revision_logical_id": "receipt:shared:retained-shared-pending"
+    },
+    {
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "kind": "pending",
+      "reference_id": "a-only-pending",
+      "fixture": "fixtures/receipt-one-cent-error.rows.txt",
+      "relative_path": "ledgers/11111111-1111-4111-8111-111111111111/pending/a-only-pending/4469f75235ac461dd4d094d7649d99c453516db001de026c58dae3fc079e5862",
+      "sha256": "4469f75235ac461dd4d094d7649d99c453516db001de026c58dae3fc079e5862",
+      "bytes": 449,
+      "source_object_reference_id": "shared-pdf",
+      "source_revision_logical_id": "receipt:shared:retained-a-only-pending"
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "kind": "pending",
+      "reference_id": "b-only-pending",
+      "fixture": "isolation/receipt-b-only.rows.txt",
+      "relative_path": "ledgers/22222222-2222-4222-8222-222222222222/pending/b-only-pending/71538a62de2a7e791ca0896f1728c42092a0e1e78e49901f3764e58ccc452213",
+      "sha256": "71538a62de2a7e791ca0896f1728c42092a0e1e78e49901f3764e58ccc452213",
+      "bytes": 451,
+      "source_object_reference_id": "shared-pdf",
+      "source_revision_logical_id": "receipt:shared:retained-b-only-pending"
+    }
+  ],
+  "access_cases": [
+    {
+      "user_id": "user-a",
+      "resource": "purchase",
+      "key": "purchase:a-only",
+      "status": 200,
+      "expected": {
+        "ledger_id": "11111111-1111-4111-8111-111111111111",
+        "logical_id": "purchase:a-only",
+        "amount_cents": 1700,
+        "merchant_label": "SYNTHETIC A EXCLUSIVE"
+      }
+    },
+    {
+      "user_id": "user-a",
+      "resource": "purchase",
+      "key": "purchase:b-only",
+      "status": 404
+    },
+    {
+      "user_id": "user-a",
+      "resource": "purchase",
+      "key": "purchase:shared",
+      "status": 200,
+      "expected": {
+        "ledger_id": "11111111-1111-4111-8111-111111111111",
+        "logical_id": "purchase:shared",
+        "amount_cents": 10500,
+        "merchant_label": "SYNTHETIC A SHARED"
+      }
+    },
+    {
+      "user_id": "user-a",
+      "resource": "document",
+      "key": "37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d",
+      "status": 200,
+      "expected": {
+        "resolved_ledger_id": "11111111-1111-4111-8111-111111111111",
+        "sha256": "37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d",
+        "bytes": 5013
+      }
+    },
+    {
+      "user_id": "user-a",
+      "resource": "document",
+      "key": "61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623",
+      "status": 404
+    },
+    {
+      "user_id": "user-a",
+      "resource": "document",
+      "key": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "status": 200,
+      "expected": {
+        "resolved_ledger_id": "11111111-1111-4111-8111-111111111111",
+        "sha256": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+        "bytes": 2700
+      }
+    },
+    {
+      "user_id": "user-b",
+      "resource": "purchase",
+      "key": "purchase:a-only",
+      "status": 404
+    },
+    {
+      "user_id": "user-b",
+      "resource": "purchase",
+      "key": "purchase:b-only",
+      "status": 200,
+      "expected": {
+        "ledger_id": "22222222-2222-4222-8222-222222222222",
+        "logical_id": "purchase:b-only",
+        "amount_cents": 2900,
+        "merchant_label": "SYNTHETIC B EXCLUSIVE"
+      }
+    },
+    {
+      "user_id": "user-b",
+      "resource": "purchase",
+      "key": "purchase:shared",
+      "status": 200,
+      "expected": {
+        "ledger_id": "22222222-2222-4222-8222-222222222222",
+        "logical_id": "purchase:shared",
+        "amount_cents": 20300,
+        "merchant_label": "SYNTHETIC B SHARED"
+      }
+    },
+    {
+      "user_id": "user-b",
+      "resource": "document",
+      "key": "37dd69eea28907eff1d71466315fc19343d01eec62cbd5f81ed6b61ce8be083d",
+      "status": 404
+    },
+    {
+      "user_id": "user-b",
+      "resource": "document",
+      "key": "61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623",
+      "status": 200,
+      "expected": {
+        "resolved_ledger_id": "22222222-2222-4222-8222-222222222222",
+        "sha256": "61062c81b30c1da1a31eadd99c832e90aec72f63d6b5dc20c76f1e3819aa1623",
+        "bytes": 5019
+      }
+    },
+    {
+      "user_id": "user-b",
+      "resource": "document",
+      "key": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+      "status": 200,
+      "expected": {
+        "resolved_ledger_id": "22222222-2222-4222-8222-222222222222",
+        "sha256": "95882174493ce8b6cd4525017bd83a66c2c51f902688a7e788eca6ee4af13852",
+        "bytes": 2700
+      }
+    }
+  ],
+  "expected_reports": [
+    {
+      "user_id": "user-a",
+      "currency": "ARS",
+      "purchase_ids": [
+        "purchase:a-only",
+        "purchase:shared"
+      ],
+      "acquisition_expense_cents": 12200
+    },
+    {
+      "user_id": "user-b",
+      "currency": "ARS",
+      "purchase_ids": [
+        "purchase:b-only",
+        "purchase:shared"
+      ],
+      "acquisition_expense_cents": 23200
+    }
+  ],
+  "mutation": {
+    "actor": "user-a",
+    "account_logical_id": "expense:food:groceries:pantry",
+    "before": {
+      "user-a": "Pantry A",
+      "user-b": "Pantry B"
+    },
+    "new_name": "Pantry A changed",
+    "after": {
+      "user-a": "Pantry A changed",
+      "user-b": "Pantry B"
+    }
+  },
+  "cross_owner_reference": {
+    "actor": "user-a",
+    "layer": "raw_postgresql_constraint",
+    "child_table": "accounting.account_name_revisions",
+    "child_columns": [
+      "ledger_id",
+      "account_id"
+    ],
+    "parent_table": "accounting.accounts",
+    "parent_columns": [
+      "ledger_id",
+      "id"
+    ],
+    "attempted_child_key": [
+      "11111111-1111-4111-8111-111111111111",
+      "expense:synthetic:b-only"
+    ],
+    "referenced_owner_ledger_id": "22222222-2222-4222-8222-222222222222",
+    "expected_sqlstate": "23503",
+    "expected": "database_foreign_key_rejection_no_partial_write",
+    "expected_state_unchanged": true,
+    "application_rejection_counts_as_database_proof": false,
+    "setup": "Use the target ownership migration. All other required child fields must be valid and unique. Execute raw INSERT inside a savepoint, force FK checks, inspect SQLSTATE, roll back, and compare complete state. No API/ORM prevalidation, disabled guards or synthetic replacement tables count as database proof."
+  },
+  "expected_recovery": {
+    "format": "tarjetas-owned-recovery-v2",
+    "references": 8,
+    "distinct_content_digests": 6,
+    "owner_qualified_paths": 8,
+    "old_session_valid": false,
+    "remember_login_valid": false,
+    "password_hashes_preserved_in_protected_identity_component": true,
+    "new_login_resolves_original_ledger": true,
+    "negative_cases": [
+      "missing_one_shared_owner_reference",
+      "swapped_owner_metadata",
+      "corrupted_payload",
+      "wrong_external_archive_sha",
+      "nonempty_target"
+    ]
+  },
+  "accounts": [
+    {
+      "ledger_id": "11111111-1111-4111-8111-111111111111",
+      "row_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+      "id": "expense:food:groceries:pantry",
+      "custom_name": "Pantry A"
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "row_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+      "id": "expense:food:groceries:pantry",
+      "custom_name": "Pantry B"
+    },
+    {
+      "ledger_id": "22222222-2222-4222-8222-222222222222",
+      "row_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+      "id": "expense:synthetic:b-only",
+      "parent_id": "expense",
+      "type": "expense",
+      "currency": "ARS",
+      "posting": true,
+      "custom_name": "SYNTHETIC B ONLY ACCOUNT"
+    }
+  ],
+  "database_reference_controls": [
+    {
+      "name": "a_shared_key_resolves_to_a",
+      "child_key": [
+        "11111111-1111-4111-8111-111111111111",
+        "expense:food:groceries:pantry"
+      ],
+      "expected_sqlstate": "00000",
+      "resolved_owner_ledger_id": "11111111-1111-4111-8111-111111111111",
+      "rollback_after_case": true
+    },
+    {
+      "name": "b_shared_key_resolves_to_b",
+      "child_key": [
+        "22222222-2222-4222-8222-222222222222",
+        "expense:food:groceries:pantry"
+      ],
+      "expected_sqlstate": "00000",
+      "resolved_owner_ledger_id": "22222222-2222-4222-8222-222222222222",
+      "rollback_after_case": true
+    },
+    {
+      "name": "b_exclusive_key_is_valid_for_b",
+      "child_key": [
+        "22222222-2222-4222-8222-222222222222",
+        "expense:synthetic:b-only"
+      ],
+      "expected_sqlstate": "00000",
+      "resolved_owner_ledger_id": "22222222-2222-4222-8222-222222222222",
+      "rollback_after_case": true
+    }
+  ],
+  "forged_owner_request": {
+    "actor": "user-a",
+    "body_ledger_id": "22222222-2222-4222-8222-222222222222",
+    "resource_key": "expense:food:groceries:pantry",
+    "expected_status": 400,
+    "expected_code": "owner_scope_conflict",
+    "expected_state_unchanged": true,
+    "layer": "application_authorization_not_database_constraint"
+  }
+}

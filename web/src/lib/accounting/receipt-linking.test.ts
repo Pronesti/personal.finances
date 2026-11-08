@@ -5,7 +5,7 @@ import { baseCatalog, cardAccounts } from "./catalog";
 import { importReceipt } from "./receipt-import";
 import { receiptExtraction } from "./receipt-test-support";
 import { importStatement } from "./statement-import";
-import { reconcileReceipt, unlinkReceipt, latestReceiptDecision } from "./linking";
+import { reconcileReceipt, unlinkReceipt, latestReceiptDecision, retainedReceiptItemAllocations } from "./linking";
 import { sourceLineId } from "./evidence";
 import { createProductTx, reviewReceiptItem } from "./review";
 const now="2026-02-01T12:00:00Z";
@@ -109,6 +109,25 @@ it('preserves reviewed per-item allocations when later statement reconciliation 
  const latest=await port.transaction(async tx=>latestReceiptDecision(await tx.receiptLinkDecisions(r.sourceRevisionId)));
  expect(latest?.itemAllocations).toEqual(itemAllocations);
  expect((await port.journals('card-a')).filter(j=>j.kind==='purchase')).toHaveLength(1);
+});
+
+it('retains the financial item split across unlink and relink without new journals', async () => {
+ const port=ledger(),docs=createMemoryDocuments(),r=await receipt(port,docs,{itemNetAmounts:[7000,3000]});
+ const product=await port.transaction(tx=>createProductTx(tx,{name:'Known pantry item',category:'pantry',unit:'un',reviewed:true}));
+ const id=sourceLineId(r.sourceRevisionId,1);
+ await reviewReceiptItem(port,{key:'known-item',receiptRevisionId:r.sourceRevisionId,sourceLineId:id,productId:product,recordedAt:now});
+ const itemAllocations=[{sourceLineId:id,accountId:'expense:food:groceries:pantry',purposeId:'food',minor:7000}];
+ await reconcile(port,r.sourceRevisionId,{itemAllocations}); const before=await port.journals('card-a');
+ await unlinkReceipt(port,{key:'unlink-allocated',receiptRevisionId:r.sourceRevisionId,recordedAt:now});
+ await reconcile(port,r.sourceRevisionId,{key:'relink-allocated'});
+ const latest=await port.transaction(async tx=>latestReceiptDecision(await tx.receiptLinkDecisions(r.sourceRevisionId)));
+ expect(latest?.itemAllocations).toEqual(itemAllocations); expect(await port.journals('card-a')).toEqual(before);
+ const history=await port.transaction(tx=>tx.receiptLinkDecisions(r.sourceRevisionId));
+ // Existing installations may already contain the old empty unlink/relink metadata.
+ const legacy=history.map(row=>row.id===latest!.id?{...row,itemAllocations:[]}:row);
+ expect(retainedReceiptItemAllocations(legacy,latest!.purchaseId)).toEqual(itemAllocations);
+ expect(retainedReceiptItemAllocations(legacy.map(row=>row.id===latest!.id?{...row,allocation:[{accountId:'expense:unallocated',purposeId:'unallocated',minor:10000}],itemAllocations:[]}:row),latest!.purchaseId)).toEqual([]);
+ expect(retainedReceiptItemAllocations(legacy,'another-purchase')).toEqual([]);
 });
 
 it('does not reopen an already reviewed historical receipt when a later statement arrives',async()=>{

@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tarjetas:synthetic:statement-extraction:v1",
+  "title": "Complete supported issuer extraction envelope",
+  "description": "Source envelope, broader than StatementJson. Preserve all additional properties. Cross-field financial admission belongs to application validation.",
+  "type": "object",
+  "properties": {
+    "file": {
+      "type": "string"
+    },
+    "brand": {
+      "enum": [
+        "visa",
+        "mastercard",
+        "mercadopago"
+      ]
+    },
+    "product": {
+      "type": "string"
+    },
+    "account": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cardholder": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "closing_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "due_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "previous_closing_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "previous_due_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_closing_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_due_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "closing_date",
+        "due_date"
+      ],
+      "additionalProperties": true
+    },
+    "balances": {
+      "type": "object",
+      "properties": {
+        "previous_ars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "previous_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "current_ars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "current_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minimum_payment_ars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "purchase": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "financing": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cash_advance": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "installments": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "rates": {
+      "type": "object",
+      "properties": {
+        "annual_nominal_ars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "annual_nominal_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "monthly_effective_ars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "monthly_effective_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "account_summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concept": {
+            "type": "string"
+          },
+          "block": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "ars": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "concept",
+          "ars",
+          "usd"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "upcoming_installments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          },
+          "amount_ars": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "month",
+          "amount_ars"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "transactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "block": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "block_cardholder": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "voucher": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ars": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "installment_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "installment_count": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "raw_line": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "section",
+          "block",
+          "block_cardholder",
+          "date",
+          "description",
+          "voucher",
+          "ars",
+          "usd",
+          "installment_number",
+          "installment_count",
+          "raw_line"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "declared_totals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concept": {
+            "type": "string"
+          },
+          "block": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "ars": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "concept",
+          "ars",
+          "usd"
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": [
+    "file",
+    "brand",
+    "product",
+    "account",
+    "cardholder",
+    "period",
+    "balances",
+    "limits",
+    "rates",
+    "upcoming_installments",
+    "transactions",
+    "declared_totals"
+  ],
+  "additionalProperties": true
+}
