@@ -88,7 +88,7 @@ class SourceIdentity
         $vouchers = $input['voucher'] === null ? [] : array_values(array_filter($eligible, fn ($row) => $row['voucher'] === $input['voucher'] && $row['purchaseDate'] === $input['purchaseDate'] && ! self::distinct($input['sourceLineId'], $row['sourceLineId'])));
         if ($vouchers !== []) {
             foreach ($vouchers as $row) {
-                if ($row['amountMinor'] !== $input['amountMinor'] || $row['installmentCount'] !== $count || ($row['installment'] !== $number && ($row['installment'] === null || $number === null || $row['installment'] >= $number))) {
+                if ($row['amountMinor'] !== $input['amountMinor'] || $row['installmentCount'] !== $count || ($row['installment'] !== $number && ($row['installment'] === null || $number === null))) {
                     return $review('voucher_facts_conflict');
                 }
             }

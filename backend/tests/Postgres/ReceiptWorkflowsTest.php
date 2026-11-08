@@ -221,6 +221,82 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_recovered_history_closes_only_resolved_receipt_reviews_and_preserves_audit(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service, $links] = $this->setupLedger();
+            $this->statement($repository, false, '2026-03-01', ['ars' => 43.33, 'installment_number' => 2, 'installment_count' => 3]);
+            $receipt = $service->import($this->input(), new ProcessingBudget(719000, 0));
+            $base = ['receiptRevisionId' => $receipt['sourceRevisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'expectedPreviousDecisionId' => null, 'allocation' => null, 'recordedAt' => '2026-04-01T12:00:00Z'];
+            $this->assertContains('missing_installment_history', array_column($links->reconcile([...$base, 'key' => 'too-early'])['reviews'], 'code'));
+            $root = $repository->query('review_events')->where('subject_id', $receipt['sourceRevisionId'])->where('code', 'missing_installment_history')->first();
+            $this->assertSame('open', $root->state);
+            $repository->transaction(fn () => $service->appendReview($receipt['sourceRevisionId'], 'voucher_facts_conflict', $base['recordedAt'], ['source' => 'unrelated-conflict']));
+            $this->statement($repository, false, '2026-02-01', ['ars' => 43.33, 'installment_number' => 1, 'installment_count' => 3]);
+            $result = $links->reconcile([...$base, 'key' => 'recovered']);
+            $this->assertSame([], $result['reviews']);
+            $latest = $repository->query('review_events')->where('subject_id', $receipt['sourceRevisionId'])->where('code', 'missing_installment_history')->orderByDesc('ordinal')->first();
+            $this->assertSame('reviewed', $latest->state);
+            $this->assertSame($root->id, $latest->prior_decision_id);
+            $this->assertSame('open', $repository->query('review_events')->where('id', $root->id)->value('state'));
+            $this->assertSame('open', $repository->query('review_events')->where('subject_id', $receipt['sourceRevisionId'])->where('code', 'voucher_facts_conflict')->orderByDesc('ordinal')->value('state'));
+            $reviews = $repository->query('review_events')->count();
+            $this->assertTrue($links->reconcile([...$base, 'key' => 'recovered'])['duplicate']);
+            $this->assertSame($reviews, $repository->query('review_events')->count());
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_allocation_without_adoption_does_not_close_missing_history_review(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+            $this->statement($repository, false, null, ['ars' => 43.33, 'installment_number' => 1, 'installment_count' => 3]);
+            $this->statement($repository, false, '2026-03-01', ['voucher' => '654321', 'ars' => 43.33, 'installment_number' => 2, 'installment_count' => 3]);
+            $failed = $links->reconcile([...$base, 'key' => 'pending-history', 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id']]);
+            $this->assertContains('missing_installment_history', array_column($failed['reviews'], 'code'));
+            $items[0] = [...$items[0], 'accountId' => 'expense:home:cleaning', 'purposeId' => 'home'];
+            $result = $links->reconcile([...$base, 'key' => 'allocation-only', 'paymentVerified' => false, 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id'], 'expectedPurchaseVersion' => 2, 'itemAllocations' => $items]);
+            $this->assertSame([], $result['reviews']);
+            $this->assertEquals($items, $service->detail($receipt['receiptId'])['link']['itemAllocations']);
+            $this->assertSame('open', $repository->query('review_events')->where('subject_id', $receipt['sourceRevisionId'])->where('code', 'missing_installment_history')->orderByDesc('ordinal')->value('state'));
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_installments_imported_one_three_two_share_one_purchase_and_preserve_conflict_checks(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                foreach ([1, 3, 2] as $position) {
+                    $transaction = ['ars' => 43.33, 'installment_number' => $position, 'installment_count' => 3];
+                    $result = $this->statement($repository, false, '2026-0'.($position + 1).'-01', $transaction);
+                    $this->assertSame([], $result['reviews']);
+                    $this->assertSame($purchaseId, $repository->query('source_purchase_identities')->where('source_line_id', SourceIdentity::line($result['sourceRevisionId'], 1))->value('purchase_id'));
+                }
+                $this->assertSame(1, $repository->query('purchases')->count());
+                $this->assertSame([1, 2, 3], $repository->query('billings')->orderBy('installment')->pluck('installment')->all());
+                $this->assertSame(13000, $this->expense($repository));
+                $this->assertSame(12999, (int) DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id])->minor);
+                $this->assertSame(1, (int) DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:unbilled'", [$repository->ledger->id])->minor);
+                $journals = $repository->query('journals')->get()->all();
+                $this->assertTrue($this->statement($repository, false, '2026-03-01', $transaction)['duplicate']);
+                $conflict = $this->statement($repository, false, '2026-05-01', ['ars' => 32.50, 'installment_number' => 2, 'installment_count' => 4]);
+                $this->assertContains('voucher_facts_conflict', array_column($conflict['reviews'], 'code'));
+                $this->assertNull($repository->query('source_purchase_identities')->where('source_line_id', SourceIdentity::line($conflict['sourceRevisionId'], 1))->value('purchase_id'));
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_reviewed_relink_preserves_purchase_and_item_allocation_metadata(): void
     {
         DB::beginTransaction();

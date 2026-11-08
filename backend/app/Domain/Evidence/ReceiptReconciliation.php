@@ -378,7 +378,8 @@ class ReceiptReconciliation
                     $result['purchaseIds'][] = $target['purchaseId'];
                     $history = $this->repository->query('review_events')->where('subject_id', $receipt['revisionId'])->get();
                     foreach ($history as $event) {
-                        if (in_array($event->code, ['receipt_payment_unresolved', 'multiple_receipt_candidates', 'receipt_amount_mismatch', 'multiple_statement_candidates', 'purchase_already_linked', 'receipt_amount_or_card_mismatch', 'unknown_card'], true) && $event->state === 'open' && ! $history->contains(fn ($child) => $child->prior_decision_id === $event->id)) {
+                        $resolved = in_array($event->code, ['receipt_payment_unresolved', 'multiple_receipt_candidates', 'receipt_amount_mismatch', 'multiple_statement_candidates', 'purchase_already_linked', 'receipt_amount_or_card_mismatch', 'unknown_card'], true) || ($event->code === 'missing_installment_history' && $input['paymentVerified'] && $input['cardId'] !== null);
+                        if ($resolved && $event->state === 'open' && ! $history->contains(fn ($child) => $child->prior_decision_id === $event->id)) {
                             $this->repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $receipt['revisionId'], 'prior_decision_id' => $event->id, 'code' => $event->code, 'params' => $event->params, 'source_line_ids' => $event->source_line_ids, 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
                         }
                     }
