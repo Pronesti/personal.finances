@@ -46,11 +46,16 @@ class ReceiptVerification
             } else {
                 $subtotal = Money::minor($subtotal + Money::minor($item['lineTotalCents']));
             }
+            $itemDiscounts = 0;
             foreach ($item['discounts'] as $discount) {
                 if (self::signed($discount['amountCents']) >= 0 || ! in_array($discount['tag'], ['A', 'M'], true)) {
                     throw new AccountingError('invalid_receipt_discount');
                 }
                 $discounts = self::signed($discounts + $discount['amountCents']);
+                $itemDiscounts = self::signed($itemDiscounts + $discount['amountCents']);
+            }
+            if ($item['lineTotalCents'] !== null && self::signed($item['lineTotalCents'] + $itemDiscounts) < 0) {
+                $errors[] = 'item '.$item['position'].' has a negative net amount';
             }
         }
         $total = self::signed($subtotal + $discounts);

@@ -45,13 +45,60 @@ class ReceiptReconciliation
         while ($current !== null && $link['purchaseId'] !== null && $current['purchaseId'] === $link['purchaseId'] && $current['receiptRevisionId'] === $link['receiptRevisionId'] && ! isset($seen[$current['id']])) {
             $seen[$current['id']] = true;
             if (($current['allocation'] ?? null) !== null || ($current['itemAllocations'] ?? []) !== []) {
-                return [...$link, 'itemAllocations' => $current['itemAllocations'] ?? []];
+                return [...$link, 'itemAllocations' => $this->currentItemAllocations($link, $current['itemAllocations'] ?? [])];
             }
             $previous = $this->repository->query('receipt_link_decisions')->where('receipt_id', $link['receiptId'])->where('id', $current['previousDecisionId'])->first();
             $current = $previous === null ? null : [...json_decode($previous->payload, true), 'id' => $previous->id];
         }
 
-        return [...$link, 'itemAllocations' => []];
+        return [...$link, 'itemAllocations' => $this->currentItemAllocations($link, [])];
+    }
+
+    private static function allocationTotals(array $rows): array
+    {
+        $totals = [];
+        foreach ($rows as $row) {
+            $key = LedgerRepository::json([$row['accountId'], $row['purposeId']]);
+            $totals[$key] = Money::minor(($totals[$key] ?? 0) + $row['minor']);
+        }
+        ksort($totals);
+
+        return $totals;
+    }
+
+    /** Item decisions describe current accounts only while consistent with the authoritative purchase. */
+    private function currentItemAllocations(array $link, array $items): array
+    {
+        $purchase = $link['purchaseId'] === null ? null : $this->repository->purchase($link['purchaseId']);
+        $receipt = $this->receipts->facts($link['receiptRevisionId']);
+        if ($purchase === null || $receipt === null || $purchase['principalMinor'] !== $receipt['totalMinor']) {
+            return [];
+        }
+        $represented = $items;
+        $covered = array_sum(array_column($items, 'minor'));
+        if ($covered < $receipt['totalMinor']) {
+            $represented[] = ['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => $receipt['totalMinor'] - $covered];
+        }
+        $current = self::allocationTotals($purchase['allocations']);
+        if ($covered <= $receipt['totalMinor'] && self::allocationTotals($represented) === $current) {
+            return $items;
+        }
+        if (count($current) !== 1) {
+            return [];
+        }
+        $target = $purchase['allocations'][0];
+        if ($target['accountId'] === 'expense:unallocated') {
+            return [];
+        }
+        $projected = [];
+        foreach ($receipt['parsed']['items'] as $index => $item) {
+            $minor = $item['lineTotalCents'] + array_sum(array_column($item['discounts'], 'amountCents'));
+            if ($minor > 0) {
+                $projected[] = ['sourceLineId' => SourceIdentity::line($receipt['revisionId'], $index + 1), 'accountId' => $target['accountId'], 'purposeId' => $target['purposeId'], 'minor' => $minor];
+            }
+        }
+
+        return $projected;
     }
 
     private function latestDecisions(): array

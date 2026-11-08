@@ -16,7 +16,10 @@ use App\Domain\Ledger\CatalogBootstrap;
 use App\Domain\Ledger\FinancialCommands;
 use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Processing\ProcessingBudget;
+use App\Domain\Reports\FinancialFacts;
+use App\Domain\Reports\ReportCalculator;
 use App\Domain\Reports\ReportSnapshot;
+use App\Domain\Reviews\MerchantReviews;
 use App\Domain\Reviews\SourceClassification;
 use App\Models\Ledger;
 use Illuminate\Database\QueryException;
@@ -215,6 +218,56 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                     $this->assertTrue($this->statement($repository, false, '2026-03-31', $transaction)['duplicate']);
                     $this->assertSame($journals, $repository->query('journals')->count());
                 }
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_negative_item_net_is_retained_rejected_and_correctable_without_poisoning_reports(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                [$repository, $service, $links] = $this->setupLedger();
+                $valid = $this->input();
+                $sentinel = $service->import($valid, new ProcessingBudget(719000, 0));
+                $links->reconcile(['key' => 'fund-sentinel', 'receiptRevisionId' => $sentinel['sourceRevisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'allocation' => null, 'recordedAt' => '2026-01-17T12:00:00Z']);
+                $correctedRows = str_replace('9999-00000001', '9999-00000002', $valid['rowsText']);
+                $rows = str_replace(['-20,00', '130,00'], ['-110,00', '40,00'], $correctedRows);
+                $input = [...$valid, 'key' => 'negative-net', 'bytes' => $valid['bytes']."\n% synthetic negative item net", 'rowsText' => $rows];
+                $journals = $repository->query('journals')->count();
+                $previous = null;
+                foreach ([false, true] as $replay) {
+                    try {
+                        $service->import($input, new ProcessingBudget(719000, 0));
+                        $this->fail('Negative item net accepted');
+                    } catch (ReceiptRejected $error) {
+                        $result = $error->receiptPayload;
+                    }
+                    $this->assertSame(['item 1 has a negative net amount'], $result['report']['errors']);
+                    $this->assertSame([true, true, true], array_column($result['report']['checks'], 'ok'));
+                    $this->assertSame($rows, $result['rowsText']);
+                    if ($replay) {
+                        $this->assertSame($previous, $result['sourceRevisionId']);
+                    }
+                    $previous = $result['sourceRevisionId'];
+                }
+                $this->assertSame('rejected', $service->source($previous)['admission']);
+                $this->assertSame($journals, $repository->query('journals')->count());
+                $snapshot = (new ReportSnapshot($repository))->read();
+                $this->assertCount(1, $snapshot['supermarket']['receipts']);
+                $report = (new ReportCalculator)->calculate([...$snapshot, 'rates' => json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/references.json')), true), 'scope' => ['basis' => 'purchase', 'value' => 'nominal', 'tax' => 'excl', 'granularity' => 'month', 'period' => null]], new ProcessingBudget(30000, 0));
+                $this->assertEquals(130, $report['spending']['spending']['total']);
+                $corrected = $service->correction($result['sha256'], $correctedRows, 'correct-negative', '2026-01-18T12:00:00Z', new ProcessingBudget(719000, 0));
+                $this->assertSame($result['receiptId'], $corrected['receiptId']);
+                $this->assertSame($previous, $service->source($corrected['sourceRevisionId'])['previousRevisionId']);
+                $this->assertSame('accepted', $service->source($corrected['sourceRevisionId'])['admission']);
+                $facts = $service->facts($corrected['sourceRevisionId']);
+                $this->assertSame($rows, $service->readObject($facts['originalRowsObject']['sha256']));
+                $this->assertSame($correctedRows, $service->readObject($facts['correctedRowsObject']['sha256']));
+                $this->assertSame($journals, $repository->query('journals')->count());
+                $this->assertCount(2, (new ReportSnapshot($repository))->read()['supermarket']['receipts']);
             }
         } finally {
             DB::rollBack();
@@ -759,6 +812,51 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_purchase_classification_updates_current_receipt_accounts_without_rewriting_item_history(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach ([false, true] as $partial) {
+                [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt($partial);
+                $merchant = new MerchantReviews($repository);
+                $history = $repository->query('receipt_link_decisions')->orderBy('ordinal')->get()->all();
+                $before = $service->detail($receipt['receiptId']);
+                $classification = ['key' => 'classify', 'recordedAt' => $base['recordedAt'], 'kind' => 'purchase_classification', 'purchaseId' => $purchaseId, 'cardId' => 'synthetic-visa-a', 'accountId' => 'expense:home:cleaning', 'purposeId' => 'home', 'scope' => 'selected', 'match' => null, 'expectedVersion' => 2];
+                $merchant->decide($classification);
+                $detail = $service->detail($receipt['receiptId']);
+                $this->assertSame(3, $detail['purchaseVersion']);
+                $this->assertSame($before['link']['id'], $detail['link']['id']);
+                $this->assertSame(['expense:home:cleaning', 'expense:home:cleaning'], array_column($detail['link']['itemAllocations'], 'accountId'));
+                $this->assertSame([8000, 5000], array_column($detail['link']['itemAllocations'], 'minor'));
+                $this->assertSame($before['items'], $detail['items']);
+                $snapshot = (new ReportSnapshot($repository))->read();
+                $this->assertSame(['expense:home:cleaning', 'expense:home:cleaning'], array_column($snapshot['allocations'], 'accountId'));
+                $this->assertSame([8000, 5000], array_column($snapshot['allocations'], 'netMinor'));
+                $this->assertEquals($history, $repository->query('receipt_link_decisions')->orderBy('ordinal')->get()->all());
+                $journals = $repository->query('journals')->count();
+                $this->assertTrue($merchant->decide($classification)['duplicate']);
+                $this->assertSame($journals, $repository->query('journals')->count());
+                $body = [...$base, 'purchaseId' => $purchaseId, 'itemAllocations' => $items, 'expectedPreviousDecisionId' => $detail['link']['id'], 'expectedPurchaseVersion' => 2];
+                $this->rejects('stale_purchase_version', fn () => $links->reconcile([...$body, 'key' => 'stale-items']));
+                $this->assertSame(13000, $repository->purchase($purchaseId)['principalMinor']);
+                $links->reconcile([...$body, 'key' => 'fresh-items', 'expectedPurchaseVersion' => 3]);
+                $this->assertEquals($items, $links->latest($receipt['receiptId'])['itemAllocations']);
+                $current = $repository->purchase($purchaseId);
+                $commands = new FinancialCommands($repository);
+                $commands->correct(['key' => 'same-accounts-reordered', 'cardId' => $base['cardId'], 'purchaseId' => $purchaseId, 'expectedVersion' => $current['version'], 'replacement' => [...$current, 'allocations' => array_reverse($current['allocations'])], 'reason' => 'same account totals', 'recordedAt' => $base['recordedAt']]);
+                $this->assertEquals($items, $links->latest($receipt['receiptId'])['itemAllocations']);
+                $current = $repository->purchase($purchaseId);
+                $commands->correct(['key' => 'different-split', 'cardId' => $base['cardId'], 'purchaseId' => $purchaseId, 'expectedVersion' => $current['version'], 'replacement' => [...$current, 'allocations' => [['accountId' => 'expense:home:cleaning', 'purposeId' => 'home', 'minor' => 7000], ['accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'minor' => 6000]]], 'reason' => 'no supported item mapping', 'recordedAt' => $base['recordedAt']]);
+                $this->assertSame([], $links->latest($receipt['receiptId'])['itemAllocations']);
+                $this->assertSame([null, null], array_column((new ReportSnapshot($repository))->read()['allocations'], 'accountId'));
+                [$other, $otherService] = $this->setupLedger();
+                $this->assertNull($otherService->detail($receipt['receiptId']));
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_stale_or_missing_purchase_version_cannot_overwrite_merchant_classification(): void
     {
         [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
@@ -913,16 +1011,21 @@ class ReceiptWorkflowsTest extends PostgresTestCase
     {
         DB::beginTransaction();
         try {
-            foreach (['a', 'b'] as $owner) {
+            foreach (['original-first', 'refund-first'] as $order) {
                 [$repository,$service] = $this->setupLedger();
                 $repository->transaction(fn () => $repository->insert('evidence', ['id' => 'opening-proof', 'kind' => 'synthetic', 'metadata' => '{}']));
                 (new FinancialCommands($repository))->post(['id' => (string) Str::uuid(), 'commandKey' => 'opening', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'effectiveDate' => '2026-02-01', 'recordedAt' => '2026-02-01T12:00:00Z', 'kind' => 'opening', 'reversesId' => null, 'evidenceIds' => ['opening-proof'], 'lines' => [['accountId' => 'equity:opening', 'debitMinor' => 13000, 'creditMinor' => 0, 'purchaseId' => null, 'purposeId' => null], ['accountId' => 'synthetic-visa-a:ARS:billed', 'debitMinor' => 0, 'creditMinor' => 13000, 'purchaseId' => null, 'purposeId' => null]]]);
-                $original = $this->statement($repository, true);
+                if ($order === 'original-first') {
+                    $original = $this->statement($repository, true);
+                }
                 $raw = json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/visa.expected.json')));
                 $raw->period->closing_date = '2026-03-31';
                 $raw->declared_totals = [];
                 $raw->transactions = [(object) ['section' => 'purchases', 'date' => '2026-03-05', 'description' => 'DEVOLUCION COTO SYNTHETIC', 'ars' => -130, 'usd' => null, 'installment_number' => null, 'installment_count' => null, 'raw_line' => '05-mar-26 DEVOLUCION COTO -130,00']];
                 $refund = (new StatementImporter($repository, app(DocumentStore::class)))->import(['key' => 'refund', 'cardId' => 'synthetic-visa-a', 'filename' => 'synthetic_refund_2026_03.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf'))."\n% synthetic full-refund seam", 'rawJson' => json_encode($raw), 'recordedAt' => '2026-03-31T12:00:00Z', 'appRevision' => 'receipt-acceptance']);
+                if ($order === 'refund-first') {
+                    $original = $this->statement($repository, true);
+                }
                 $input = ['key' => 'full-refund', 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'originalSourceLineId' => SourceIdentity::line($original['sourceRevisionId'], 1), 'refundSourceLineId' => SourceIdentity::line($refund['sourceRevisionId'], 1), 'accountId' => 'expense:food:groceries:pantry', 'purposeId' => 'food', 'confirmedFullRefund' => true, 'recordedAt' => '2026-04-01T12:00:00Z'];
                 $useCase = new HistoricalRefund($service);
                 $this->rejects('full_refund_confirmation_required', fn () => $useCase->post([...$input, 'confirmedFullRefund' => false]));
@@ -939,6 +1042,18 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                 $this->assertSame(0, $repository->query('purchases')->count());
                 $billed = DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id]);
                 $this->assertSame(0, (int) $billed->minor);
+                $snapshot = (new ReportSnapshot($repository))->read();
+                $credits = array_values(array_filter($snapshot['facts'], fn ($fact) => $fact['kind'] === 'credit'));
+                $this->assertCount(1, $credits);
+                $this->assertSame(-13000, $credits[0]['minor']);
+                $this->assertSame($input['refundSourceLineId'], $credits[0]['sourceLineId']);
+                $this->assertSame($refund['sourceRevisionId'], $credits[0]['statementId']);
+                $this->assertSame(FinancialFacts::cycle('2026-03-31', $raw->period->previous_closing_date), $credits[0]['cycleMonth']);
+                foreach (['purchase', 'billed'] as $basis) {
+                    $report = (new ReportCalculator)->calculate([...$snapshot, 'rates' => json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/references.json')), true), 'scope' => ['basis' => $basis, 'value' => 'nominal', 'tax' => 'excl', 'granularity' => 'month', 'period' => null], 'locale' => 'en'], new ProcessingBudget(30000, 0));
+                    $this->assertEquals(0, $report['spending']['spending']['total']);
+                }
+
             }
         } finally {
             DB::rollBack();

@@ -79,6 +79,13 @@ class ReportSnapshot
         foreach ($repository->query('journal_evidence')->orderBy('evidence_id')->get() as $row) {
             $journalEvidence[$row->journal_id][] = $row->evidence_id;
         }
+        $refundSources = [];
+        foreach ($repository->query('review_decisions')->where('kind', 'historical_refund')->get() as $decision) {
+            $payload = json_decode($decision->payload, true);
+            foreach ($payload['result']['journalIds'] as $journalId) {
+                $refundSources[$journalId] = $payload['input']['refundSourceLineId'];
+            }
+        }
         $journals = [];
         $journalSources = [];
         foreach ($repository->query('journals')->where('status', 'posted')->orderBy('effective_date')->orderBy('id')->get() as $row) {
@@ -99,6 +106,12 @@ class ReportSnapshot
                     if (($source['kind'] ?? null) === 'statement') {
                         $candidates[] = ['lineId' => null, 'revisionId' => $id, 'payload' => [], 'closingDate' => $source['closingDate'], 'previousClosingDate' => $source['rawPayload']['period']['previous_closing_date'] ?? null, 'ordinal' => array_search($id, array_column($sources, 'id'), true)];
                     }
+                }
+            }
+            if (isset($refundSources[$row->id])) {
+                $candidates = array_values(array_filter($candidates, fn ($candidate) => $candidate['lineId'] === $refundSources[$row->id]));
+                if ($candidates === []) {
+                    throw new AccountingError('historical_refund_source_missing');
                 }
             }
             usort($candidates, fn ($a, $b) => ($b['ordinal'] <=> $a['ordinal']) ?: strcmp($a['lineId'], $b['lineId']));

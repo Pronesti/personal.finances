@@ -129,3 +129,18 @@ test('correction from a second history PDF retains that PDF and its original OCR
   expect(retained.original.replace(/\r\n?/g,'\n').trimEnd()).toBe(originalB.trimEnd());expect(retained.corrected.trimEnd()).toBe(rows.trimEnd());
   await page.goto('/');await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();await login(page,'b');await page.goto(receiptUrl);await expect(page.getByRole('alert')).toHaveText('Receipt not found.');
 });
+
+test('over-discounted item remains rejected and correctable while financial reports stay usable',async({page})=>{
+ test.setTimeout(120000);
+ users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:receipt-rejection','--fresh','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));
+ await login(page,'b');await page.goto('/receipts');await page.getByRole('link',{name:'2026-01-15',exact:true}).first().click();
+ await page.locator('summary').filter({hasText:/ · rejected$/}).first().click();await page.getByRole('button',{name:'Original OCR transcript',exact:true}).click();
+ const valid=readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8');const negative=valid.replaceAll('-20,00','-110,00').replaceAll('130,00','40,00');
+ await page.getByLabel('Editable transcript').fill(negative);
+ let posted=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');await page.getByRole('button',{name:'Verify correction',exact:true}).click();
+ const rejected=await posted;expect(rejected.status(),await rejected.text()).toBe(422);const retained=await rejected.json();expect(retained.report.errors).toContain('item 1 has a negative net amount');expect(retained.report.checks.every((check:any)=>check.ok)).toBe(true);
+ await expect(page.getByLabel('Editable transcript')).toHaveValue(negative.replace(/\r\n?/g,'\n'));
+ await page.getByLabel('Editable transcript').fill(valid);posted=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');await page.getByRole('button',{name:'Verify correction',exact:true}).click();const corrected=await posted;expect(corrected.status(),await corrected.text()).toBe(200);expect((await corrected.json()).receiptId).toBe(retained.receiptId);
+ await page.reload();await expect(page.locator('summary').filter({hasText:/ · rejected$/})).toHaveCount(2);await expect(page.locator('summary').filter({hasText:/ · accepted$/})).toHaveCount(1);
+ const report=page.waitForResponse(r=>r.url().includes('/api/v1/reports/super-categories')&&r.request().method()==='GET');await page.goto('/super/categories?value=nominal');const reports=await report;expect(reports.status(),await reports.text()).toBe(200);await expect(page.getByRole('heading',{name:'Supermarket categories',exact:true})).toBeVisible();await expect(page.getByRole('row').filter({has:page.locator(`a[href="/receipts/${retained.receiptId}"]`)})).toContainText('130,00');
+});
