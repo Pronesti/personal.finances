@@ -41,13 +41,18 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         return ['key' => 'synthetic:shared-receipt', 'bytes' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_coto.pdf')), 'rowsText' => file_get_contents(base_path('../docs/rebuild/fixtures/'.$transcript)), 'correctedRowsText' => null, 'scale' => 3, 'recordedAt' => '2026-01-16T12:00:00Z', 'appRevision' => 'receipt-acceptance'];
     }
 
-    private function statement(LedgerRepository $repository, bool $observationOnly = false): array
+    private function statement(LedgerRepository $repository, bool $observationOnly = false, ?string $closingDate = null, array $transaction = []): array
     {
         $raw = json_decode(file_get_contents(base_path('../docs/rebuild/fixtures/visa.expected.json')));
         $raw->transactions = [(object) ['section' => 'purchases', 'block' => 1, 'block_cardholder' => 'SYNTHETIC HOLDER', 'date' => '2026-01-15', 'description' => 'COTO SYNTHETIC', 'voucher' => '123456', 'ars' => 130, 'usd' => null, 'installment_number' => null, 'installment_count' => null, 'raw_line' => '15-ene-26 COTO SYNTHETIC 123456 130,00']];
         $raw->declared_totals = [];
+        if ($closingDate !== null) {
+            $raw->period->closing_date = $closingDate;
+        }
+        $raw->transactions[0] = (object) [...get_object_vars($raw->transactions[0]), ...$transaction];
+        $suffix = $closingDate === null && $transaction === [] ? '' : hash('sha256', LedgerRepository::json([$closingDate, $transaction]));
 
-        return (new StatementImporter($repository, app(DocumentStore::class)))->import(['key' => 'coto-statement', 'cardId' => 'synthetic-visa-a', 'filename' => 'synthetic_visa_2026_02.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf')), 'rawJson' => json_encode($raw), 'recordedAt' => '2026-02-02T12:00:00Z', 'appRevision' => 'receipt-acceptance', 'observationOnly' => $observationOnly]);
+        return (new StatementImporter($repository, app(DocumentStore::class)))->import(['key' => 'coto-statement'.$suffix, 'cardId' => 'synthetic-visa-a', 'filename' => 'synthetic_visa_2026_02.pdf', 'pdf' => file_get_contents(base_path('../docs/rebuild/fixtures/pdf/synthetic_visa_2026_02.pdf')).($suffix === '' ? '' : "\n% synthetic statement seam ".$suffix), 'rawJson' => json_encode($raw), 'recordedAt' => '2026-02-02T12:00:00Z', 'appRevision' => 'receipt-acceptance', 'observationOnly' => $observationOnly]);
     }
 
     private function expense(LedgerRepository $repository): int
@@ -168,6 +173,48 @@ class ReceiptWorkflowsTest extends PostgresTestCase
                 $this->assertSame('reviewed', $repository->query('review_events')->where('code', 'receipt_purchase_unlinked')->orderByDesc('ordinal')->value('state'));
                 $this->assertTrue($links->reconcile([...$base, 'key' => 'explicit-relink', 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2])['duplicate']);
                 $this->assertSame($journals + 1, $repository->query('journals')->count());
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_receipt_origin_cannot_override_established_voucher_identity_across_cycles(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                foreach (['distinct', 'same', 'conflicting', 'missing'] as $case) {
+                    [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                    $this->statement($repository);
+                    $transaction = match ($case) {
+                        'distinct' => ['voucher' => '654321'],
+                        'same' => [],
+                        'conflicting' => ['installment_number' => 1, 'installment_count' => 1],
+                        'missing' => ['voucher' => null],
+                    };
+                    $result = $this->statement($repository, false, '2026-03-31', $transaction);
+                    $line = SourceIdentity::line($result['sourceRevisionId'], 1);
+                    $identity = $repository->query('source_purchase_identities')->where('source_line_id', $line)->value('purchase_id');
+                    if ($case === 'distinct') {
+                        $this->assertSame(2, $repository->query('purchases')->count());
+                        $this->assertNotNull($identity);
+                        $this->assertNotSame($purchaseId, $identity);
+                        $this->assertSame(26000, $this->expense($repository));
+                        $this->assertSame([], $result['reviews']);
+                    } else {
+                        $this->assertSame(1, $repository->query('purchases')->count());
+                        $this->assertSame(13000, $this->expense($repository));
+                        $this->assertSame($case === 'same' ? $purchaseId : null, $identity);
+                        $this->assertContains(match ($case) {
+                            'same' => 'conflicting_installment', 'conflicting' => 'voucher_facts_conflict', 'missing' => 'insufficient_identity_evidence'
+                        }, array_column($result['reviews'], 'code'));
+                    }
+                    $this->assertSame($purchaseId, $links->latest($receipt['receiptId'])['purchaseId']);
+                    $journals = $repository->query('journals')->count();
+                    $this->assertTrue($this->statement($repository, false, '2026-03-31', $transaction)['duplicate']);
+                    $this->assertSame($journals, $repository->query('journals')->count());
+                }
             }
         } finally {
             DB::rollBack();

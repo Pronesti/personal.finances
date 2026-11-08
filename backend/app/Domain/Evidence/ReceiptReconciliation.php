@@ -415,7 +415,10 @@ class ReceiptReconciliation
         $unlinked = false;
         foreach ($this->latestDecisions() as $link) {
             $detached = $this->requiresPaymentVerification($link, $link['receiptId']);
-            if ($link['cardId'] !== $input['cardId'] || (! $detached && ! $link['paymentVerified']) || ($detached && ($link['purchaseId'] !== 'receipt-purchase:'.$link['receiptId'] || $this->repository->query('source_purchase_identities')->where('purchase_id', $link['purchaseId'])->exists()))) {
+            if ($link['cardId'] !== $input['cardId'] || (! $detached && ! $link['paymentVerified']) || ($detached && $link['purchaseId'] !== 'receipt-purchase:'.$link['receiptId'])) {
+                continue;
+            }
+            if ($this->repository->query('source_purchase_identities')->where('purchase_id', $link['purchaseId'])->exists()) {
                 continue;
             }
             $receipt = $this->receipts->facts($link['receiptRevisionId']);
@@ -433,12 +436,8 @@ class ReceiptReconciliation
             if ($purchase === null || $purchase['principalMinor'] !== $receipt['totalMinor'] || ! in_array($receipt['revisionId'], $purchase['evidenceIds'], true)) {
                 continue;
             }
-            $revision = json_decode($input['sourceLineId'], true)[0];
-            $sameOccurrence = $this->repository->query('source_purchase_identities')->where('purchase_id', $purchase['purchaseId'])->get()->contains(fn ($identity) => json_decode($identity->source_line_id, true)[0] === $revision && $identity->source_line_id !== $input['sourceLineId']);
-            if (! $sameOccurrence) {
-                $candidates[$purchase['purchaseId']] = true;
-                $unlinked = $unlinked || $detached;
-            }
+            $candidates[$purchase['purchaseId']] = true;
+            $unlinked = $unlinked || $detached;
         }
 
         if ($unlinked) {

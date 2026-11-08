@@ -13,9 +13,10 @@ vi.mock('../../auth/SessionProvider',()=>({useSession:()=>({session:{ledger:{id:
 vi.mock('./api',()=>({command:mocks.command}));
 beforeEach(()=>{mocks.get.mockReset();mocks.command.mockReset();document.cookie='lang=en; Path=/';});
 afterEach(cleanup);
-function receipt(action:'link'|'unlink',purchaseVersion:number,partial=false){
+function receipt(action:'link'|'unlink',purchaseVersion:number,partial=false,invalidated=false){
  const item={sourceLineId:'line-1',accountId:'expense:food:groceries:pantry',purposeId:'food',minor:8000};
  const data={receiptId:1,revisionId:'revision-1',purchaseVersion,date:'2026-01-15',fiscalId:'synthetic',totalMinor:8000,documentHash:'synthetic',report:{ok:true,checks:[],errors:[],warnings:[]},parsed:{header:{paymentMethod:'Synthetic',paymentCents:8000}},items:[{id:'line-1',item:{descPrinted:'Synthetic rice',qtyMilli:1000,unit:'un',lineTotalCents:8000,discounts:[]},product:{id:'product-1',name:'Synthetic rice',category:'pantry',unit:'un',reviewed:true,seq:1},match:{seq:1,productId:'product-1',reviewed:true}}],link:{id:'decision-1',action,purchaseId:'purchase-1',cardId:'card-a',itemAllocations:[item]},history:[]};
+ if(invalidated)data.items[0].match.reviewed=false;
  if(partial){data.totalMinor=13000;data.items.push({...data.items[0],id:'line-2',item:{...data.items[0].item,descPrinted:'Unreviewed soap',lineTotalCents:5000},product:{...data.items[0].product,id:'product-2',reviewed:false},match:{...data.items[0].match,productId:'product-2',reviewed:false}});}
  mocks.get.mockImplementation((path:string)=>Promise.resolve({data:path.startsWith('/receipts/')?data:{cards:[{id:'card-a',display_name:'Synthetic card'}],catalog:[{id:item.accountId,type:'expense',posting:true,enabled:true,currency:null,primary_purpose_id:'food',custom_name:'Pantry'}]}}));
  render(<MemoryRouter initialEntries={['/receipts/1']}><LocaleProvider><Routes><Route path="/receipts/:id" element={<ReceiptPage/>}/></Routes></LocaleProvider></MemoryRouter>);
@@ -60,4 +61,10 @@ it('clears an earlier payment confirmation after unlinking',async()=>{
  receipt('link',7);const user=userEvent.setup();await user.click(await screen.findByRole('checkbox'));expect(screen.getByRole('checkbox')).toBeChecked();
  const get=mocks.get.getMockImplementation()!;mocks.command.mockImplementation(async()=>{mocks.get.mockImplementation(async(path:string)=>{const result=await get(path);if(path.startsWith('/receipts/'))result.data.link.action='unlink';return result;});return {};});
  await user.click(screen.getByRole('button',{name:'Unlink evidence'}));await screen.findByText('Current link: Unlinked');expect(screen.getByRole('checkbox')).not.toBeChecked();
+});
+
+it('lets an invalidated allocated item be cleared but prevents assigning an account until reapproval',async()=>{
+ mocks.command.mockRejectedValue(new Error('stop after submission'));receipt('link',7,false,true);const user=userEvent.setup();
+ const account=await screen.findByRole('combobox',{name:'Account'});expect(account).toBeEnabled();expect(screen.getByRole('option',{name:'Pantry'})).toBeDisabled();await user.selectOptions(account,'expense:unallocated');
+ expect(account).toBeDisabled();await user.click(screen.getByRole('button',{name:'Apply reviewed item allocations'}));await waitFor(()=>expect(mocks.command).toHaveBeenCalled());expect(mocks.command.mock.calls[0][1]).toMatchObject({expectedPurchaseVersion:7,itemAllocations:[],allocation:[{accountId:'expense:unallocated',purposeId:'unallocated',minor:8000}]});
 });
