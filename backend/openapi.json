@@ -1330,7 +1330,7 @@
     "/api/v1/receipts/{id}/reconciliation": {
       "post": {
         "operationId": "reconcileReceipt",
-        "description": "Expected latest decision is mandatory, null for first link. Item allocations require reviewed canonical and individual identity; remainder stays Unallocated. Receipt-first requires actual card and full payment verification. Statement-first uses existing acquisition. Ambiguity reviews do not fabricate purchases.",
+        "description": "Expected latest decision is mandatory, null for first link. Item allocations require reviewed canonical and individual identity; remainder stays Unallocated. Receipt-first requires actual card and full payment verification. Statement-first uses existing acquisition. Ambiguity reviews do not fabricate purchases. Reconcile a receipt with its purchase and pending issuer rows. Verified attempts process pending installments in installment order. A result containing reviews retains evidence and review history but commits no financial, item-allocation, or link changes from this reconciliation. Replays return the recorded result without new postings.",
         "security": [
           {
             "session": [],

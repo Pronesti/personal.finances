@@ -221,6 +221,99 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_reviewed_relink_preserves_purchase_and_item_allocation_metadata(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['change', 'clear'] as $change) {
+                [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                $this->statement($repository, false, null, ['ars' => 43.33, 'installment_number' => 1, 'installment_count' => 3]);
+                $links->unlink(['key' => 'unlink', 'receiptRevisionId' => $base['receiptRevisionId'], 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id'], 'recordedAt' => $base['recordedAt']]);
+                $this->statement($repository, false, '2026-03-31', ['ars' => 32.50, 'installment_number' => 2, 'installment_count' => 4]);
+                $before = $service->detail($receipt['receiptId']);
+                $purchase = $repository->purchase($purchaseId);
+                $journals = $repository->query('journals')->get()->all();
+                $replacement = $items;
+                $replacement[0] = [...$replacement[0], 'accountId' => 'expense:home:cleaning', 'purposeId' => 'home'];
+                $command = [...$base, 'key' => 'reviewed-allocation', 'expectedPreviousDecisionId' => $before['link']['id'], 'expectedPurchaseVersion' => 2, 'itemAllocations' => $change === 'clear' ? [] : $replacement, 'allocation' => $change === 'clear' ? [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]] : null];
+                $result = $links->reconcile($command);
+                $this->assertContains('voucher_facts_conflict', array_column($result['reviews'], 'code'));
+                $this->assertSame([], $result['postedJournalIds']);
+                $this->assertEquals($purchase, $repository->purchase($purchaseId));
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+                $this->assertEquals($before['link'], $service->detail($receipt['receiptId'])['link']);
+                $this->assertEquals($items, $service->detail($receipt['receiptId'])['link']['itemAllocations']);
+                $this->assertTrue($links->reconcile($command)['duplicate']);
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_out_of_order_adoption_funds_and_bills_in_installment_order_and_recovers_partial_state(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['fresh', 'partial'] as $state) {
+                [$repository, $service, $links] = $this->setupLedger();
+                $second = $this->statement($repository, false, '2026-03-01', ['ars' => 43.33, 'installment_number' => 2, 'installment_count' => 3]);
+                $first = $this->statement($repository, false, '2026-02-01', ['ars' => 43.33, 'installment_number' => 1, 'installment_count' => 3]);
+                $receipt = $service->import($this->input(), new ProcessingBudget(719000, 0));
+                $purchaseId = 'receipt-purchase:'.$receipt['receiptId'];
+                if ($state === 'partial') {
+                    $commands = new FinancialCommands($repository);
+                    $commands->purchase(['key' => 'legacy-fund', 'purchaseId' => $purchaseId, 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'effectiveDate' => '2026-01-15', 'recordedAt' => '2026-04-01T12:00:00Z', 'evidenceIds' => [$receipt['sourceRevisionId']], 'principalMinor' => 13000, 'allocations' => [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]]]);
+                    $line = SourceIdentity::line($first['sourceRevisionId'], 1);
+                    $commands->bill(['key' => 'legacy-first', 'purchaseId' => $purchaseId, 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'installment' => 1, 'amountMinor' => 4333, 'effectiveDate' => '2026-02-01', 'recordedAt' => '2026-04-01T12:00:00Z', 'evidenceIds' => [$line]]);
+                    $identity = ['sourceLineId' => $line, 'purchaseId' => $purchaseId, 'cardId' => 'synthetic-visa-a', 'currency' => 'ARS', 'purchaseDate' => '2026-01-15', 'voucher' => '123456', 'installment' => 1, 'installmentCount' => 3, 'amountMinor' => 4333];
+                    $repository->transaction(fn () => $repository->insert('source_purchase_identities', ['source_line_id' => $line, 'currency' => 'ARS', 'purchase_id' => $purchaseId, 'card_id' => 'synthetic-visa-a', 'purchase_date' => '2026-01-15', 'payload' => LedgerRepository::json($identity)], false));
+                }
+                $command = ['key' => 'ordered-funding', 'receiptRevisionId' => $receipt['sourceRevisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'expectedPreviousDecisionId' => null, 'allocation' => null, 'recordedAt' => '2026-04-01T12:00:00Z'];
+                $result = $links->reconcile($command);
+                $this->assertSame([], $result['reviews']);
+                $this->assertSame([$purchaseId], $result['purchaseIds']);
+                $this->assertCount($state === 'fresh' ? 3 : 1, $result['postedJournalIds']);
+                $this->assertSame(1, $repository->query('purchases')->count());
+                $this->assertSame(3, $repository->query('journals')->count());
+                $this->assertSame(13000, $this->expense($repository));
+                $this->assertSame('link', $links->latest($receipt['receiptId'])['action']);
+                $this->assertSame([1, 2], $repository->query('billings')->orderBy('installment')->pluck('installment')->all());
+                $this->assertSame([$purchaseId, $purchaseId], $repository->query('source_purchase_identities')->orderBy('source_line_id')->pluck('purchase_id')->all());
+                $this->assertSame('reviewed', $repository->query('review_events')->where('subject_id', $second['sourceRevisionId'])->orderByDesc('ordinal')->value('state'));
+                $journals = $repository->query('journals')->get()->all();
+                $this->assertTrue($links->reconcile($command)['duplicate']);
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+                $this->assertSame(8666, (int) DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id])->minor);
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    public function test_failed_adoption_rolls_back_new_funding_billing_and_allocation_together(): void
+    {
+        DB::beginTransaction();
+        try {
+            [$repository, $service, $links] = $this->setupLedger();
+            foreach ([2, 1, 3] as $position) {
+                $this->statement($repository, false, '2026-0'.($position + 1).'-01', ['ars' => 43.34, 'installment_number' => $position, 'installment_count' => 3]);
+            }
+            $receipt = $service->import($this->input(), new ProcessingBudget(719000, 0));
+            $result = $links->reconcile(['key' => 'over-principal', 'receiptRevisionId' => $receipt['sourceRevisionId'], 'cardId' => 'synthetic-visa-a', 'paymentVerified' => true, 'purchaseId' => null, 'expectedPreviousDecisionId' => null, 'allocation' => [['accountId' => 'expense:unallocated', 'purposeId' => 'unallocated', 'minor' => 13000]], 'itemAllocations' => [], 'recordedAt' => '2026-05-01T12:00:00Z']);
+            $this->assertContains('billing_exceeds_principal', array_column($result['reviews'], 'code'));
+            $this->assertSame([], $result['postedJournalIds']);
+            $this->assertSame([], $result['purchaseIds']);
+            $this->assertSame(0, $repository->query('journals')->count());
+            $this->assertSame(0, $repository->query('purchases')->count());
+            $this->assertSame(0, $repository->query('source_purchase_identities')->count());
+            $this->assertNull($service->detail($receipt['receiptId'])['link']);
+            $this->assertSame('billing_exceeds_principal', $repository->query('review_events')->where('subject_id', $receipt['sourceRevisionId'])->orderByDesc('ordinal')->value('code'));
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_verified_relink_revalidates_installment_identity_before_posting_or_binding(): void
     {
         DB::beginTransaction();

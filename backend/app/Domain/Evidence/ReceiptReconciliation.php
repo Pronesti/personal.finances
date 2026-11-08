@@ -8,6 +8,7 @@ use App\Domain\Ledger\LedgerRepository;
 use App\Domain\Ledger\Money;
 use App\Domain\Reviews\MerchantReviews;
 use Brick\Math\BigInteger;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ReceiptReconciliation
@@ -228,6 +229,7 @@ class ReceiptReconciliation
 
     private function adoptStatements(array $rows, array $receipt, array $purchase, array $input, array &$result, callable $review): void
     {
+        usort($rows, fn ($a, $b) => [$a['line']['installment_number'] ?? 1, $a['closingDate'], $a['lineId']] <=> [$b['line']['installment_number'] ?? 1, $b['closingDate'], $b['lineId']]);
         $commands = new FinancialCommands($this->repository);
         foreach ($rows as $observation) {
             $line = $observation['line'];
@@ -255,7 +257,7 @@ class ReceiptReconciliation
             }
             $this->repository->insert('source_purchase_identities', ['source_line_id' => $observation['lineId'], 'currency' => 'ARS', 'purchase_id' => $purchase['purchaseId'], 'card_id' => $input['cardId'], 'purchase_date' => $line['date'], 'payload' => LedgerRepository::json($identity)], false);
             (new MerchantReviews($this->repository))->register($purchase['purchaseId'], $input['cardId'], $line['description'], $observation['lineId']);
-            $history = $this->repository->query('review_events')->where('subject_id', $observation['revisionId'])->where('code', 'receipt_purchase_unlinked')->get();
+            $history = $this->repository->query('review_events')->where('subject_id', $observation['revisionId'])->whereIn('code', ['receipt_purchase_unlinked', 'missing_supported_principal', 'missing_installment_history'])->get();
             foreach ($history as $event) {
                 if ($event->state === 'open' && ! $history->contains(fn ($child) => $child->prior_decision_id === $event->id) && in_array($observation['lineId'], json_decode($event->source_line_ids, true), true)) {
                     $this->repository->insert('review_events', ['id' => Str::uuid()->toString(), 'subject_id' => $observation['revisionId'], 'prior_decision_id' => $event->id, 'code' => $event->code, 'params' => $event->params, 'source_line_ids' => $event->source_line_ids, 'state' => 'reviewed', 'recorded_at' => $input['recordedAt']]);
@@ -291,8 +293,7 @@ class ReceiptReconciliation
                 throw new AccountingError('receipt_payment_unresolved');
             }
             $result = ['sourceRevisionId' => $receipt['revisionId'], 'purchaseIds' => [], 'postedJournalIds' => [], 'reviews' => [], 'duplicate' => false];
-            $review = function (string $code, array $params = []) use (&$result, $receipt, $input): void {
-                $this->receipts->appendReview($receipt['revisionId'], $code, $input['recordedAt'], $params);
+            $review = function (string $code, array $params = []) use (&$result): void {
                 $result['reviews'][] = ['code' => $code, 'params' => (object) $params, 'sourceLineIds' => []];
             };
             $target = $input['purchaseId'] ?? (($previous['action'] ?? null) === 'link' ? $previous['purchaseId'] : 'receipt-purchase:'.$receipt['receiptId']);
@@ -311,7 +312,7 @@ class ReceiptReconciliation
                     $review('receipt_amount_mismatch');
                 }
             }
-            $unposted = ($target === null || ($needsPaymentVerification && $input['paymentVerified'] && $input['cardId'] !== null)) && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
+            $unposted = ($target === null || ($input['paymentVerified'] && $input['cardId'] !== null)) && $result['reviews'] === [] ? $this->unposted($receipt, $input['cardId']) : ['rows' => [], 'ambiguous' => false];
             if ($unposted['ambiguous']) {
                 $review('multiple_statement_candidates', ['count' => count($unposted['rows'])]);
             }
@@ -333,6 +334,8 @@ class ReceiptReconciliation
                 $review('receipt_amount_or_card_mismatch');
                 $target = null;
             }
+            // Keep financial state and its allocation/link decision consistent on review.
+            DB::statement('SAVEPOINT receipt_financial_work');
             $commands = new FinancialCommands($this->repository);
             $existingPurchase = $target !== null;
             if ($target === null && $result['reviews'] === []) {
@@ -380,6 +383,15 @@ class ReceiptReconciliation
                         }
                     }
                 }
+            }
+            if ($result['reviews'] !== []) {
+                DB::statement('ROLLBACK TO SAVEPOINT receipt_financial_work');
+                $result['purchaseIds'] = [];
+                $result['postedJournalIds'] = [];
+            }
+            DB::statement('RELEASE SAVEPOINT receipt_financial_work');
+            foreach ($result['reviews'] as $event) {
+                $this->receipts->appendReview($receipt['revisionId'], $event['code'], $input['recordedAt'], (array) $event['params']);
             }
             $this->repository->insert('source_import_commands', ['key' => $key, 'digest' => $digest, 'result' => LedgerRepository::json($result)]);
 
