@@ -120,3 +120,19 @@ test('an invalidated allocated item can be cleared without reapproval and withou
   await page.goto('/');await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
  }
 });
+
+test('verified receipt relinking cannot adopt a conflicting voucher installment from real PDFs',async({page})=>{
+ test.setTimeout(120000);
+ const users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd,encoding:'utf8'}));
+ const first=Buffer.from(original.toString('latin1').replaceAll('SYNTHETIC SHOP','COTO C.01/03  ').replaceAll('(100,00)','(043,33)'),'latin1');
+ const conflicting=Buffer.from(first.toString('latin1').replaceAll('01/03','02/04').replaceAll('(043,33)','(032,50)').replaceAll('01-feb-26','01-mar-26').replaceAll('10-feb-26','10-mar-26').replaceAll('990002','990004'),'latin1');expect(first.length).toBe(original.length);expect(conflicting.length).toBe(original.length);
+ for(const owner of ['a','b']){
+  await login(page,users[owner]);await importReceipt(page);await page.getByRole('link',{name:'Open retained receipt',exact:true}).click();const receiptUrl=page.url();const funded=await fund(page);await importStatement(page,'synthetic_plan_2026_02.pdf',first);
+  let state=await inspect(page);expect(state.accounting.accounts.find((a:any)=>a.id==='synthetic-visa-a:ARS:billed').balances.ARS).toBe('4333');expect(state.accounting.accounts.find((a:any)=>a.id==='synthetic-visa-a:ARS:unbilled').balances.ARS).toBe('8667');
+  await page.goto(receiptUrl);const unlink=page.waitForResponse(r=>r.url().endsWith('/unlink')&&r.request().method()==='POST');await page.getByRole('button',{name:'Unlink evidence',exact:true}).click();expect((await unlink).status()).toBe(200);await expect(page.getByText('Current link: Unlinked',{exact:true})).toBeVisible();
+  const imported=await importStatement(page,'synthetic_conflicting_plan_2026_03.pdf',conflicting);expect(imported.reviews.some((r:any)=>r.code==='voucher_facts_conflict')).toBe(true);state=await inspect(page);const journals=state.accounting.meta.total;
+  await page.goto(receiptUrl);await expect(page.getByText('Current link: Unlinked',{exact:true})).toBeVisible();const rejected=await fund(page);expect(rejected.reviews.some((r:any)=>r.code==='voucher_facts_conflict')).toBe(true);expect(rejected.postedJournalIds).toEqual([]);await expect(page.getByText('Current link: Unlinked',{exact:true})).toBeVisible();
+  state=await inspect(page);expect(state.accounting.meta.total).toBe(journals);expect(state.accounting.accounts.find((a:any)=>a.id==='expense:unallocated').balances.ARS).toBe('13000');expect(state.accounting.accounts.find((a:any)=>a.id==='synthetic-visa-a:ARS:billed').balances.ARS).toBe('4333');expect(state.accounting.accounts.find((a:any)=>a.id==='synthetic-visa-a:ARS:unbilled').balances.ARS).toBe('8667');expect(state.review.purchases.filter((p:any)=>p.purchase.currency==='ARS').map((p:any)=>p.id)).toEqual(funded.purchaseIds);expect(state.matching.financialLinks).toHaveLength(0);
+  await page.goto('/');await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
+ }
+});

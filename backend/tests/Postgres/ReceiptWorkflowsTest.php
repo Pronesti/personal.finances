@@ -221,6 +221,65 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_verified_relink_revalidates_installment_identity_before_posting_or_binding(): void
+    {
+        DB::beginTransaction();
+        try {
+            foreach (['a', 'b'] as $owner) {
+                foreach (['changed-count', 'changed-amount', 'changed-voucher', 'new-voucher-first', 'missing-voucher', 'valid'] as $case) {
+                    [$repository, $service, $links, $receipt, $base, $items, $purchaseId] = $this->allocatedReceipt();
+                    $this->statement($repository, false, null, ['ars' => 43.33, 'installment_number' => 1, 'installment_count' => 3]);
+                    $links->unlink(['key' => 'unlink-plan', 'receiptRevisionId' => $base['receiptRevisionId'], 'expectedPreviousDecisionId' => $links->latest($receipt['receiptId'])['id'], 'recordedAt' => $base['recordedAt']]);
+                    $unlinked = $links->latest($receipt['receiptId']);
+                    $transaction = ['ars' => 43.33, 'installment_number' => 2, 'installment_count' => 3, ...match ($case) {
+                        'changed-count' => ['ars' => 32.50, 'installment_count' => 4],
+                        'changed-amount' => ['ars' => 43.34],
+                        'changed-voucher' => ['voucher' => '654321'],
+                        'new-voucher-first' => ['voucher' => '654321', 'installment_number' => 1],
+                        'missing-voucher' => ['voucher' => null],
+                        'valid' => [],
+                    }];
+                    $statement = $this->statement($repository, $case === 'valid', '2026-03-31', $transaction);
+                    $line = SourceIdentity::line($statement['sourceRevisionId'], 1);
+                    $expectedCode = in_array($case, ['changed-count', 'changed-amount'], true) ? 'voucher_facts_conflict' : 'missing_installment_history';
+                    if ($case !== 'valid') {
+                        $this->assertContains($case === 'new-voucher-first' ? 'missing_supported_principal' : $expectedCode, array_column($statement['reviews'], 'code'));
+                    }
+                    if ($case === 'new-voucher-first') {
+                        $expectedCode = 'receipt_statement_identity_conflict';
+                    }
+                    $journals = $repository->query('journals')->get()->all();
+                    $identities = $repository->query('source_purchase_identities')->get()->all();
+                    $command = [...$base, 'key' => 'verified-plan-relink', 'expectedPreviousDecisionId' => $unlinked['id'], 'expectedPurchaseVersion' => 2];
+                    $result = $links->reconcile($command);
+                    if ($case === 'valid') {
+                        $this->assertCount(1, $result['postedJournalIds']);
+                        $this->assertSame([], $result['reviews']);
+                        $this->assertSame($purchaseId, $repository->query('source_purchase_identities')->where('source_line_id', $line)->value('purchase_id'));
+                        $this->assertSame('link', $links->latest($receipt['receiptId'])['action']);
+                    } else {
+                        $this->assertContains($expectedCode, array_column($result['reviews'], 'code'));
+                        $this->assertSame([], $result['postedJournalIds']);
+                        $this->assertSame($unlinked['id'], $links->latest($receipt['receiptId'])['id']);
+                        $this->assertEquals($journals, $repository->query('journals')->get()->all());
+                        $this->assertEquals($identities, $repository->query('source_purchase_identities')->get()->all());
+                        $this->assertNull($repository->query('source_purchase_identities')->where('source_line_id', $line)->value('purchase_id'));
+                    }
+                    $this->assertSame(13000, $this->expense($repository));
+                    $billed = DB::selectOne("SELECT sum(credit_minor-debit_minor) AS minor FROM accounting.journal_lines WHERE ledger_id=? AND account_id='synthetic-visa-a:ARS:billed'", [$repository->ledger->id]);
+                    $this->assertSame($case === 'valid' ? 8666 : 4333, (int) $billed->minor);
+                    $journalCount = $repository->query('journals')->count();
+                    $reviewCount = $repository->query('review_events')->count();
+                    $this->assertTrue($links->reconcile($command)['duplicate']);
+                    $this->assertSame($journalCount, $repository->query('journals')->count());
+                    $this->assertSame($reviewCount, $repository->query('review_events')->count());
+                }
+            }
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_allocation_only_relink_is_rejected_before_or_after_statement_without_financial_changes(): void
     {
         DB::beginTransaction();

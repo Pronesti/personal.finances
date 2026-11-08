@@ -231,6 +231,19 @@ class ReceiptReconciliation
         $commands = new FinancialCommands($this->repository);
         foreach ($rows as $observation) {
             $line = $observation['line'];
+            $identity = ['sourceLineId' => $observation['lineId'], 'purchaseId' => $purchase['purchaseId'], 'cardId' => $input['cardId'], 'currency' => 'ARS', 'purchaseDate' => $line['date'], 'voucher' => $line['voucher'] ?? null, 'installment' => $line['installment_number'] ?? null, 'installmentCount' => $line['installment_count'] ?? null, 'amountMinor' => Money::source($line['ars'])];
+            $candidates = $this->repository->query('source_purchase_identities')->where('card_id', $input['cardId'])->where('currency', 'ARS')->where('purchase_date', $line['date'])->get()->map(fn ($row) => json_decode($row->payload, true, flags: JSON_THROW_ON_ERROR))->all();
+            $decision = SourceIdentity::identify($identity, $candidates);
+            if ($decision['status'] === 'review') {
+                $review($decision['reason']);
+
+                continue;
+            }
+            if (($decision['status'] === 'matched' && $decision['purchaseId'] !== $purchase['purchaseId']) || ($decision['status'] === 'new' && $this->repository->query('source_purchase_identities')->where('purchase_id', $purchase['purchaseId'])->exists())) {
+                $review('receipt_statement_identity_conflict');
+
+                continue;
+            }
             $billing = $commands->bill(['key' => 'receipt:'.$receipt['revisionId'].':adopt:'.$observation['lineId'], 'purchaseId' => $purchase['purchaseId'], 'cardId' => $input['cardId'], 'currency' => 'ARS', 'installment' => $line['installment_number'] ?? 1, 'amountMinor' => Money::source($line['ars']), 'effectiveDate' => $observation['closingDate'], 'recordedAt' => $input['recordedAt'], 'evidenceIds' => [$observation['lineId'], $receipt['revisionId']]]);
             if ($billing['status'] === 'review') {
                 $review($billing['reviewCode']);
@@ -240,7 +253,6 @@ class ReceiptReconciliation
             if ($billing['status'] === 'posted') {
                 array_push($result['postedJournalIds'], ...$billing['journalIds']);
             }
-            $identity = ['sourceLineId' => $observation['lineId'], 'purchaseId' => $purchase['purchaseId'], 'cardId' => $input['cardId'], 'currency' => 'ARS', 'purchaseDate' => $line['date'], 'voucher' => $line['voucher'] ?? null, 'installment' => $line['installment_number'] ?? null, 'installmentCount' => $line['installment_count'] ?? null, 'amountMinor' => Money::source($line['ars'])];
             $this->repository->insert('source_purchase_identities', ['source_line_id' => $observation['lineId'], 'currency' => 'ARS', 'purchase_id' => $purchase['purchaseId'], 'card_id' => $input['cardId'], 'purchase_date' => $line['date'], 'payload' => LedgerRepository::json($identity)], false);
             (new MerchantReviews($this->repository))->register($purchase['purchaseId'], $input['cardId'], $line['description'], $observation['lineId']);
             $history = $this->repository->query('review_events')->where('subject_id', $observation['revisionId'])->where('code', 'receipt_purchase_unlinked')->get();
