@@ -1,0 +1,810 @@
+{
+  "version": 3,
+  "purpose": "Phase-aware static arithmetic oracle, not runtime proof. Normal cases compose every production guard. The outer-watchdog case and its independent upload-boundary controls disable only the non-OCR guard in a dedicated harness; ordinary clients cannot select that mode. Upload completion at or after 180000 ms is rejected by the still-active upload guard in every mode. Processing/cleanup are precommit work, and a command is admitted only after all required phases complete.",
+  "cases": [
+    {
+      "name": "buffered_upload_then_success",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 10000,
+      "requested_processing_ms": 500000,
+      "processing_phases": [
+        {
+          "name": "render",
+          "kind": "non_ocr",
+          "duration_ms": 10000
+        },
+        {
+          "name": "ocr-1",
+          "kind": "ocr",
+          "duration_ms": 160000,
+          "attempt": 1
+        },
+        {
+          "name": "ocr-2",
+          "kind": "ocr",
+          "duration_ms": 160000,
+          "attempt": 2
+        },
+        {
+          "name": "ocr-3",
+          "kind": "ocr",
+          "duration_ms": 160000,
+          "attempt": 3
+        },
+        {
+          "name": "verify-and-prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 10000
+        }
+      ],
+      "cleanup_ms": 10000,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 200,
+        "code": "ok",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 130000,
+        "raw_remaining_ms": 590000,
+        "processing_budget_ms": 589000,
+        "finished_elapsed_ms": 640000,
+        "worker_cancelled": false,
+        "financial_postings": 1,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 160000,
+        "non_ocr_remaining_ms_at_backend_entry": 50000,
+        "ocr_attempts_started": 3
+      }
+    },
+    {
+      "name": "buffered_upload_then_processing_timeout",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 650000,
+      "processing_phases": [
+        {
+          "name": "render",
+          "kind": "non_ocr",
+          "duration_ms": 10000
+        },
+        {
+          "name": "ocr-1",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 1
+        },
+        {
+          "name": "ocr-2",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 2
+        },
+        {
+          "name": "ocr-3",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 3
+        },
+        {
+          "name": "verify-and-prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 100300
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "processing_timeout",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": 600000,
+        "processing_budget_ms": 599000,
+        "finished_elapsed_ms": 719000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 179300,
+        "non_ocr_remaining_ms_at_backend_entry": 60000,
+        "ocr_attempts_started": 3
+      }
+    },
+    {
+      "name": "upstream_queue_exhausts_non_ocr_budget",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 610000,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_total_limit_is_not_an_inactivity_timer",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 180001,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 408,
+        "code": "upload_timeout",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "client_cannot_restart_deadline_after_upload",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 650000,
+      "processing_phases": [
+        {
+          "name": "render",
+          "kind": "non_ocr",
+          "duration_ms": 10000
+        },
+        {
+          "name": "ocr-1",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 1
+        },
+        {
+          "name": "ocr-2",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 2
+        },
+        {
+          "name": "ocr-3",
+          "kind": "ocr",
+          "duration_ms": 179900,
+          "attempt": 3
+        },
+        {
+          "name": "verify-and-prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 100300
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": 1700999999999,
+      "expected": {
+        "status": 504,
+        "code": "processing_timeout",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": 600000,
+        "processing_budget_ms": 599000,
+        "finished_elapsed_ms": 719000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 179300,
+        "non_ocr_remaining_ms_at_backend_entry": 60000,
+        "ocr_attempts_started": 3
+      }
+    },
+    {
+      "name": "missing_trusted_metadata_fails_before_processing",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "missing",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 503,
+        "code": "deadline_metadata_invalid",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 120000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 120000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "extended_trusted_deadline_is_invalid",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "invalid_deadline",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720001,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 503,
+        "code": "deadline_metadata_invalid",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 120000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 120000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_and_queue_exhaust_non_ocr_before_dispatch",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 61000,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "one_ms_below_non_ocr_limit_succeeds",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 59998,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 200,
+        "code": "ok",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 179998,
+        "raw_remaining_ms": 540002,
+        "processing_budget_ms": 539002,
+        "finished_elapsed_ms": 179999,
+        "worker_cancelled": false,
+        "financial_postings": 1,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 179999,
+        "non_ocr_remaining_ms_at_backend_entry": 2,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "non_ocr_exactly_exhausted_before_dispatch",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 60000,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "non_ocr_exhausts_during_verification",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 170000,
+      "processing_phases": [
+        {
+          "name": "render",
+          "kind": "non_ocr",
+          "duration_ms": 10000
+        },
+        {
+          "name": "ocr-1",
+          "kind": "ocr",
+          "duration_ms": 100000,
+          "attempt": 1
+        },
+        {
+          "name": "verification",
+          "kind": "non_ocr",
+          "duration_ms": 60000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": 600000,
+        "processing_budget_ms": 599000,
+        "finished_elapsed_ms": 280000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": 60000,
+        "ocr_attempts_started": 1
+      }
+    },
+    {
+      "name": "cleanup_uses_remaining_non_ocr_budget",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 120000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 59000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 59000
+        }
+      ],
+      "cleanup_ms": 1000,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 120000,
+        "raw_remaining_ms": 600000,
+        "processing_budget_ms": 599000,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": 60000,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "ocr_attempt_cannot_exceed_its_own_limit",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 1000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 180001,
+      "processing_phases": [
+        {
+          "name": "ocr-1",
+          "kind": "ocr",
+          "duration_ms": 180001,
+          "attempt": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "ocr_attempt_timeout",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 1000,
+        "raw_remaining_ms": 719000,
+        "processing_budget_ms": 718000,
+        "finished_elapsed_ms": 181000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 1000,
+        "non_ocr_remaining_ms_at_backend_entry": 179000,
+        "ocr_attempts_started": 1
+      }
+    },
+    {
+      "name": "outer_watchdog_queue_timeout_fault_injection",
+      "mode": "outer_watchdog_fault_injection",
+      "fault_injection": {
+        "test_harness_only": true,
+        "disabled_guards": [
+          "non_ocr_budget"
+        ]
+      },
+      "upload_ms": 120000,
+      "upstream_queue_ms": 610000,
+      "requested_processing_ms": 1000,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1000
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "request_deadline_exceeded",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 720000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 720000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_just_below_expiry_normal",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 179999,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 504,
+        "code": "non_ocr_budget_exceeded",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 179999,
+        "raw_remaining_ms": 540001,
+        "processing_budget_ms": 539001,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": true,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": 1,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_at_expiry_normal",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 180000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 408,
+        "code": "upload_timeout",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_after_expiry_normal",
+      "mode": "normal",
+      "fault_injection": null,
+      "upload_ms": 180001,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 408,
+        "code": "upload_timeout",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_just_below_expiry_fault_injection",
+      "mode": "outer_watchdog_fault_injection",
+      "fault_injection": {
+        "test_harness_only": true,
+        "disabled_guards": [
+          "non_ocr_budget"
+        ]
+      },
+      "upload_ms": 179999,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 200,
+        "code": "ok",
+        "backend_started": true,
+        "backend_entry_elapsed_ms": 179999,
+        "raw_remaining_ms": 540001,
+        "processing_budget_ms": 539001,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 1,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": 1,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_at_expiry_fault_injection",
+      "mode": "outer_watchdog_fault_injection",
+      "fault_injection": {
+        "test_harness_only": true,
+        "disabled_guards": [
+          "non_ocr_budget"
+        ]
+      },
+      "upload_ms": 180000,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 408,
+        "code": "upload_timeout",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    },
+    {
+      "name": "upload_after_expiry_fault_injection",
+      "mode": "outer_watchdog_fault_injection",
+      "fault_injection": {
+        "test_harness_only": true,
+        "disabled_guards": [
+          "non_ocr_budget"
+        ]
+      },
+      "upload_ms": 180001,
+      "upstream_queue_ms": 0,
+      "requested_processing_ms": 1,
+      "processing_phases": [
+        {
+          "name": "prepare-command",
+          "kind": "non_ocr",
+          "duration_ms": 1
+        }
+      ],
+      "cleanup_ms": 0,
+      "trusted_metadata": "valid",
+      "trusted_started_at_unix_ms": 1700000000000,
+      "trusted_deadline_unix_ms": 1700000720000,
+      "client_supplied_deadline_unix_ms": null,
+      "expected": {
+        "status": 408,
+        "code": "upload_timeout",
+        "backend_started": false,
+        "backend_entry_elapsed_ms": null,
+        "raw_remaining_ms": null,
+        "processing_budget_ms": 0,
+        "finished_elapsed_ms": 180000,
+        "worker_cancelled": false,
+        "financial_postings": 0,
+        "client_metadata_used": false,
+        "non_ocr_consumed_ms": 180000,
+        "non_ocr_remaining_ms_at_backend_entry": null,
+        "ocr_attempts_started": 0
+      }
+    }
+  ],
+  "edge_start_unix_ms": 1700000000000,
+  "clock_assumption": "Synchronized clocks (zero offset) for exact arithmetic; runtime must also verify bounded skew, monotonic expiry and clock-health rejection.",
+  "tie_rule": "Expiry wins a tie, including receipt of the final upload byte at exactly 180000 ms. Upload timeout has priority over the equal pre-dispatch non-OCR boundary. Active-phase ties prioritize original request, non-OCR, then OCR attempt."
+}

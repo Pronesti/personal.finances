@@ -1,0 +1,25 @@
+{
+  "sourcePayloadDigest": {
+    "fixture": "visa.expected.json",
+    "normalizedFile": null,
+    "sha256": "de9a025d15a70a11cf88c3027be3f7c9a8d542d3aff34149510208d5d85c079d"
+  },
+  "fingerprints": {
+    "input": {
+      "brand": "visa",
+      "date": "2026-01-15",
+      "description": "SYNTHETIC SHOP",
+      "ars": 100,
+      "usd": null,
+      "installment_number": null,
+      "installment_count": null
+    },
+    "key": "visa|2026-01-15|SYNTHETIC SHOP|100|||",
+    "first": "5278ca31944965a87dcec9ccb8ca93d5fb51ddb8",
+    "second": "5a910688a82f12f731b99f492667f3f1f34200f0"
+  },
+  "sourceKey": {
+    "statement": "[\"statement\",\"synthetic-visa-a\",\"2026-02-01\"]",
+    "receiptFiscal": "[\"receipt\",\"fiscal\",\"coto:9999-00000001\"]"
+  }
+}

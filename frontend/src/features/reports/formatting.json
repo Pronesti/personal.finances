@@ -1,0 +1,40 @@
+{
+  "money": [
+    {
+      "input": 1234.56,
+      "value": "nominal",
+      "expected": "$ 1.235"
+    },
+    {
+      "input": 12.345,
+      "value": "usd",
+      "expected": "US$ 12.35"
+    }
+  ],
+  "cents": [
+    {
+      "input": 123456,
+      "value": "nominal",
+      "expected": "$ 1.234,56"
+    },
+    {
+      "input": 500,
+      "value": "usd",
+      "expected": "US$ 5.00"
+    }
+  ],
+  "percent": [
+    {
+      "input": null,
+      "expected": "—"
+    },
+    {
+      "input": 0,
+      "expected": "+0,0%"
+    },
+    {
+      "input": -2.25,
+      "expected": "−2,3%"
+    }
+  ]
+}

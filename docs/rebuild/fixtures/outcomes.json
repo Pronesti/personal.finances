@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "money": "integer minor units; report display values explicitly tagged major units",
+  "imports": {
+    "visa": {
+      "admission": "accepted",
+      "purchases": 2,
+      "journals": 4,
+      "reviewCodes": [],
+      "ARS": {
+        "expenseMinor": 10000,
+        "billedMinor": 10000,
+        "unbilledMinor": 0,
+        "clearingMinor": 0
+      },
+      "USD": {
+        "expenseMinor": 500,
+        "billedMinor": 500,
+        "unbilledMinor": 0,
+        "clearingMinor": 0
+      }
+    },
+    "mastercard": {
+      "purchases": 2,
+      "journals": 4,
+      "reviewCodes": []
+    },
+    "mercadopago": {
+      "admission": "accepted",
+      "purchases": 1,
+      "journals": 2,
+      "reviewCodes": [
+        "missing_supported_principal"
+      ],
+      "ARS": {
+        "expenseMinor": 10000,
+        "billedMinor": 10000,
+        "unbilledMinor": 0,
+        "clearingMinor": 0
+      },
+      "reportedArsBalanceMinor": 14000,
+      "differenceMinor": 4000,
+      "scheduleOrigin": "parser_projection"
+    },
+    "renamedReplay": {
+      "duplicate": true,
+      "newJournals": 0,
+      "sourceRevisionUnchanged": true
+    },
+    "conflictingTotals": {
+      "admission": "pending",
+      "reviewCodes": [
+        "statement_totals_conflict"
+      ],
+      "journals": 0
+    },
+    "revision": {
+      "admission": "pending",
+      "reviewCodes": [
+        "source_revision_requires_review"
+      ],
+      "newJournals": 0,
+      "currentAcceptedUnchanged": true
+    },
+    "dualPurchase": {
+      "reviewCodes": [
+        "ambiguous_dual_currency_line"
+      ],
+      "journals": 0
+    },
+    "dualRepayment": {
+      "currencies": [
+        "ARS",
+        "USD"
+      ],
+      "kind": "repayment",
+      "journals": 2
+    },
+    "unsupportedJsonBrand": {
+      "admission": "pending",
+      "reviewCodes": [
+        "unsupported_statement_layout"
+      ],
+      "journals": 0
+    }
+  },
+  "allocation": {
+    "amount": 10001,
+    "weights": [
+      42000,
+      12000,
+      6000
+    ],
+    "shares": [
+      7001,
+      2000,
+      1000
+    ]
+  },
+  "ledger": {
+    "purchaseMinor": 60000,
+    "initialAllocations": [
+      {
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "minor": 42000
+      },
+      {
+        "accountId": "expense:home:cleaning",
+        "purposeId": "home",
+        "minor": 12000
+      },
+      {
+        "accountId": "expense:personal:hygiene",
+        "purposeId": "personal",
+        "minor": 6000
+      }
+    ],
+    "billingMinor": 10001,
+    "paymentMinor": 5000,
+    "credit": {
+      "amountMinor": 12000,
+      "billedReductionMinor": 2000,
+      "unbilledReductionMinor": 10000
+    },
+    "replacementAllocations": [
+      {
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "minor": 30000
+      },
+      {
+        "accountId": "expense:travel:abroad",
+        "purposeId": "travel",
+        "minor": 30000
+      }
+    ],
+    "afterPurchase": {
+      "expenseMinor": 60000,
+      "billedMinor": 0,
+      "unbilledMinor": 60000,
+      "clearingMinor": 0
+    },
+    "afterBilling": {
+      "expenseMinor": 60000,
+      "billedMinor": 10001,
+      "unbilledMinor": 49999,
+      "clearingMinor": 0
+    },
+    "afterPayment": {
+      "expenseMinor": 60000,
+      "billedMinor": 5001,
+      "unbilledMinor": 49999,
+      "clearingMinor": -5000
+    },
+    "afterCredit": {
+      "expenseMinor": 48000,
+      "billedMinor": 3001,
+      "unbilledMinor": 39999,
+      "clearingMinor": -5000
+    },
+    "afterCorrection": {
+      "expenseMinor": 48000,
+      "billedMinor": 3001,
+      "unbilledMinor": 39999,
+      "clearingMinor": -5000
+    },
+    "currentVersion": 2,
+    "journalsAfterCorrection": 8,
+    "currentExpenseByPurpose": {
+      "food": 24000,
+      "travel": 24000
+    },
+    "outstandingByPurpose": {
+      "food": 0,
+      "travel": 3001
+    },
+    "correctionEffectiveDate": "2026-01-15",
+    "creditEffectiveDate": "2026-04-01",
+    "correctionRecordedAt": "2026-05-01T12:00:00Z"
+  },
+  "receipt": {
+    "acceptedTotalMinor": 13000,
+    "grossMinor": 15000,
+    "discountMinor": -2000,
+    "itemNetMinor": [
+      8000,
+      5000
+    ],
+    "items": 2,
+    "units": [
+      "un",
+      "un"
+    ],
+    "rejectedTotalMinor": 13001,
+    "errorCode": "verification_failed",
+    "unfundedJournals": 0,
+    "unfundedReview": "receipt_payment_unresolved",
+    "partialAllocationMinor": 8000,
+    "unallocatedRemainderMinor": 5000,
+    "fullAllocationMinor": 13000,
+    "statementAndReceiptPurchaseCount": 1,
+    "statementAndReceiptTotalMinor": 13000
+  },
+  "reports": {
+    "inputArsMinor": 100000,
+    "inputUsdMinor": 500,
+    "purchaseDate": "2026-01-15",
+    "cycleMonth": "2026-02",
+    "nominalArsMajor": 1000,
+    "realArsMajor": 1210,
+    "usdMajor": 6,
+    "currencyNominalArsMajor": {
+      "arsBilled": 1000,
+      "usdBilled": 5000
+    },
+    "billedUsdMajor": 5.909090909090909,
+    "quarterConstituentUsdMajor": 1.5,
+    "quarterConstituentRealArsMajor": 3000
+  },
+  "opening": {
+    "principalMinor": 12000,
+    "laterBillingMinor": 6000,
+    "afterBilling": {
+      "expenseMinor": 0,
+      "billedMinor": 6000,
+      "unbilledMinor": 6000,
+      "clearingMinor": 0
+    },
+    "journals": 2
+  },
+  "errors": {
+    "unsafeAmount": "invalid_source_amount",
+    "unknownCard": "unknown_card",
+    "staleVersion": "stale_purchase_version",
+    "changedPrincipal": "correction_requires_schedule_revalidation",
+    "badIssuerAllocation": "invalid_issuer_allocation"
+  }
+}

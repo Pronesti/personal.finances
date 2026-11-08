@@ -1,0 +1,248 @@
+{
+  "version": 4,
+  "date": "2026-11-04",
+  "status": "plan_only_not_implemented",
+  "backend": {
+    "directory": "backend",
+    "framework": "Laravel",
+    "major": 13,
+    "php": "8.5",
+    "sanctum_major": 4,
+    "api_prefix": "/api/v1",
+    "independent_build_and_deployment": true
+  },
+  "frontend": {
+    "directory": "frontend",
+    "framework": "React",
+    "release_line": "19.3",
+    "language": "TypeScript",
+    "bundler": "Vite",
+    "bundler_release_line": "8.3",
+    "node_lts_major": 24,
+    "type": "standalone_spa",
+    "api_base_env": "VITE_API_BASE_URL",
+    "direct_http": true,
+    "independent_build_and_deployment": true,
+    "existing_financial_route_count": 32,
+    "additional_routes": [
+      "/login"
+    ]
+  },
+  "prohibited": [
+    "Inertia",
+    "Blade application screens",
+    "Laravel React starter kit",
+    "Next.js runtime",
+    "browser-stored authentication tokens"
+  ],
+  "authentication": {
+    "mode": "sanctum_cookie_session",
+    "csrf_cookie_path": "/sanctum/csrf-cookie",
+    "csrf_header": "X-XSRF-TOKEN",
+    "login": "/api/v1/auth/login",
+    "current_user": "/api/v1/auth/user",
+    "logout": "/api/v1/auth/logout",
+    "with_credentials": true,
+    "with_xsrf_token": true,
+    "registration": "out_of_scope",
+    "account_provisioning": "out_of_scope",
+    "session_http_only": true,
+    "session_secure": true,
+    "session_same_site": "lax",
+    "token_storage": [],
+    "csrf_cookie_name": "XSRF-TOKEN"
+  },
+  "ownership": {
+    "multiple_users": true,
+    "one_private_ledger_per_user": true,
+    "strategy": "shared_tables_with_ledger_id_and_composite_constraints",
+    "ledger_from_authenticated_user": true,
+    "client_owner_selection": false,
+    "other_owner_resource_status": 404,
+    "document_namespace": "ledgers/{ledger_uuid}/objects/{sha256}",
+    "scope_caches_jobs_deduplication_and_commands": true,
+    "baseline_schema_requires_extension": true,
+    "eloquent_primary_key": "globally_unique_row_id_uuid",
+    "logical_unique_key": [
+      "ledger_id",
+      "id"
+    ],
+    "shared_key_status": 200,
+    "pending_namespace": "ledgers/{ledger_uuid}/pending/{pending_id}/{sha256}"
+  },
+  "local": {
+    "frontend_origin": "https://app.tarjetas.test",
+    "api_origin": "https://api.tarjetas.test",
+    "api_base_url": "https://api.tarjetas.test/api/v1",
+    "cors_allowed_origins": [
+      "https://app.tarjetas.test"
+    ],
+    "sanctum_stateful_domains": [
+      "app.tarjetas.test"
+    ],
+    "session_domain": ".tarjetas.test"
+  },
+  "health": {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "public": true,
+    "expected_status": 200,
+    "expected_json": {
+      "status": "ok",
+      "service": "tarjetas-api",
+      "api_version": "v1"
+    },
+    "required_proof": "real_browser_request_from_frontend_to_api",
+    "verification_status": "not_run_target_apps_not_implemented",
+    "stateful_middleware": false,
+    "session_middleware": false,
+    "database_dependency": false,
+    "sets_cookie": false,
+    "cors_enabled": true,
+    "browser_no_session_side_effects_required": true
+  },
+  "synthetic_isolation_identities": [
+    {
+      "id": "user-a",
+      "email": "synthetic-a@example.invalid",
+      "ledger_id": "11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "id": "user-b",
+      "email": "synthetic-b@example.invalid",
+      "ledger_id": "22222222-2222-4222-8222-222222222222"
+    }
+  ],
+  "required_acceptance": [
+    "independent_builds",
+    "frontend_health_http",
+    "sanctum_login_reload_logout",
+    "csrf_rejection_and_success",
+    "credentialed_cors_and_preflight",
+    "two_user_read_write_document_isolation",
+    "database_cross_ledger_reference_rejection",
+    "cache_job_replay_isolation",
+    "per_owner_financial_fixtures",
+    "all_financial_spa_routes",
+    "owner_aware_restore",
+    "production_domain_auth_smoke",
+    "health_without_session_or_database",
+    "pdf_button_blob_auth_and_fallback",
+    "disposable_postgres_guard_refusals",
+    "http_upload_boundaries_and_bounded_processing",
+    "database_fk_exclusive_key_sqlstate_23503",
+    "buffered_upload_and_queue_share_ingress_deadline",
+    "client_deadline_spoofing_rejected",
+    "development_and_test_cookie_domains_disjoint"
+  ],
+  "known_deployment_dependency": "Private macOS Vision processing runtime; Linux-only API hosting needs an explicitly designed private adapter",
+  "document_viewer": {
+    "transport": "credentialed_spa_blob_fetch",
+    "direct_api_new_tab": false,
+    "popup_blocked_fallback": "second_click_blob_link",
+    "expire_clears_cached_bytes": true
+  },
+  "recovery": {
+    "format": "tarjetas-owned-recovery-v2",
+    "reference_identity": [
+      "ledger_id",
+      "kind",
+      "reference_id"
+    ],
+    "owner_qualified_paths": true,
+    "identity_component": "separate_encrypted_users_password_hashes_and_ledger_mapping",
+    "sessions_included": false,
+    "remember_tokens_cleared": true,
+    "legacy_backup_compatible_unchanged": false
+  },
+  "test_safety": {
+    "driver": "pgsql",
+    "integration_environment": "testing",
+    "browser_environment": "browser-testing",
+    "guard_before_destructive_hooks": true,
+    "approved_target_registry_required": true,
+    "protected_database_marker_required": true,
+    "resolved_config_checked": true,
+    "cached_config_rejected": true,
+    "browser_csrf_enabled": true,
+    "development_target_allowed": false,
+    "cookie_domains_disjoint_from_other_environments": true
+  },
+  "upload_limits": {
+    "statement_file_bytes": 10485760,
+    "receipt_file_bytes": 41943040,
+    "multipart_overhead_bytes": 1048576,
+    "php_upload_max_filesize_bytes": 41943040,
+    "php_post_max_size_bytes": 50331648,
+    "ingress_body_max_bytes": 50331648,
+    "file_over_limit_status": 400,
+    "body_over_limit_status": 413
+  },
+  "timeouts": {
+    "upload_max_seconds": 180,
+    "request_wall_clock_seconds": 720,
+    "ocr_attempt_max_seconds": 180,
+    "ocr_attempts_max": 3,
+    "non_ocr_total_max_seconds": 180,
+    "fpm_terminate_seconds": 750,
+    "upstream_read_seconds": 780,
+    "edge_response_wait_seconds": 800,
+    "spa_import_timeout_ms": 1000000,
+    "deadline_includes_intake": true
+  },
+  "test_environments": {
+    "integration": {
+      "api_origin": "https://api.tarjetas-integration.test",
+      "frontend_origin": "https://app.tarjetas-integration.test",
+      "session_domain": ".tarjetas-integration.test",
+      "session_cookie": "tarjetas_integration_session",
+      "environment_example": "backend.testing.env.example"
+    },
+    "browser": {
+      "api_origin": "https://api.tarjetas-browser.test",
+      "frontend_origin": "https://app.tarjetas-browser.test",
+      "session_domain": ".tarjetas-browser.test",
+      "session_cookie": "tarjetas_browser_session",
+      "environment_example": "backend.browser-testing.env.example"
+    }
+  },
+  "ingress_deadline": {
+    "authority": "first_trusted_ingress",
+    "start_event": "first_request_byte_before_any_body_buffering",
+    "metadata_transport": "protected_fastcgi_parameters_or_authenticated_private_hop",
+    "metadata_fields": [
+      "request_id",
+      "started_at_unix_ms",
+      "deadline_unix_ms"
+    ],
+    "client_metadata_policy": "discard_and_replace",
+    "edge_total_timer_required": true,
+    "edge_upload_total_timer_required": true,
+    "backend_may_reset_deadline": false,
+    "direct_backend_bypass_allowed": false,
+    "missing_or_invalid_metadata_status": 503,
+    "clock_safety_margin_ms": 1000,
+    "maximum_clock_skew_ms": 1000,
+    "cancel_upstream_and_process_groups": true,
+    "deadline_preserved_across_processing_hops": true,
+    "read_timeout_is_total_deadline": false
+  },
+  "non_ocr_budget_accounting": {
+    "limit_seconds": 180,
+    "charged_phases": [
+      "upload",
+      "queue",
+      "rendering",
+      "verification",
+      "persistence",
+      "cleanup"
+    ],
+    "excluded_phase": "active_ocr_attempt_only",
+    "pre_dispatch_enforcement": true,
+    "propagate_trusted_cumulative_phase_context": true,
+    "reset_between_hops_or_attempts": false,
+    "expiry_wins_ties": true,
+    "client_may_disable_guards": false,
+    "outer_watchdog_fault_injection": "dedicated_test_harness_only"
+  }
+}

@@ -1,0 +1,5581 @@
+{
+  "spending": {
+    "periods": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "stacked": [
+      {
+        "period": "2026-01",
+        "expense:digital": 100,
+        "expense:food": 210,
+        "expense:travel": 600
+      },
+      {
+        "period": "2026-02",
+        "expense:digital": 100,
+        "expense:food": 220
+      },
+      {
+        "period": "2026-03",
+        "expense:digital": 100,
+        "expense:food": 230
+      },
+      {
+        "period": "2026-04",
+        "expense:digital": 100,
+        "expense:food": 240
+      },
+      {
+        "period": "2026-05",
+        "expense:digital": 100,
+        "expense:food": 250
+      },
+      {
+        "period": "2026-06",
+        "expense:digital": 24090,
+        "expense:food": 260
+      }
+    ],
+    "accounts": [
+      "expense:digital",
+      "expense:food",
+      "expense:travel"
+    ],
+    "compare": [
+      {
+        "period": "2026-01",
+        "amount": 910,
+        "pctVsPrev": null
+      },
+      {
+        "period": "2026-02",
+        "amount": 320,
+        "pctVsPrev": -64.83516483516483
+      },
+      {
+        "period": "2026-03",
+        "amount": 330,
+        "pctVsPrev": 3.125
+      },
+      {
+        "period": "2026-04",
+        "amount": 340,
+        "pctVsPrev": 3.0303030303030303
+      },
+      {
+        "period": "2026-05",
+        "amount": 350,
+        "pctVsPrev": 2.941176470588235
+      },
+      {
+        "period": "2026-06",
+        "amount": 24350,
+        "pctVsPrev": 6857.142857142857
+      }
+    ],
+    "movers": [
+      {
+        "category": "expense:digital",
+        "prev": 100,
+        "cur": 24090,
+        "delta": 23990,
+        "pctChange": 23990
+      },
+      {
+        "category": "expense:food",
+        "prev": 250,
+        "cur": 260,
+        "delta": 10,
+        "pctChange": 4
+      },
+      {
+        "category": "expense:travel",
+        "prev": 0,
+        "cur": 0,
+        "delta": 0,
+        "pctChange": null
+      }
+    ],
+    "spending": {
+      "rows": [
+        {
+          "period": "2026-01",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-01",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 210
+        },
+        {
+          "period": "2026-01",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 600
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 220
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 230
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 240
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 250
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 24090
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 260
+        }
+      ],
+      "total": 26600,
+      "purchaseCount": 15,
+      "merchantTotals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1400
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 600
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 600
+        }
+      ]
+    },
+    "merchants": {
+      "totals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000,
+          "share": 90.22556390977444,
+          "cumulativeShare": 90.22556390977444
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1400,
+          "share": 5.263157894736842,
+          "cumulativeShare": 95.48872180451127
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 600,
+          "share": 2.2556390977443606,
+          "cumulativeShare": 97.74436090225564
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 600,
+          "share": 2.2556390977443606,
+          "cumulativeShare": 100
+        }
+      ],
+      "novelty": [
+        {
+          "period": "2026-01",
+          "newAmount": 910,
+          "returningAmount": 0
+        },
+        {
+          "period": "2026-02",
+          "newAmount": 0,
+          "returningAmount": 320
+        },
+        {
+          "period": "2026-03",
+          "newAmount": 0,
+          "returningAmount": 330
+        },
+        {
+          "period": "2026-04",
+          "newAmount": 0,
+          "returningAmount": 340
+        },
+        {
+          "period": "2026-05",
+          "newAmount": 0,
+          "returningAmount": 350
+        },
+        {
+          "period": "2026-06",
+          "newAmount": 24000,
+          "returningAmount": 350
+        }
+      ]
+    }
+  },
+  "billed": {
+    "periods": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "stacked": [
+      {
+        "period": "2026-01",
+        "expense:digital": 100,
+        "expense:food": 210
+      },
+      {
+        "period": "2026-02",
+        "expense:digital": 100,
+        "expense:food": 220,
+        "expense:travel": 200
+      },
+      {
+        "period": "2026-03",
+        "expense:digital": 100,
+        "expense:food": 230,
+        "expense:travel": 200
+      },
+      {
+        "period": "2026-04",
+        "expense:digital": 100,
+        "expense:food": 240,
+        "expense:travel": 200
+      },
+      {
+        "period": "2026-05",
+        "expense:digital": 100,
+        "expense:food": 250
+      },
+      {
+        "period": "2026-06",
+        "expense:digital": 24090,
+        "expense:food": 260
+      }
+    ],
+    "accounts": [
+      "expense:digital",
+      "expense:food",
+      "expense:travel"
+    ],
+    "compare": [
+      {
+        "period": "2026-01",
+        "amount": 310,
+        "pctVsPrev": null
+      },
+      {
+        "period": "2026-02",
+        "amount": 520,
+        "pctVsPrev": 67.74193548387096
+      },
+      {
+        "period": "2026-03",
+        "amount": 530,
+        "pctVsPrev": 1.9230769230769231
+      },
+      {
+        "period": "2026-04",
+        "amount": 540,
+        "pctVsPrev": 1.8867924528301887
+      },
+      {
+        "period": "2026-05",
+        "amount": 350,
+        "pctVsPrev": -35.18518518518518
+      },
+      {
+        "period": "2026-06",
+        "amount": 24350,
+        "pctVsPrev": 6857.142857142857
+      }
+    ],
+    "movers": [
+      {
+        "category": "expense:digital",
+        "prev": 100,
+        "cur": 24090,
+        "delta": 23990,
+        "pctChange": 23990
+      },
+      {
+        "category": "expense:food",
+        "prev": 250,
+        "cur": 260,
+        "delta": 10,
+        "pctChange": 4
+      },
+      {
+        "category": "expense:travel",
+        "prev": 0,
+        "cur": 0,
+        "delta": 0,
+        "pctChange": null
+      }
+    ],
+    "spending": {
+      "rows": [
+        {
+          "period": "2026-01",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-01",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 210
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 220
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 200
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 230
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 200
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 240
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 200
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 250
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 24090
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 260
+        }
+      ],
+      "total": 26600,
+      "purchaseCount": 15,
+      "merchantTotals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1400
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 600
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 600
+        }
+      ]
+    },
+    "merchants": {
+      "totals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000,
+          "share": 90.22556390977444,
+          "cumulativeShare": 90.22556390977444
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1400,
+          "share": 5.263157894736842,
+          "cumulativeShare": 95.48872180451127
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 600,
+          "share": 2.2556390977443606,
+          "cumulativeShare": 97.74436090225564
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 600,
+          "share": 2.2556390977443606,
+          "cumulativeShare": 100
+        }
+      ],
+      "novelty": [
+        {
+          "period": "2026-01",
+          "newAmount": 310,
+          "returningAmount": 0
+        },
+        {
+          "period": "2026-02",
+          "newAmount": 200,
+          "returningAmount": 320
+        },
+        {
+          "period": "2026-03",
+          "newAmount": 0,
+          "returningAmount": 530
+        },
+        {
+          "period": "2026-04",
+          "newAmount": 0,
+          "returningAmount": 540
+        },
+        {
+          "period": "2026-05",
+          "newAmount": 0,
+          "returningAmount": 350
+        },
+        {
+          "period": "2026-06",
+          "newAmount": 24000,
+          "returningAmount": 350
+        }
+      ]
+    }
+  },
+  "realQuarter": {
+    "periods": [
+      "2026-Q1",
+      "2026-Q2"
+    ],
+    "stacked": [
+      {
+        "period": "2026-Q1",
+        "expense:digital": 440.5610000000001,
+        "expense:food": 966.4391000000003,
+        "expense:travel": 966.3060000000004
+      },
+      {
+        "period": "2026-Q2",
+        "expense:digital": 24321,
+        "expense:food": 825.3999999999999
+      }
+    ],
+    "accounts": [
+      "expense:digital",
+      "expense:food",
+      "expense:travel"
+    ],
+    "compare": [
+      {
+        "period": "2026-Q1",
+        "amount": 2373.3061000000007,
+        "pctVsPrev": null
+      },
+      {
+        "period": "2026-Q2",
+        "amount": 25146.4,
+        "pctVsPrev": 959.5514838983472
+      }
+    ],
+    "movers": [
+      {
+        "category": "expense:digital",
+        "prev": 440.5610000000001,
+        "cur": 24321,
+        "delta": 23880.439,
+        "pctChange": 5420.461411700081
+      },
+      {
+        "category": "expense:food",
+        "prev": 966.4391000000003,
+        "cur": 825.3999999999999,
+        "delta": -141.03910000000042,
+        "pctChange": -14.593687279415782
+      },
+      {
+        "category": "expense:travel",
+        "prev": 966.3060000000004,
+        "cur": 0,
+        "delta": -966.3060000000004,
+        "pctChange": -100
+      }
+    ],
+    "spending": {
+      "rows": [
+        {
+          "period": "2026-Q1",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 440.5610000000001
+        },
+        {
+          "period": "2026-Q1",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 966.4391000000003
+        },
+        {
+          "period": "2026-Q1",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 966.3060000000004
+        },
+        {
+          "period": "2026-Q2",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 24321
+        },
+        {
+          "period": "2026-Q2",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 825.3999999999999
+        }
+      ],
+      "total": 27519.706100000003,
+      "purchaseCount": 15,
+      "merchantTotals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1781.8391000000001
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 966.3060000000004
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 771.5610000000001
+        }
+      ]
+    },
+    "merchants": {
+      "totals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000,
+          "share": 87.2102336877791,
+          "cumulativeShare": 87.2102336877791
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1781.8391000000001,
+          "share": 6.474775179375916,
+          "cumulativeShare": 93.685008867155
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 966.3060000000004,
+          "share": 3.511323836412629,
+          "cumulativeShare": 97.19633270356763
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 771.5610000000001,
+          "share": 2.803667296432356,
+          "cumulativeShare": 99.99999999999999
+        }
+      ],
+      "novelty": [
+        {
+          "period": "2026-Q1",
+          "newAmount": 1465.5641000000005,
+          "returningAmount": 907.7420000000002
+        },
+        {
+          "period": "2026-Q2",
+          "newAmount": 24000,
+          "returningAmount": 1146.3999999999999
+        }
+      ]
+    }
+  },
+  "usdYear": {
+    "periods": [
+      "2026"
+    ],
+    "stacked": [
+      {
+        "period": "2026",
+        "expense:digital": 46.482594072594075,
+        "expense:food": 1.1381868131868131,
+        "expense:travel": 0.6
+      }
+    ],
+    "accounts": [
+      "expense:digital",
+      "expense:food",
+      "expense:travel"
+    ],
+    "compare": [
+      {
+        "period": "2026",
+        "amount": 48.22078088578089,
+        "pctVsPrev": null
+      }
+    ],
+    "movers": [],
+    "spending": {
+      "rows": [
+        {
+          "period": "2026",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 46.482594072594075
+        },
+        {
+          "period": "2026",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 1.1381868131868131
+        },
+        {
+          "period": "2026",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 0.6
+        }
+      ],
+      "total": 48.22078088578089,
+      "purchaseCount": 21,
+      "merchantTotals": [
+        {
+          "merchant": "SYNTHETIC USD SERVICE",
+          "amount": 30
+        },
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 16
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1.1315201465201465
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 0.6
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 0.4892607392607392
+        }
+      ]
+    },
+    "merchants": {
+      "totals": [
+        {
+          "merchant": "SYNTHETIC USD SERVICE",
+          "amount": 30,
+          "share": 62.21384110526974,
+          "cumulativeShare": 62.21384110526974
+        },
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 16,
+          "share": 33.18071525614386,
+          "cumulativeShare": 95.3945563614136
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1.1315201465201465,
+          "share": 2.3465404867671977,
+          "cumulativeShare": 97.7410968481808
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 0.6,
+          "share": 1.2442768221053948,
+          "cumulativeShare": 98.9853736702862
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 0.4892607392607392,
+          "share": 1.0146263297138145,
+          "cumulativeShare": 100.00000000000001
+        }
+      ],
+      "novelty": [
+        {
+          "period": "2026",
+          "newAmount": 21.91,
+          "returningAmount": 26.310780885780883
+        }
+      ]
+    }
+  },
+  "taxIncluded": {
+    "periods": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "stacked": [
+      {
+        "period": "2026-01",
+        "expense:digital": 100.30131826741997,
+        "expense:food": 210.63276836158192,
+        "expense:travel": 601.8079096045199
+      },
+      {
+        "period": "2026-02",
+        "expense:digital": 100.265780730897,
+        "expense:food": 220.5847176079734
+      },
+      {
+        "period": "2026-03",
+        "expense:digital": 100.24502297090352,
+        "expense:food": 230.5635528330781
+      },
+      {
+        "period": "2026-04",
+        "expense:digital": 100.22727272727272,
+        "expense:food": 240.54545454545453
+      },
+      {
+        "period": "2026-05",
+        "expense:digital": 100.21768707482994,
+        "expense:food": 250.54421768707485
+      },
+      {
+        "period": "2026-06",
+        "expense:digital": 24102.101726844587,
+        "expense:food": 260.130612244898
+      }
+    ],
+    "accounts": [
+      "expense:digital",
+      "expense:food",
+      "expense:travel"
+    ],
+    "compare": [
+      {
+        "period": "2026-01",
+        "amount": 912.7419962335218,
+        "pctVsPrev": null
+      },
+      {
+        "period": "2026-02",
+        "amount": 320.8504983388704,
+        "pctVsPrev": -64.84762400953643
+      },
+      {
+        "period": "2026-03",
+        "amount": 330.8085758039816,
+        "pctVsPrev": 3.1036503033864276
+      },
+      {
+        "period": "2026-04",
+        "amount": 340.77272727272725,
+        "pctVsPrev": 3.012059601093841
+      },
+      {
+        "period": "2026-05",
+        "amount": 350.7619047619048,
+        "pctVsPrev": 2.9313312626638175
+      },
+      {
+        "period": "2026-06",
+        "amount": 24362.232339089485,
+        "pctVsPrev": 6845.518315515601
+      }
+    ],
+    "movers": [
+      {
+        "category": "expense:digital",
+        "prev": 100.21768707482994,
+        "cur": 24102.101726844587,
+        "delta": 24001.884039769757,
+        "pctChange": 23949.748532759666
+      },
+      {
+        "category": "expense:food",
+        "prev": 250.54421768707485,
+        "cur": 260.130612244898,
+        "delta": 9.586394557823127,
+        "pctChange": 3.826228617974476
+      },
+      {
+        "category": "expense:travel",
+        "prev": 0,
+        "cur": 0,
+        "delta": 0,
+        "pctChange": null
+      }
+    ],
+    "spending": {
+      "rows": [
+        {
+          "period": "2026-01",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100.30131826741997
+        },
+        {
+          "period": "2026-01",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 210.63276836158192
+        },
+        {
+          "period": "2026-01",
+          "accountId": "expense:travel:abroad",
+          "purposeId": "travel",
+          "amount": 601.8079096045199
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100.265780730897
+        },
+        {
+          "period": "2026-02",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 220.5847176079734
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100.24502297090352
+        },
+        {
+          "period": "2026-03",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 230.5635528330781
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100.22727272727272
+        },
+        {
+          "period": "2026-04",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 240.54545454545453
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 100.21768707482994
+        },
+        {
+          "period": "2026-05",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 250.54421768707485
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:digital:ai",
+          "purposeId": "digital",
+          "amount": 24102.101726844587
+        },
+        {
+          "period": "2026-06",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "amount": 260.130612244898
+        }
+      ],
+      "total": 26618.168041500492,
+      "purchaseCount": 15,
+      "merchantTotals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24012.05651491366
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1402.9962997321802
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 601.8079096045199
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 601.30731725013
+        }
+      ]
+    },
+    "merchants": {
+      "totals": [
+        {
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24012.05651491366,
+          "share": 90.20927539970583,
+          "cumulativeShare": 90.20927539970583
+        },
+        {
+          "merchant": "SYNTHETIC GROCERY",
+          "amount": 1402.9962997321802,
+          "share": 5.270822160055355,
+          "cumulativeShare": 95.48009755976119
+        },
+        {
+          "merchant": "SYNTHETIC PLAN",
+          "amount": 601.8079096045199,
+          "share": 2.26089154094391,
+          "cumulativeShare": 97.74098910070511
+        },
+        {
+          "merchant": "SYNTHETIC SUBSCRIPTION",
+          "amount": 601.30731725013,
+          "share": 2.259010899294908,
+          "cumulativeShare": 100.00000000000001
+        }
+      ],
+      "novelty": [
+        {
+          "period": "2026-01",
+          "newAmount": 912.7419962335218,
+          "returningAmount": 0
+        },
+        {
+          "period": "2026-02",
+          "newAmount": 0,
+          "returningAmount": 320.8504983388704
+        },
+        {
+          "period": "2026-03",
+          "newAmount": 0,
+          "returningAmount": 330.8085758039816
+        },
+        {
+          "period": "2026-04",
+          "newAmount": 0,
+          "returningAmount": 340.77272727272725
+        },
+        {
+          "period": "2026-05",
+          "newAmount": 0,
+          "returningAmount": 350.7619047619048
+        },
+        {
+          "period": "2026-06",
+          "newAmount": 24012.05651491366,
+          "returningAmount": 350.17582417582423
+        }
+      ]
+    }
+  },
+  "foodDrill": {
+    "level": "category",
+    "groups": [
+      {
+        "key": "expense:food:groceries",
+        "amount": 1410
+      }
+    ],
+    "rows": [
+      {
+        "purchaseId": "shop-2026-01",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 21000,
+        "purchaseDate": "2026-01-15",
+        "cycleMonth": "2026-01",
+        "sourceLineId": "source-shop-2026-01",
+        "statementId": "statement-a-2026-01",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-01-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-01-15",
+        "journalId": "shop-2026-01-purchase-journal"
+      },
+      {
+        "purchaseId": "shop-2026-02",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 22000,
+        "purchaseDate": "2026-02-15",
+        "cycleMonth": "2026-02",
+        "sourceLineId": "source-shop-2026-02",
+        "statementId": "statement-a-2026-02",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-02-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-02-15",
+        "journalId": "shop-2026-02-purchase-journal"
+      },
+      {
+        "purchaseId": "shop-2026-03",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 23000,
+        "purchaseDate": "2026-03-15",
+        "cycleMonth": "2026-03",
+        "sourceLineId": "source-shop-2026-03",
+        "statementId": "statement-a-2026-03",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-03-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-03-15",
+        "journalId": "shop-2026-03-purchase-journal"
+      },
+      {
+        "purchaseId": "shop-2026-04",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 24000,
+        "purchaseDate": "2026-04-15",
+        "cycleMonth": "2026-04",
+        "sourceLineId": "source-shop-2026-04",
+        "statementId": "statement-a-2026-04",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-04-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-04-15",
+        "journalId": "shop-2026-04-purchase-journal"
+      },
+      {
+        "purchaseId": "shop-2026-05",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 25000,
+        "purchaseDate": "2026-05-15",
+        "cycleMonth": "2026-05",
+        "sourceLineId": "source-shop-2026-05",
+        "statementId": "statement-a-2026-05",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-05-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-05-15",
+        "journalId": "shop-2026-05-purchase-journal"
+      },
+      {
+        "purchaseId": "shop-2026-06",
+        "origin": "ledger",
+        "cardId": "synthetic-visa-a",
+        "merchant": "SYNTHETIC GROCERY",
+        "description": "SYNTHETIC GROCERY",
+        "accountId": "expense:food:groceries:pantry",
+        "purposeId": "food",
+        "currency": "ARS",
+        "minor": 26000,
+        "purchaseDate": "2026-06-15",
+        "cycleMonth": "2026-06",
+        "sourceLineId": "source-shop-2026-06",
+        "statementId": "statement-a-2026-06",
+        "coverage": "complete",
+        "financed": false,
+        "id": "shop-2026-06-purchase",
+        "kind": "purchase",
+        "effectiveDate": "2026-06-15",
+        "journalId": "shop-2026-06-purchase-journal"
+      }
+    ],
+    "values": [
+      {
+        "fact": {
+          "purchaseId": "shop-2026-01",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 21000,
+          "purchaseDate": "2026-01-15",
+          "cycleMonth": "2026-01",
+          "sourceLineId": "source-shop-2026-01",
+          "statementId": "statement-a-2026-01",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-01-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-01-15",
+          "journalId": "shop-2026-01-purchase-journal"
+        },
+        "amount": 210,
+        "month": "2026-01",
+        "period": "2026-01"
+      },
+      {
+        "fact": {
+          "purchaseId": "shop-2026-02",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 22000,
+          "purchaseDate": "2026-02-15",
+          "cycleMonth": "2026-02",
+          "sourceLineId": "source-shop-2026-02",
+          "statementId": "statement-a-2026-02",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-02-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-02-15",
+          "journalId": "shop-2026-02-purchase-journal"
+        },
+        "amount": 220,
+        "month": "2026-02",
+        "period": "2026-02"
+      },
+      {
+        "fact": {
+          "purchaseId": "shop-2026-03",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 23000,
+          "purchaseDate": "2026-03-15",
+          "cycleMonth": "2026-03",
+          "sourceLineId": "source-shop-2026-03",
+          "statementId": "statement-a-2026-03",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-03-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-03-15",
+          "journalId": "shop-2026-03-purchase-journal"
+        },
+        "amount": 230,
+        "month": "2026-03",
+        "period": "2026-03"
+      },
+      {
+        "fact": {
+          "purchaseId": "shop-2026-04",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 24000,
+          "purchaseDate": "2026-04-15",
+          "cycleMonth": "2026-04",
+          "sourceLineId": "source-shop-2026-04",
+          "statementId": "statement-a-2026-04",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-04-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-04-15",
+          "journalId": "shop-2026-04-purchase-journal"
+        },
+        "amount": 240,
+        "month": "2026-04",
+        "period": "2026-04"
+      },
+      {
+        "fact": {
+          "purchaseId": "shop-2026-05",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 25000,
+          "purchaseDate": "2026-05-15",
+          "cycleMonth": "2026-05",
+          "sourceLineId": "source-shop-2026-05",
+          "statementId": "statement-a-2026-05",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-05-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-05-15",
+          "journalId": "shop-2026-05-purchase-journal"
+        },
+        "amount": 250,
+        "month": "2026-05",
+        "period": "2026-05"
+      },
+      {
+        "fact": {
+          "purchaseId": "shop-2026-06",
+          "origin": "ledger",
+          "cardId": "synthetic-visa-a",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "SYNTHETIC GROCERY",
+          "accountId": "expense:food:groceries:pantry",
+          "purposeId": "food",
+          "currency": "ARS",
+          "minor": 26000,
+          "purchaseDate": "2026-06-15",
+          "cycleMonth": "2026-06",
+          "sourceLineId": "source-shop-2026-06",
+          "statementId": "statement-a-2026-06",
+          "coverage": "complete",
+          "financed": false,
+          "id": "shop-2026-06-purchase",
+          "kind": "purchase",
+          "effectiveDate": "2026-06-15",
+          "journalId": "shop-2026-06-purchase-journal"
+        },
+        "amount": 260,
+        "month": "2026-06",
+        "period": "2026-06"
+      }
+    ]
+  },
+  "flow": {
+    "nodes": [
+      {
+        "id": "card:\"synthetic-visa-a\"",
+        "labelId": "synthetic-visa-a"
+      },
+      {
+        "id": "account:\"expense:digital:ai\"",
+        "labelId": "expense:digital:ai"
+      },
+      {
+        "id": "merchant:[\"expense:digital:ai\",\"SYNTHETIC SUBSCRIPTION\"]",
+        "labelId": "SYNTHETIC SUBSCRIPTION"
+      },
+      {
+        "id": "account:\"expense:food:groceries:pantry\"",
+        "labelId": "expense:food:groceries:pantry"
+      },
+      {
+        "id": "merchant:[\"expense:food:groceries:pantry\",\"SYNTHETIC GROCERY\"]",
+        "labelId": "SYNTHETIC GROCERY"
+      },
+      {
+        "id": "account:\"expense:travel:abroad\"",
+        "labelId": "expense:travel:abroad"
+      },
+      {
+        "id": "merchant:[\"expense:travel:abroad\",\"SYNTHETIC PLAN\"]",
+        "labelId": "SYNTHETIC PLAN"
+      },
+      {
+        "id": "merchant:[\"expense:digital:ai\",\"SYNTHETIC NEW MERCHANT\"]",
+        "labelId": "SYNTHETIC NEW MERCHANT"
+      }
+    ],
+    "links": [
+      {
+        "sourceId": "card:\"synthetic-visa-a\"",
+        "targetId": "account:\"expense:digital:ai\"",
+        "amount": 24600
+      },
+      {
+        "sourceId": "account:\"expense:digital:ai\"",
+        "targetId": "merchant:[\"expense:digital:ai\",\"SYNTHETIC SUBSCRIPTION\"]",
+        "amount": 600
+      },
+      {
+        "sourceId": "card:\"synthetic-visa-a\"",
+        "targetId": "account:\"expense:food:groceries:pantry\"",
+        "amount": 1410
+      },
+      {
+        "sourceId": "account:\"expense:food:groceries:pantry\"",
+        "targetId": "merchant:[\"expense:food:groceries:pantry\",\"SYNTHETIC GROCERY\"]",
+        "amount": 1410
+      },
+      {
+        "sourceId": "card:\"synthetic-visa-a\"",
+        "targetId": "account:\"expense:travel:abroad\"",
+        "amount": 600
+      },
+      {
+        "sourceId": "account:\"expense:travel:abroad\"",
+        "targetId": "merchant:[\"expense:travel:abroad\",\"SYNTHETIC PLAN\"]",
+        "amount": 600
+      },
+      {
+        "sourceId": "account:\"expense:digital:ai\"",
+        "targetId": "merchant:[\"expense:digital:ai\",\"SYNTHETIC NEW MERCHANT\"]",
+        "amount": 24000
+      }
+    ]
+  },
+  "timing": {
+    "weekdays": [
+      {
+        "day": "Mon",
+        "count": 2,
+        "expense:digital:ai": 100,
+        "expense:food:groceries:pantry": 260
+      },
+      {
+        "day": "Tue",
+        "count": 0
+      },
+      {
+        "day": "Wed",
+        "count": 2,
+        "expense:digital:ai": 90,
+        "expense:food:groceries:pantry": 240
+      },
+      {
+        "day": "Thu",
+        "count": 3,
+        "expense:digital:ai": 100,
+        "expense:food:groceries:pantry": 210,
+        "expense:travel:abroad": 600
+      },
+      {
+        "day": "Fri",
+        "count": 3,
+        "expense:digital:ai": 12100,
+        "expense:food:groceries:pantry": 250
+      },
+      {
+        "day": "Sat",
+        "count": 1,
+        "expense:digital:ai": 12000
+      },
+      {
+        "day": "Sun",
+        "count": 4,
+        "expense:digital:ai": 200,
+        "expense:food:groceries:pantry": 450
+      }
+    ],
+    "weekdayTotals": [
+      {
+        "day": "Mon",
+        "count": 2,
+        "total": 360
+      },
+      {
+        "day": "Tue",
+        "count": 0,
+        "total": 0
+      },
+      {
+        "day": "Wed",
+        "count": 2,
+        "total": 330
+      },
+      {
+        "day": "Thu",
+        "count": 3,
+        "total": 910
+      },
+      {
+        "day": "Fri",
+        "count": 3,
+        "total": 12350
+      },
+      {
+        "day": "Sat",
+        "count": 1,
+        "total": 12000
+      },
+      {
+        "day": "Sun",
+        "count": 4,
+        "total": 650
+      }
+    ],
+    "calendar": [
+      {
+        "date": "2026-01-15",
+        "amount": 910,
+        "count": 4,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 210,
+            "count": 1
+          },
+          {
+            "category": "expense:travel:abroad",
+            "amount": 600,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-01",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-01",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 210,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-01",
+            "description": "SYNTHETIC PLAN",
+            "merchant": "SYNTHETIC PLAN",
+            "category": "expense:travel:abroad",
+            "subcategory": null,
+            "amount": 600,
+            "usd": null,
+            "installmentCount": 3,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-01",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-02-15",
+        "amount": 320,
+        "count": 3,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 220,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-02",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-02",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 220,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-02",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-03-15",
+        "amount": 330,
+        "count": 3,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 230,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-03",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-03",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 230,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-03",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-04-15",
+        "amount": 340,
+        "count": 3,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 240,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-04",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-04",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 240,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-04",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-05-15",
+        "amount": 350,
+        "count": 3,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 250,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-05",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-05",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 250,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-05",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-06-05",
+        "amount": 12000,
+        "count": 1,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 12000,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "SYNTHETIC NEW MERCHANT",
+            "merchant": "SYNTHETIC NEW MERCHANT",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 12000,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-06-06",
+        "amount": 12000,
+        "count": 1,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 12000,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "SYNTHETIC NEW MERCHANT",
+            "merchant": "SYNTHETIC NEW MERCHANT",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 12000,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-06-10",
+        "amount": -10,
+        "count": 0,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": -10,
+            "count": 0
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "BONIFICACION PROMO",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": -10,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      },
+      {
+        "date": "2026-06-15",
+        "amount": 360,
+        "count": 3,
+        "categories": [
+          {
+            "category": "expense:digital:ai",
+            "amount": 100,
+            "count": 2
+          },
+          {
+            "category": "expense:food:groceries:pantry",
+            "amount": 260,
+            "count": 1
+          }
+        ],
+        "charges": [
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "SYNTHETIC SUBSCRIPTION",
+            "merchant": "SYNTHETIC SUBSCRIPTION",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": 100,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "SYNTHETIC GROCERY",
+            "merchant": "SYNTHETIC GROCERY",
+            "category": "expense:food:groceries:pantry",
+            "subcategory": null,
+            "amount": 260,
+            "usd": null,
+            "installmentCount": null,
+            "receiptId": null
+          },
+          {
+            "brand": "synthetic-visa-a",
+            "month": "2026-06",
+            "description": "SYNTHETIC USD SERVICE",
+            "merchant": "SYNTHETIC USD SERVICE",
+            "category": "expense:digital:ai",
+            "subcategory": null,
+            "amount": null,
+            "usd": 5,
+            "installmentCount": null,
+            "receiptId": null
+          }
+        ]
+      }
+    ],
+    "tickets": [
+      {
+        "period": "2026-01",
+        "count": 3,
+        "total": 910,
+        "avgTicket": 303.3333333333333,
+        "medianTicket": 210
+      },
+      {
+        "period": "2026-02",
+        "count": 2,
+        "total": 320,
+        "avgTicket": 160,
+        "medianTicket": 160
+      },
+      {
+        "period": "2026-03",
+        "count": 2,
+        "total": 330,
+        "avgTicket": 165,
+        "medianTicket": 165
+      },
+      {
+        "period": "2026-04",
+        "count": 2,
+        "total": 340,
+        "avgTicket": 170,
+        "medianTicket": 170
+      },
+      {
+        "period": "2026-05",
+        "count": 2,
+        "total": 350,
+        "avgTicket": 175,
+        "medianTicket": 175
+      },
+      {
+        "period": "2026-06",
+        "count": 4,
+        "total": 24360,
+        "avgTicket": 6090,
+        "medianTicket": 6130
+      }
+    ],
+    "accounts": [
+      "expense:digital:ai",
+      "expense:food:groceries:pantry",
+      "expense:travel:abroad"
+    ]
+  },
+  "currency": [
+    {
+      "period": "2026-01",
+      "arsBilled": 910,
+      "usdBilled": 5000
+    },
+    {
+      "period": "2026-02",
+      "arsBilled": 320,
+      "usdBilled": 5500
+    },
+    {
+      "period": "2026-03",
+      "arsBilled": 330,
+      "usdBilled": 6000
+    },
+    {
+      "period": "2026-04",
+      "arsBilled": 340,
+      "usdBilled": 6500
+    },
+    {
+      "period": "2026-05",
+      "arsBilled": 350,
+      "usdBilled": 7000
+    },
+    {
+      "period": "2026-06",
+      "arsBilled": 24350,
+      "usdBilled": 7500
+    }
+  ],
+  "pace": [
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-01",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 910
+        },
+        {
+          "day": 15,
+          "cumulative": 910
+        },
+        {
+          "day": 16,
+          "cumulative": 910
+        },
+        {
+          "day": 17,
+          "cumulative": 910
+        },
+        {
+          "day": 18,
+          "cumulative": 910
+        },
+        {
+          "day": 19,
+          "cumulative": 910
+        },
+        {
+          "day": 20,
+          "cumulative": 910
+        },
+        {
+          "day": 21,
+          "cumulative": 910
+        },
+        {
+          "day": 22,
+          "cumulative": 910
+        },
+        {
+          "day": 23,
+          "cumulative": 910
+        },
+        {
+          "day": 24,
+          "cumulative": 910
+        },
+        {
+          "day": 25,
+          "cumulative": 910
+        },
+        {
+          "day": 26,
+          "cumulative": 910
+        },
+        {
+          "day": 27,
+          "cumulative": 910
+        },
+        {
+          "day": 28,
+          "cumulative": 910
+        },
+        {
+          "day": 29,
+          "cumulative": 910
+        },
+        {
+          "day": 30,
+          "cumulative": 910
+        },
+        {
+          "day": 31,
+          "cumulative": 910
+        }
+      ],
+      "priorMedian": []
+    },
+    {
+      "cardId": "synthetic-visa-b",
+      "cycleMonth": "2026-01",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        },
+        {
+          "day": 31,
+          "cumulative": 0
+        }
+      ],
+      "priorMedian": []
+    },
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-02",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 320
+        },
+        {
+          "day": 15,
+          "cumulative": 320
+        },
+        {
+          "day": 16,
+          "cumulative": 320
+        },
+        {
+          "day": 17,
+          "cumulative": 320
+        },
+        {
+          "day": 18,
+          "cumulative": 320
+        },
+        {
+          "day": 19,
+          "cumulative": 320
+        },
+        {
+          "day": 20,
+          "cumulative": 320
+        },
+        {
+          "day": 21,
+          "cumulative": 320
+        },
+        {
+          "day": 22,
+          "cumulative": 320
+        },
+        {
+          "day": 23,
+          "cumulative": 320
+        },
+        {
+          "day": 24,
+          "cumulative": 320
+        },
+        {
+          "day": 25,
+          "cumulative": 320
+        },
+        {
+          "day": 26,
+          "cumulative": 320
+        },
+        {
+          "day": 27,
+          "cumulative": 320
+        },
+        {
+          "day": 28,
+          "cumulative": 320
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 910
+        },
+        {
+          "day": 15,
+          "cumulative": 910
+        },
+        {
+          "day": 16,
+          "cumulative": 910
+        },
+        {
+          "day": 17,
+          "cumulative": 910
+        },
+        {
+          "day": 18,
+          "cumulative": 910
+        },
+        {
+          "day": 19,
+          "cumulative": 910
+        },
+        {
+          "day": 20,
+          "cumulative": 910
+        },
+        {
+          "day": 21,
+          "cumulative": 910
+        },
+        {
+          "day": 22,
+          "cumulative": 910
+        },
+        {
+          "day": 23,
+          "cumulative": 910
+        },
+        {
+          "day": 24,
+          "cumulative": 910
+        },
+        {
+          "day": 25,
+          "cumulative": 910
+        },
+        {
+          "day": 26,
+          "cumulative": 910
+        },
+        {
+          "day": 27,
+          "cumulative": 910
+        },
+        {
+          "day": 28,
+          "cumulative": 910
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-b",
+      "cycleMonth": "2026-02",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-03",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 330
+        },
+        {
+          "day": 15,
+          "cumulative": 330
+        },
+        {
+          "day": 16,
+          "cumulative": 330
+        },
+        {
+          "day": 17,
+          "cumulative": 330
+        },
+        {
+          "day": 18,
+          "cumulative": 330
+        },
+        {
+          "day": 19,
+          "cumulative": 330
+        },
+        {
+          "day": 20,
+          "cumulative": 330
+        },
+        {
+          "day": 21,
+          "cumulative": 330
+        },
+        {
+          "day": 22,
+          "cumulative": 330
+        },
+        {
+          "day": 23,
+          "cumulative": 330
+        },
+        {
+          "day": 24,
+          "cumulative": 330
+        },
+        {
+          "day": 25,
+          "cumulative": 330
+        },
+        {
+          "day": 26,
+          "cumulative": 330
+        },
+        {
+          "day": 27,
+          "cumulative": 330
+        },
+        {
+          "day": 28,
+          "cumulative": 330
+        },
+        {
+          "day": 29,
+          "cumulative": 330
+        },
+        {
+          "day": 30,
+          "cumulative": 330
+        },
+        {
+          "day": 31,
+          "cumulative": 330
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 615
+        },
+        {
+          "day": 15,
+          "cumulative": 615
+        },
+        {
+          "day": 16,
+          "cumulative": 615
+        },
+        {
+          "day": 17,
+          "cumulative": 615
+        },
+        {
+          "day": 18,
+          "cumulative": 615
+        },
+        {
+          "day": 19,
+          "cumulative": 615
+        },
+        {
+          "day": 20,
+          "cumulative": 615
+        },
+        {
+          "day": 21,
+          "cumulative": 615
+        },
+        {
+          "day": 22,
+          "cumulative": 615
+        },
+        {
+          "day": 23,
+          "cumulative": 615
+        },
+        {
+          "day": 24,
+          "cumulative": 615
+        },
+        {
+          "day": 25,
+          "cumulative": 615
+        },
+        {
+          "day": 26,
+          "cumulative": 615
+        },
+        {
+          "day": 27,
+          "cumulative": 615
+        },
+        {
+          "day": 28,
+          "cumulative": 615
+        },
+        {
+          "day": 29,
+          "cumulative": 615
+        },
+        {
+          "day": 30,
+          "cumulative": 615
+        },
+        {
+          "day": 31,
+          "cumulative": 615
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-b",
+      "cycleMonth": "2026-03",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        },
+        {
+          "day": 31,
+          "cumulative": 0
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        },
+        {
+          "day": 31,
+          "cumulative": 0
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-04",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 340
+        },
+        {
+          "day": 15,
+          "cumulative": 340
+        },
+        {
+          "day": 16,
+          "cumulative": 340
+        },
+        {
+          "day": 17,
+          "cumulative": 340
+        },
+        {
+          "day": 18,
+          "cumulative": 340
+        },
+        {
+          "day": 19,
+          "cumulative": 340
+        },
+        {
+          "day": 20,
+          "cumulative": 340
+        },
+        {
+          "day": 21,
+          "cumulative": 340
+        },
+        {
+          "day": 22,
+          "cumulative": 340
+        },
+        {
+          "day": 23,
+          "cumulative": 340
+        },
+        {
+          "day": 24,
+          "cumulative": 340
+        },
+        {
+          "day": 25,
+          "cumulative": 340
+        },
+        {
+          "day": 26,
+          "cumulative": 340
+        },
+        {
+          "day": 27,
+          "cumulative": 340
+        },
+        {
+          "day": 28,
+          "cumulative": 340
+        },
+        {
+          "day": 29,
+          "cumulative": 340
+        },
+        {
+          "day": 30,
+          "cumulative": 340
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 330
+        },
+        {
+          "day": 15,
+          "cumulative": 330
+        },
+        {
+          "day": 16,
+          "cumulative": 330
+        },
+        {
+          "day": 17,
+          "cumulative": 330
+        },
+        {
+          "day": 18,
+          "cumulative": 330
+        },
+        {
+          "day": 19,
+          "cumulative": 330
+        },
+        {
+          "day": 20,
+          "cumulative": 330
+        },
+        {
+          "day": 21,
+          "cumulative": 330
+        },
+        {
+          "day": 22,
+          "cumulative": 330
+        },
+        {
+          "day": 23,
+          "cumulative": 330
+        },
+        {
+          "day": 24,
+          "cumulative": 330
+        },
+        {
+          "day": 25,
+          "cumulative": 330
+        },
+        {
+          "day": 26,
+          "cumulative": 330
+        },
+        {
+          "day": 27,
+          "cumulative": 330
+        },
+        {
+          "day": 28,
+          "cumulative": 330
+        },
+        {
+          "day": 29,
+          "cumulative": 330
+        },
+        {
+          "day": 30,
+          "cumulative": 330
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-b",
+      "cycleMonth": "2026-04",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-05",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 350
+        },
+        {
+          "day": 15,
+          "cumulative": 350
+        },
+        {
+          "day": 16,
+          "cumulative": 350
+        },
+        {
+          "day": 17,
+          "cumulative": 350
+        },
+        {
+          "day": 18,
+          "cumulative": 350
+        },
+        {
+          "day": 19,
+          "cumulative": 350
+        },
+        {
+          "day": 20,
+          "cumulative": 350
+        },
+        {
+          "day": 21,
+          "cumulative": 350
+        },
+        {
+          "day": 22,
+          "cumulative": 350
+        },
+        {
+          "day": 23,
+          "cumulative": 350
+        },
+        {
+          "day": 24,
+          "cumulative": 350
+        },
+        {
+          "day": 25,
+          "cumulative": 350
+        },
+        {
+          "day": 26,
+          "cumulative": 350
+        },
+        {
+          "day": 27,
+          "cumulative": 350
+        },
+        {
+          "day": 28,
+          "cumulative": 350
+        },
+        {
+          "day": 29,
+          "cumulative": 350
+        },
+        {
+          "day": 30,
+          "cumulative": 350
+        },
+        {
+          "day": 31,
+          "cumulative": 350
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 335
+        },
+        {
+          "day": 15,
+          "cumulative": 335
+        },
+        {
+          "day": 16,
+          "cumulative": 335
+        },
+        {
+          "day": 17,
+          "cumulative": 335
+        },
+        {
+          "day": 18,
+          "cumulative": 335
+        },
+        {
+          "day": 19,
+          "cumulative": 335
+        },
+        {
+          "day": 20,
+          "cumulative": 335
+        },
+        {
+          "day": 21,
+          "cumulative": 335
+        },
+        {
+          "day": 22,
+          "cumulative": 335
+        },
+        {
+          "day": 23,
+          "cumulative": 335
+        },
+        {
+          "day": 24,
+          "cumulative": 335
+        },
+        {
+          "day": 25,
+          "cumulative": 335
+        },
+        {
+          "day": 26,
+          "cumulative": 335
+        },
+        {
+          "day": 27,
+          "cumulative": 335
+        },
+        {
+          "day": 28,
+          "cumulative": 335
+        },
+        {
+          "day": 29,
+          "cumulative": 335
+        },
+        {
+          "day": 30,
+          "cumulative": 335
+        },
+        {
+          "day": 31,
+          "cumulative": 335
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-b",
+      "cycleMonth": "2026-05",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        },
+        {
+          "day": 31,
+          "cumulative": 0
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 0
+        },
+        {
+          "day": 15,
+          "cumulative": 0
+        },
+        {
+          "day": 16,
+          "cumulative": 0
+        },
+        {
+          "day": 17,
+          "cumulative": 0
+        },
+        {
+          "day": 18,
+          "cumulative": 0
+        },
+        {
+          "day": 19,
+          "cumulative": 0
+        },
+        {
+          "day": 20,
+          "cumulative": 0
+        },
+        {
+          "day": 21,
+          "cumulative": 0
+        },
+        {
+          "day": 22,
+          "cumulative": 0
+        },
+        {
+          "day": 23,
+          "cumulative": 0
+        },
+        {
+          "day": 24,
+          "cumulative": 0
+        },
+        {
+          "day": 25,
+          "cumulative": 0
+        },
+        {
+          "day": 26,
+          "cumulative": 0
+        },
+        {
+          "day": 27,
+          "cumulative": 0
+        },
+        {
+          "day": 28,
+          "cumulative": 0
+        },
+        {
+          "day": 29,
+          "cumulative": 0
+        },
+        {
+          "day": 30,
+          "cumulative": 0
+        },
+        {
+          "day": 31,
+          "cumulative": 0
+        }
+      ]
+    },
+    {
+      "cardId": "synthetic-visa-a",
+      "cycleMonth": "2026-06",
+      "points": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 12000
+        },
+        {
+          "day": 5,
+          "cumulative": 24000
+        },
+        {
+          "day": 6,
+          "cumulative": 24000
+        },
+        {
+          "day": 7,
+          "cumulative": 24000
+        },
+        {
+          "day": 8,
+          "cumulative": 24000
+        },
+        {
+          "day": 9,
+          "cumulative": 23990
+        },
+        {
+          "day": 10,
+          "cumulative": 23990
+        },
+        {
+          "day": 11,
+          "cumulative": 23990
+        },
+        {
+          "day": 12,
+          "cumulative": 23990
+        },
+        {
+          "day": 13,
+          "cumulative": 23990
+        },
+        {
+          "day": 14,
+          "cumulative": 24350
+        },
+        {
+          "day": 15,
+          "cumulative": 24350
+        },
+        {
+          "day": 16,
+          "cumulative": 24350
+        },
+        {
+          "day": 17,
+          "cumulative": 24350
+        },
+        {
+          "day": 18,
+          "cumulative": 24350
+        },
+        {
+          "day": 19,
+          "cumulative": 24350
+        },
+        {
+          "day": 20,
+          "cumulative": 24350
+        },
+        {
+          "day": 21,
+          "cumulative": 24350
+        },
+        {
+          "day": 22,
+          "cumulative": 24350
+        },
+        {
+          "day": 23,
+          "cumulative": 24350
+        },
+        {
+          "day": 24,
+          "cumulative": 24350
+        },
+        {
+          "day": 25,
+          "cumulative": 24350
+        },
+        {
+          "day": 26,
+          "cumulative": 24350
+        },
+        {
+          "day": 27,
+          "cumulative": 24350
+        },
+        {
+          "day": 28,
+          "cumulative": 24350
+        },
+        {
+          "day": 29,
+          "cumulative": 24350
+        },
+        {
+          "day": 30,
+          "cumulative": 24350
+        }
+      ],
+      "priorMedian": [
+        {
+          "day": 1,
+          "cumulative": 0
+        },
+        {
+          "day": 2,
+          "cumulative": 0
+        },
+        {
+          "day": 3,
+          "cumulative": 0
+        },
+        {
+          "day": 4,
+          "cumulative": 0
+        },
+        {
+          "day": 5,
+          "cumulative": 0
+        },
+        {
+          "day": 6,
+          "cumulative": 0
+        },
+        {
+          "day": 7,
+          "cumulative": 0
+        },
+        {
+          "day": 8,
+          "cumulative": 0
+        },
+        {
+          "day": 9,
+          "cumulative": 0
+        },
+        {
+          "day": 10,
+          "cumulative": 0
+        },
+        {
+          "day": 11,
+          "cumulative": 0
+        },
+        {
+          "day": 12,
+          "cumulative": 0
+        },
+        {
+          "day": 13,
+          "cumulative": 0
+        },
+        {
+          "day": 14,
+          "cumulative": 340
+        },
+        {
+          "day": 15,
+          "cumulative": 340
+        },
+        {
+          "day": 16,
+          "cumulative": 340
+        },
+        {
+          "day": 17,
+          "cumulative": 340
+        },
+        {
+          "day": 18,
+          "cumulative": 340
+        },
+        {
+          "day": 19,
+          "cumulative": 340
+        },
+        {
+          "day": 20,
+          "cumulative": 340
+        },
+        {
+          "day": 21,
+          "cumulative": 340
+        },
+        {
+          "day": 22,
+          "cumulative": 340
+        },
+        {
+          "day": 23,
+          "cumulative": 340
+        },
+        {
+          "day": 24,
+          "cumulative": 340
+        },
+        {
+          "day": 25,
+          "cumulative": 340
+        },
+        {
+          "day": 26,
+          "cumulative": 340
+        },
+        {
+          "day": 27,
+          "cumulative": 340
+        },
+        {
+          "day": 28,
+          "cumulative": 340
+        },
+        {
+          "day": 29,
+          "cumulative": 340
+        },
+        {
+          "day": 30,
+          "cumulative": 340
+        }
+      ]
+    }
+  ],
+  "commitments": {
+    "recurring": [
+      {
+        "merchant": "SYNTHETIC SUBSCRIPTION",
+        "currency": "ARS",
+        "currencies": [
+          "ARS"
+        ],
+        "occurrences": 6,
+        "firstMonth": "2026-01",
+        "lastMonth": "2026-06",
+        "lastAmount": 100,
+        "prevAmount": 100,
+        "pctChange": 0,
+        "monthsSinceLast": 0,
+        "status": "active",
+        "confidence": "high",
+        "priceRegime": "pegged",
+        "nextExpectedMonth": "2026-07"
+      },
+      {
+        "merchant": "SYNTHETIC USD SERVICE",
+        "currency": "USD",
+        "currencies": [
+          "USD"
+        ],
+        "occurrences": 6,
+        "firstMonth": "2026-01",
+        "lastMonth": "2026-06",
+        "lastAmount": 5,
+        "prevAmount": 5,
+        "pctChange": 0,
+        "monthsSinceLast": 0,
+        "status": "active",
+        "confidence": "high",
+        "priceRegime": "pegged",
+        "nextExpectedMonth": "2026-07"
+      },
+      {
+        "merchant": "SYNTHETIC GROCERY",
+        "currency": "ARS",
+        "currencies": [
+          "ARS"
+        ],
+        "occurrences": 6,
+        "firstMonth": "2026-01",
+        "lastMonth": "2026-06",
+        "lastAmount": 250,
+        "prevAmount": 250,
+        "pctChange": 0,
+        "monthsSinceLast": 0,
+        "status": "active",
+        "confidence": "low",
+        "priceRegime": null,
+        "nextExpectedMonth": "2026-07"
+      }
+    ],
+    "inflation": {
+      "points": [
+        {
+          "month": "2026-01",
+          "personal": 100,
+          "official": 100
+        },
+        {
+          "month": "2026-02",
+          "personal": 103.2258064516129,
+          "official": 110.00000000000001
+        },
+        {
+          "month": "2026-03",
+          "personal": 106.4516129032258,
+          "official": 121.00000000000001
+        },
+        {
+          "month": "2026-04",
+          "personal": 109.67741935483869,
+          "official": 133.10000000000005
+        },
+        {
+          "month": "2026-05",
+          "personal": 112.90322580645159,
+          "official": 146.41000000000005
+        },
+        {
+          "month": "2026-06",
+          "personal": 112.90322580645159,
+          "official": 161.05100000000004
+        }
+      ],
+      "basket": [
+        "SYNTHETIC GROCERY",
+        "SYNTHETIC SUBSCRIPTION"
+      ]
+    },
+    "taxes": [
+      {
+        "period": "2026-01",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.3013182674199623
+      },
+      {
+        "period": "2026-02",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.26578073089701
+      },
+      {
+        "period": "2026-03",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.2450229709035222
+      },
+      {
+        "period": "2026-04",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.22727272727272727
+      },
+      {
+        "period": "2026-05",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.21768707482993196
+      },
+      {
+        "period": "2026-06",
+        "rg5617": 5,
+        "iva": 0,
+        "iibb": 0,
+        "stampDuty": 10,
+        "interest": 1,
+        "other": 0,
+        "total": 16,
+        "ratePct": 0.050235478806907374
+      }
+    ],
+    "credits": {
+      "periods": [
+        {
+          "period": "2026-06",
+          "promo": 10,
+          "refund": 50,
+          "taxback": 0,
+          "total": 60,
+          "pctOfSpend": 0.24630541871921183
+        }
+      ],
+      "top": [
+        {
+          "month": "2026-06",
+          "date": "2026-06-10",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "Reembolso SYNTHETIC",
+          "kind": "refund",
+          "amount": 50
+        },
+        {
+          "month": "2026-06",
+          "date": "2026-06-10",
+          "merchant": "SYNTHETIC GROCERY",
+          "description": "BONIFICACION PROMO",
+          "kind": "promo",
+          "amount": 10
+        }
+      ]
+    },
+    "float": [
+      {
+        "period": "2026-01",
+        "avgDays": 26,
+        "avgDaysOneOff": 26,
+        "avgDaysInstallment": null,
+        "gainOneOff": 45.38710000000009,
+        "gainInstallment": 0,
+        "gain": 45.38710000000009,
+        "gainPct": 9.090909090909106
+      },
+      {
+        "period": "2026-02",
+        "avgDays": 34.92307692307692,
+        "avgDaysOneOff": 23,
+        "avgDaysInstallment": 54,
+        "gainOneOff": 42.591999999999985,
+        "gainInstallment": 55.902000000000044,
+        "gain": 98.49400000000003,
+        "gainPct": 12.45791245791246
+      },
+      {
+        "period": "2026-03",
+        "avgDays": 48.264150943396224,
+        "avgDaysOneOff": 26,
+        "avgDaysInstallment": 85,
+        "gainOneOff": 39.930000000000135,
+        "gainInstallment": 80.10200000000012,
+        "gain": 120.03200000000025,
+        "gainPct": 15.766052129688523
+      },
+      {
+        "period": "2026-04",
+        "avgDays": 58.333333333333336,
+        "avgDaysOneOff": 25,
+        "avgDaysInstallment": 115,
+        "gainOneOff": 37.39999999999998,
+        "gainInstallment": 102.10200000000012,
+        "gain": 139.5020000000001,
+        "gainPct": 19.01862571608531
+      },
+      {
+        "period": "2026-05",
+        "avgDays": 26,
+        "avgDaysOneOff": 26,
+        "avgDaysInstallment": null,
+        "gainOneOff": 34.99999999999996,
+        "gainInstallment": 0,
+        "gain": 34.99999999999996,
+        "gainPct": 9.09090909090908
+      },
+      {
+        "period": "2026-06",
+        "avgDays": 34.35960591133005,
+        "avgDaysOneOff": 34.35960591133005,
+        "avgDaysInstallment": null,
+        "gainOneOff": 0,
+        "gainInstallment": 0,
+        "gain": 0,
+        "gainPct": 0
+      }
+    ],
+    "installments": {
+      "burden": [
+        {
+          "period": "2026-01",
+          "installment": 0,
+          "oneOff": 310,
+          "plans": 0,
+          "sharePct": 0
+        },
+        {
+          "period": "2026-02",
+          "installment": 200,
+          "oneOff": 320,
+          "plans": 1,
+          "sharePct": 38.46153846153847
+        },
+        {
+          "period": "2026-03",
+          "installment": 200,
+          "oneOff": 330,
+          "plans": 1,
+          "sharePct": 37.735849056603776
+        },
+        {
+          "period": "2026-04",
+          "installment": 200,
+          "oneOff": 340,
+          "plans": 1,
+          "sharePct": 37.03703703703704
+        },
+        {
+          "period": "2026-05",
+          "installment": 0,
+          "oneOff": 350,
+          "plans": 0,
+          "sharePct": 0
+        },
+        {
+          "period": "2026-06",
+          "installment": 0,
+          "oneOff": 24350,
+          "plans": 0,
+          "sharePct": 0
+        }
+      ],
+      "plans": []
+    },
+    "forecast": [
+      {
+        "month": "2026-07",
+        "certain": 90,
+        "expected": 110.00000000000001,
+        "estLow": 231.00000000000003,
+        "estHigh": 26675.000000000004
+      },
+      {
+        "month": "2026-08",
+        "certain": 60,
+        "expected": 121.00000000000001,
+        "estLow": 254.10000000000005,
+        "estHigh": 29342.500000000004
+      },
+      {
+        "month": "2026-09",
+        "certain": 0,
+        "expected": 133.10000000000005,
+        "estLow": 279.5100000000001,
+        "estHigh": 32276.75000000001
+      },
+      {
+        "month": "2026-10",
+        "certain": 0,
+        "expected": 146.41000000000005,
+        "estLow": 307.4610000000001,
+        "estHigh": 35504.42500000002
+      },
+      {
+        "month": "2026-11",
+        "certain": 0,
+        "expected": 161.05100000000004,
+        "estLow": 338.20710000000014,
+        "estHigh": 39054.867500000015
+      },
+      {
+        "month": "2026-12",
+        "certain": 0,
+        "expected": 177.1561000000001,
+        "estLow": 372.02781000000016,
+        "estHigh": 42960.35425000002
+      }
+    ],
+    "bank": [
+      {
+        "month": "2026-01",
+        "limit": 15000,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000,
+          "synthetic-visa-b": 5000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 6510,
+        "utilizationPct": 43.4,
+        "minPaymentPct": 13.245033112582782,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": null,
+        "realTemPct": null
+      },
+      {
+        "month": "2026-02",
+        "limit": 15000,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000,
+          "synthetic-visa-b": 5000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 7020,
+        "utilizationPct": 46.800000000000004,
+        "minPaymentPct": 13.157894736842104,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-03",
+        "limit": 15000,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000,
+          "synthetic-visa-b": 5000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 7530,
+        "utilizationPct": 50.2,
+        "minPaymentPct": 13.071895424836603,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-04",
+        "limit": 15000,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000,
+          "synthetic-visa-b": 5000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 8040,
+        "utilizationPct": 53.6,
+        "minPaymentPct": 12.987012987012985,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000032,
+        "realTemPct": -3.63636363636366
+      },
+      {
+        "month": "2026-05",
+        "limit": 15000,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000,
+          "synthetic-visa-b": 5000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 8550,
+        "utilizationPct": 56.99999999999999,
+        "minPaymentPct": 12.903225806451612,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-06",
+        "limit": null,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5
+        },
+        "balance": 8560,
+        "utilizationPct": 85.6,
+        "minPaymentPct": 9.433962264150944,
+        "temPct": 5,
+        "temBrand": "synthetic-visa-a",
+        "inflationPct": 9.999999999999986,
+        "realTemPct": -4.545454545454531
+      }
+    ],
+    "realBank": [
+      {
+        "month": "2026-01",
+        "limit": 24157.65000000001,
+        "limitByBrand": {
+          "synthetic-visa-a": 16105.100000000006,
+          "synthetic-visa-b": 8052.550000000003
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 10484.420100000003,
+        "utilizationPct": 43.4,
+        "minPaymentPct": 13.245033112582782,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": null,
+        "realTemPct": null
+      },
+      {
+        "month": "2026-02",
+        "limit": 21961.500000000004,
+        "limitByBrand": {
+          "synthetic-visa-a": 14641.000000000002,
+          "synthetic-visa-b": 7320.500000000001
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 10277.982000000002,
+        "utilizationPct": 46.800000000000004,
+        "minPaymentPct": 13.157894736842104,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-03",
+        "limit": 19965.000000000004,
+        "limitByBrand": {
+          "synthetic-visa-a": 13310.000000000002,
+          "synthetic-visa-b": 6655.000000000001
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 10022.430000000002,
+        "utilizationPct": 50.2,
+        "minPaymentPct": 13.071895424836603,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-04",
+        "limit": 18150,
+        "limitByBrand": {
+          "synthetic-visa-a": 12100,
+          "synthetic-visa-b": 6050
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 9728.4,
+        "utilizationPct": 53.6,
+        "minPaymentPct": 12.987012987012985,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000032,
+        "realTemPct": -3.63636363636366
+      },
+      {
+        "month": "2026-05",
+        "limit": 16499.999999999996,
+        "limitByBrand": {
+          "synthetic-visa-a": 10999.999999999998,
+          "synthetic-visa-b": 5499.999999999999
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5,
+          "synthetic-visa-b": 6
+        },
+        "balance": 9404.999999999998,
+        "utilizationPct": 56.99999999999999,
+        "minPaymentPct": 12.903225806451612,
+        "temPct": 6,
+        "temBrand": "synthetic-visa-b",
+        "inflationPct": 10.000000000000009,
+        "realTemPct": -3.6363636363636376
+      },
+      {
+        "month": "2026-06",
+        "limit": null,
+        "limitByBrand": {
+          "synthetic-visa-a": 10000
+        },
+        "temByBrand": {
+          "synthetic-visa-a": 5
+        },
+        "balance": 8560,
+        "utilizationPct": 85.6,
+        "minPaymentPct": 9.433962264150944,
+        "temPct": 5,
+        "temBrand": "synthetic-visa-a",
+        "inflationPct": 9.999999999999986,
+        "realTemPct": -4.545454545454531
+      }
+    ],
+    "alerts": [
+      {
+        "key": "computed:56919cbd95b43b718ce7b081e3f5798ebf3249e582c7c4e04db6212b6ed00818",
+        "source": "anomaly",
+        "kind": "new_merchant",
+        "month": "2026-06",
+        "date": null,
+        "merchant": "SYNTHETIC NEW MERCHANT",
+        "amount": 24000,
+        "message": "first charge from this merchant in 6 months of statements",
+        "messageKey": "anomaly.newMerchant",
+        "messageParams": {
+          "months": 6
+        },
+        "state": "open"
+      },
+      {
+        "key": "computed:e737b488bd953f95328d222f836acf9f2c7406d59122d573907988b95ed52652",
+        "source": "anomaly",
+        "kind": "duplicate",
+        "month": "2026-06",
+        "date": "2026-06-06",
+        "merchant": "SYNTHETIC NEW MERCHANT",
+        "amount": 12000,
+        "message": "charged twice within 2 days (2026-06-05 and 2026-06-06)",
+        "messageKey": "anomaly.duplicate",
+        "messageParams": {
+          "days": 2,
+          "first": "2026-06-05",
+          "second": "2026-06-06"
+        },
+        "state": "open"
+      }
+    ],
+    "cleared": 0,
+    "totals": [
+      {
+        "period": "2026-01",
+        "amount": 910
+      },
+      {
+        "period": "2026-02",
+        "amount": 320
+      },
+      {
+        "period": "2026-03",
+        "amount": 330
+      },
+      {
+        "period": "2026-04",
+        "amount": 340
+      },
+      {
+        "period": "2026-05",
+        "amount": 350
+      },
+      {
+        "period": "2026-06",
+        "amount": 24350
+      }
+    ],
+    "coverage": {
+      "cards": 2,
+      "scheduleCards": 1,
+      "uncertain": 19
+    },
+    "overview": {
+      "spentThisMonth": 24350,
+      "pctVsPrev": 6857.142857142857,
+      "openAlerts": [
+        {
+          "key": "computed:56919cbd95b43b718ce7b081e3f5798ebf3249e582c7c4e04db6212b6ed00818",
+          "source": "anomaly",
+          "kind": "new_merchant",
+          "month": "2026-06",
+          "date": null,
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 24000,
+          "message": "first charge from this merchant in 6 months of statements",
+          "messageKey": "anomaly.newMerchant",
+          "messageParams": {
+            "months": 6
+          },
+          "state": "open"
+        },
+        {
+          "key": "computed:e737b488bd953f95328d222f836acf9f2c7406d59122d573907988b95ed52652",
+          "source": "anomaly",
+          "kind": "duplicate",
+          "month": "2026-06",
+          "date": "2026-06-06",
+          "merchant": "SYNTHETIC NEW MERCHANT",
+          "amount": 12000,
+          "message": "charged twice within 2 days (2026-06-05 and 2026-06-06)",
+          "messageKey": "anomaly.duplicate",
+          "messageParams": {
+            "days": 2,
+            "first": "2026-06-05",
+            "second": "2026-06-06"
+          },
+          "state": "open"
+        }
+      ],
+      "nextStatementForecast": {
+        "month": "2026-07",
+        "certain": 90,
+        "expected": 110.00000000000001,
+        "estLow": 231.00000000000003,
+        "estHigh": 26675.000000000004
+      },
+      "topCategories": [
+        {
+          "category": "expense:digital:ai",
+          "amount": 24090
+        },
+        {
+          "category": "expense:food:groceries:pantry",
+          "amount": 260
+        }
+      ],
+      "installmentMonths": 2,
+      "installmentTotal": 150,
+      "sparkline": [
+        {
+          "month": "2026-01",
+          "amount": 910
+        },
+        {
+          "month": "2026-02",
+          "amount": 320
+        },
+        {
+          "month": "2026-03",
+          "amount": 330
+        },
+        {
+          "month": "2026-04",
+          "amount": 340
+        },
+        {
+          "month": "2026-05",
+          "amount": 350
+        },
+        {
+          "month": "2026-06",
+          "amount": 24350
+        }
+      ],
+      "latestClosing": "2026-07-01",
+      "nextDueDate": "2026-07-10",
+      "baseMonth": "2026-06"
+    }
+  },
+  "supermarket": {
+    "periods": [
+      {
+        "index": 1,
+        "receiptId": 1,
+        "date": "2026-01-15",
+        "nItems": 2,
+        "grossCents": 15000,
+        "discountsCents": -2000,
+        "totalCents": 13000,
+        "savingsPct": 13.333333333333334,
+        "mpCents": -2000,
+        "cotoCents": 0,
+        "mixedCents": 0
+      },
+      {
+        "index": 2,
+        "receiptId": 2,
+        "date": "2026-02-15",
+        "nItems": 2,
+        "grossCents": 18000,
+        "discountsCents": -2500,
+        "totalCents": 15500,
+        "savingsPct": 13.88888888888889,
+        "mpCents": -2000,
+        "cotoCents": -500,
+        "mixedCents": 0
+      }
+    ],
+    "kpis": {
+      "nPeriods": 2,
+      "lastTotalCents": 15500,
+      "prevTotalCents": 13000,
+      "deltaPct": 19.230769230769234,
+      "avgTotalCents": 14250,
+      "monthlyProjectionCents": 61702.5,
+      "accumulatedTotalCents": 28500,
+      "accumulatedSavingsCents": 4500
+    },
+    "products": [
+      {
+        "productId": 1,
+        "name": "Synthetic Rice",
+        "category": "pantry",
+        "unit": "un",
+        "appearances": [
+          {
+            "index": 1,
+            "date": "2026-01-15",
+            "qtyMilli": 1000,
+            "grossCents": 10000,
+            "discountCents": -2000,
+            "netCents": 8000,
+            "unitGross": 10000,
+            "unitNet": 8000
+          },
+          {
+            "index": 2,
+            "date": "2026-02-15",
+            "qtyMilli": 1000,
+            "grossCents": 12000,
+            "discountCents": -2000,
+            "netCents": 10000,
+            "unitGross": 12000,
+            "unitNet": 10000
+          }
+        ],
+        "timesBought": 2,
+        "totalQtyMilli": 2000,
+        "totalSpentCents": 18000,
+        "totalDiscountCents": -4000,
+        "lastChange": {
+          "from": 1,
+          "to": 2,
+          "grossPct": 20,
+          "netPct": 25
+        }
+      },
+      {
+        "productId": 2,
+        "name": "Synthetic Soap",
+        "category": "personal_care",
+        "unit": "un",
+        "appearances": [
+          {
+            "index": 1,
+            "date": "2026-01-15",
+            "qtyMilli": 1000,
+            "grossCents": 5000,
+            "discountCents": 0,
+            "netCents": 5000,
+            "unitGross": 5000,
+            "unitNet": 5000
+          },
+          {
+            "index": 2,
+            "date": "2026-02-15",
+            "qtyMilli": 1000,
+            "grossCents": 6000,
+            "discountCents": -500,
+            "netCents": 5500,
+            "unitGross": 6000,
+            "unitNet": 5500
+          }
+        ],
+        "timesBought": 2,
+        "totalQtyMilli": 2000,
+        "totalSpentCents": 10500,
+        "totalDiscountCents": -500,
+        "lastChange": {
+          "from": 1,
+          "to": 2,
+          "grossPct": 20,
+          "netPct": 10
+        }
+      }
+    ],
+    "categories": [
+      {
+        "category": "pantry",
+        "perPeriod": [
+          8000,
+          10000
+        ],
+        "totalNetCents": 18000,
+        "totalDiscountCents": -4000,
+        "sharePct": 63.1578947368421
+      },
+      {
+        "category": "personal_care",
+        "perPeriod": [
+          5000,
+          5500
+        ],
+        "totalNetCents": 10500,
+        "totalDiscountCents": -500,
+        "sharePct": 36.8421052631579
+      }
+    ],
+    "index": [
+      {
+        "index": 1,
+        "date": "2026-01-15",
+        "list": 100,
+        "effective": 100,
+        "factorListPct": null,
+        "factorEffectivePct": null,
+        "nProducts": 0
+      },
+      {
+        "index": 2,
+        "date": "2026-02-15",
+        "list": 120,
+        "effective": 119.23076923076923,
+        "factorListPct": 19.999999999999996,
+        "factorEffectivePct": 19.23076923076923,
+        "nProducts": 2
+      }
+    ],
+    "frequency": {
+      "essentials": [
+        {
+          "productId": 1,
+          "name": "Synthetic Rice",
+          "category": "pantry",
+          "unit": "un",
+          "appearances": [
+            {
+              "index": 1,
+              "date": "2026-01-15",
+              "qtyMilli": 1000,
+              "grossCents": 10000,
+              "discountCents": -2000,
+              "netCents": 8000,
+              "unitGross": 10000,
+              "unitNet": 8000
+            },
+            {
+              "index": 2,
+              "date": "2026-02-15",
+              "qtyMilli": 1000,
+              "grossCents": 12000,
+              "discountCents": -2000,
+              "netCents": 10000,
+              "unitGross": 12000,
+              "unitNet": 10000
+            }
+          ],
+          "timesBought": 2,
+          "totalQtyMilli": 2000,
+          "totalSpentCents": 18000,
+          "totalDiscountCents": -4000,
+          "lastChange": {
+            "from": 1,
+            "to": 2,
+            "grossPct": 20,
+            "netPct": 25
+          }
+        },
+        {
+          "productId": 2,
+          "name": "Synthetic Soap",
+          "category": "personal_care",
+          "unit": "un",
+          "appearances": [
+            {
+              "index": 1,
+              "date": "2026-01-15",
+              "qtyMilli": 1000,
+              "grossCents": 5000,
+              "discountCents": 0,
+              "netCents": 5000,
+              "unitGross": 5000,
+              "unitNet": 5000
+            },
+            {
+              "index": 2,
+              "date": "2026-02-15",
+              "qtyMilli": 1000,
+              "grossCents": 6000,
+              "discountCents": -500,
+              "netCents": 5500,
+              "unitGross": 6000,
+              "unitNet": 5500
+            }
+          ],
+          "timesBought": 2,
+          "totalQtyMilli": 2000,
+          "totalSpentCents": 10500,
+          "totalDiscountCents": -500,
+          "lastChange": {
+            "from": 1,
+            "to": 2,
+            "grossPct": 20,
+            "netPct": 10
+          }
+        }
+      ],
+      "frequent": [],
+      "occasional": []
+    },
+    "basket": {
+      "entered": [],
+      "left": []
+    },
+    "top": [
+      {
+        "productId": 1,
+        "name": "Synthetic Rice",
+        "category": "pantry",
+        "unit": "un",
+        "appearances": [
+          {
+            "index": 1,
+            "date": "2026-01-15",
+            "qtyMilli": 1000,
+            "grossCents": 10000,
+            "discountCents": -2000,
+            "netCents": 8000,
+            "unitGross": 10000,
+            "unitNet": 8000
+          },
+          {
+            "index": 2,
+            "date": "2026-02-15",
+            "qtyMilli": 1000,
+            "grossCents": 12000,
+            "discountCents": -2000,
+            "netCents": 10000,
+            "unitGross": 12000,
+            "unitNet": 10000
+          }
+        ],
+        "timesBought": 2,
+        "totalQtyMilli": 2000,
+        "totalSpentCents": 18000,
+        "totalDiscountCents": -4000,
+        "lastChange": {
+          "from": 1,
+          "to": 2,
+          "grossPct": 20,
+          "netPct": 25
+        }
+      },
+      {
+        "productId": 2,
+        "name": "Synthetic Soap",
+        "category": "personal_care",
+        "unit": "un",
+        "appearances": [
+          {
+            "index": 1,
+            "date": "2026-01-15",
+            "qtyMilli": 1000,
+            "grossCents": 5000,
+            "discountCents": 0,
+            "netCents": 5000,
+            "unitGross": 5000,
+            "unitNet": 5000
+          },
+          {
+            "index": 2,
+            "date": "2026-02-15",
+            "qtyMilli": 1000,
+            "grossCents": 6000,
+            "discountCents": -500,
+            "netCents": 5500,
+            "unitGross": 6000,
+            "unitNet": 5500
+          }
+        ],
+        "timesBought": 2,
+        "totalQtyMilli": 2000,
+        "totalSpentCents": 10500,
+        "totalDiscountCents": -500,
+        "lastChange": {
+          "from": 1,
+          "to": 2,
+          "grossPct": 20,
+          "netPct": 10
+        }
+      }
+    ]
+  }
+}

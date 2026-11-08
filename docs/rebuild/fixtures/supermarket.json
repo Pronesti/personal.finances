@@ -1,0 +1,84 @@
+{
+  "receipts": [
+    {
+      "id": 1,
+      "date": "2026-01-15",
+      "time": "09:00:00",
+      "subtotalCents": 15000,
+      "discountsCents": -2000,
+      "totalCents": 13000
+    },
+    {
+      "id": 2,
+      "date": "2026-02-15",
+      "time": "09:00:00",
+      "subtotalCents": 18000,
+      "discountsCents": -2500,
+      "totalCents": 15500
+    }
+  ],
+  "items": [
+    {
+      "receiptId": 1,
+      "productId": 1,
+      "productName": "Synthetic Rice",
+      "category": "pantry",
+      "unit": "un",
+      "qtyMilli": 1000,
+      "grossCents": 10000,
+      "discountCents": -2000,
+      "hasM": true,
+      "hasA": false
+    },
+    {
+      "receiptId": 1,
+      "productId": 2,
+      "productName": "Synthetic Soap",
+      "category": "personal_care",
+      "unit": "un",
+      "qtyMilli": 1000,
+      "grossCents": 5000,
+      "discountCents": 0,
+      "hasM": false,
+      "hasA": true
+    },
+    {
+      "receiptId": 2,
+      "productId": 1,
+      "productName": "Synthetic Rice",
+      "category": "pantry",
+      "unit": "un",
+      "qtyMilli": 1000,
+      "grossCents": 12000,
+      "discountCents": -2000,
+      "hasM": true,
+      "hasA": false
+    },
+    {
+      "receiptId": 2,
+      "productId": 2,
+      "productName": "Synthetic Soap",
+      "category": "personal_care",
+      "unit": "un",
+      "qtyMilli": 1000,
+      "grossCents": 6000,
+      "discountCents": -500,
+      "hasM": false,
+      "hasA": true
+    }
+  ],
+  "expected": {
+    "lastTotalCents": 15500,
+    "prevTotalCents": 13000,
+    "avgTotalCents": 14250,
+    "monthlyProjectionCents": 61702.5,
+    "accumulatedTotalCents": 28500,
+    "accumulatedSavingsCents": 4500,
+    "riceGrossChangePct": 20,
+    "riceNetChangePct": 25,
+    "soapNetChangePct": 10,
+    "listIndex": 120,
+    "effectiveIndex": 119.23076923076923,
+    "essentialProducts": 2
+  }
+}
