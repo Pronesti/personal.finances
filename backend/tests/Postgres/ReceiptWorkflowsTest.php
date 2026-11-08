@@ -221,6 +221,41 @@ class ReceiptWorkflowsTest extends PostgresTestCase
         }
     }
 
+    public function test_duplicate_corrections_reserve_keys_without_new_evidence_and_isolate_owners(): void
+    {
+        DB::beginTransaction();
+        try {
+            $digests = [];
+            foreach (['a', 'b'] as $owner) {
+                [$repository, $service] = $this->setupLedger();
+                $input = $this->input();
+                $service->import($input, new ProcessingBudget(719000, 0));
+                $hash = hash('sha256', $input['bytes']);
+                $rows = str_replace('SYNTHETIC RICE', 'SYNTHETIC RICE '.$owner, $input['rowsText']);
+                $first = $service->correction($hash, $rows, 'first-correction', '2026-02-01T12:00:00Z', new ProcessingBudget(719000, 0));
+                $revisions = $repository->query('source_revisions')->get()->all();
+                $reviews = $repository->query('review_events')->get()->all();
+                $journals = $repository->query('journals')->get()->all();
+                $duplicate = $service->correction($hash, $rows, 'shared-duplicate-key', '2026-02-02T12:00:00Z', new ProcessingBudget(719000, 0));
+                $this->assertTrue($duplicate['duplicate']);
+                $this->assertSame($first['sourceRevisionId'], $duplicate['sourceRevisionId']);
+                $this->assertSame([], $duplicate['postedJournalIds']);
+                $record = $repository->query('source_import_commands')->where('key', 'receipt-import:shared-duplicate-key')->first();
+                $this->assertNotNull($record);
+                $digests[] = $record->digest;
+                $this->assertEquals($duplicate, json_decode($record->result, true));
+                $this->assertEquals($duplicate, $service->correction($hash, $rows, 'shared-duplicate-key', '2026-02-03T12:00:00Z', new ProcessingBudget(719000, 0)));
+                $this->rejects('command_conflict', fn () => $service->correction($hash, str_replace('SYNTHETIC RICE', 'SYNTHETIC ALTERED RICE', $rows), 'shared-duplicate-key', '2026-02-04T12:00:00Z', new ProcessingBudget(719000, 0)));
+                $this->assertEquals($revisions, $repository->query('source_revisions')->get()->all());
+                $this->assertEquals($reviews, $repository->query('review_events')->get()->all());
+                $this->assertEquals($journals, $repository->query('journals')->get()->all());
+            }
+            $this->assertNotSame($digests[0], $digests[1]);
+        } finally {
+            DB::rollBack();
+        }
+    }
+
     public function test_recovered_history_closes_only_resolved_receipt_reviews_and_preserves_audit(): void
     {
         DB::beginTransaction();

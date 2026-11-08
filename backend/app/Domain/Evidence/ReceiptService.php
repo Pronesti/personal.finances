@@ -230,7 +230,11 @@ class ReceiptService
             if ($duplicate !== null) {
                 $facts = $this->facts($duplicate->id);
 
-                return ['sourceRevisionId' => $duplicate->id, 'receiptId' => $facts['receiptId'], 'purchaseIds' => [], 'postedJournalIds' => [], 'reviews' => [], 'duplicate' => true];
+                $result = ['sourceRevisionId' => $duplicate->id, 'receiptId' => $facts['receiptId'], 'purchaseIds' => [], 'postedJournalIds' => [], 'reviews' => [], 'duplicate' => true];
+                $budget->assertNonOcr();
+                $this->repository->insert('source_import_commands', ['key' => $key, 'digest' => $commandDigest, 'result' => LedgerRepository::json($result)]);
+
+                return $result;
             }
             $previous = $this->repository->query('source_revisions')->where('source_key', $sourceKey)->orderByDesc('ordinal')->first();
             if ($previous === null && ($input['correctedRowsText'] ?? null) !== null) {
