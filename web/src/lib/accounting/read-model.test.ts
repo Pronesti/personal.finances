@@ -109,6 +109,17 @@ it.skipIf(!pgEnabled)("reads actual numeric receipt/product identities and inclu
   const data=await after.receiptFacts();expect(data.items).toMatchObject([{receiptId:1,productId:Number(productId),productName:"Mi producto",grossCents:10000,discountCents:-2000,hasM:true,hasA:false}]);
   expect(await after.receiptAllocations()).toEqual([{receiptId:1,itemId:line.id,accountId:"expense:food",purposeId:"food",netMinor:8000,reviewed:true}]);
  }finally{await after.close();}
+ const journals=await port.journals('card-a');
+ await port.transaction(async tx=>{
+  const history=await tx.receiptLinkDecisions(imported.sourceRevisionId),previous=history.find(row=>!history.some(child=>child.previousDecisionId===row.id))!;
+  const unlink={...previous,id:crypto.randomUUID(),key:'legacy-unlink',action:'unlink' as const,previousDecisionId:previous.id,paymentVerified:false,allocation:null,itemAllocations:[]};
+  await tx.appendReceiptLinkDecision(unlink);
+  await tx.appendReceiptLinkDecision({...unlink,id:crypto.randomUUID(),key:'legacy-relink',action:'link',previousDecisionId:unlink.id});
+ });
+ const relinked=createPostgresReader(context.connectionString,context.schema);try{
+  expect(await relinked.receiptAllocations()).toEqual([{receiptId:1,itemId:line.id,accountId:'expense:food',purposeId:'food',netMinor:8000,reviewed:true}]);
+  expect(await port.journals('card-a')).toEqual(journals);
+ }finally{await relinked.close();}
 }));
 
 import {importStatement} from "./statement-import";

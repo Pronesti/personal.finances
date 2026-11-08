@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -108,4 +108,34 @@ it.each([['en', 'Unallocated purchases'], ['es', 'Compras sin asignar']])('trans
   render(<MemoryRouter><LocaleProvider><Accounting /></LocaleProvider></MemoryRouter>);
   expect(await screen.findByText(label)).toBeInTheDocument();
   expect(screen.queryByText('accounting.group.unallocated')).not.toBeInTheDocument();
+});
+
+it.each([['en', 'Actual card', 'Months left'], ['es', 'Tarjeta concreta', 'Meses restantes']])('renders the installment API contract without inventing missing schedule facts (%s)', async (locale, cardLabel, monthsLabel) => {
+  document.cookie = `lang=${locale}; Path=/`;
+  const data = projection('nominal');
+  data.data = { burden: [], plans: [
+    { merchant: 'SYNTHETIC PLAN', brand: 'card-a', paid: 1, total: 3, monthly: 50, remainingMonths: 2, remainingTotal: 100 },
+    { merchant: 'UNKNOWN SCHEDULE', brand: 'card-a', paid: null, total: null, monthly: 50, remainingMonths: null, remainingTotal: null },
+  ] };
+  data.meta.cards = [{ id: 'card-a', displayName: 'Synthetic Mercado Pago' }];
+  data.meta.controls = { title: 'installments.title' };
+  mocks.get.mockResolvedValueOnce({ data }); report('/installments');
+  const plan = await screen.findByRole('row', { name: /SYNTHETIC PLAN/ });
+  expect(plan).toHaveTextContent('Synthetic Mercado Pago');
+  expect(plan).toHaveTextContent('1/3'); expect(plan).toHaveTextContent('$ 100');
+  expect(screen.getByRole('columnheader', { name: cardLabel })).toBeInTheDocument();
+  expect(screen.getByRole('columnheader', { name: monthsLabel })).toBeInTheDocument();
+  expect(within(screen.getByRole('row', { name: /UNKNOWN SCHEDULE/ })).getAllByRole('cell').map(cell => cell.textContent?.replace(/\s/g, ' '))).toEqual(['Synthetic Mercado Pago', '—', '—', '$ 50', '—']);
+});
+
+it.each([['en', 'How to read this page', 'due date', 'recorded interest'], ['es', 'Cómo leer esta página', 'vencimiento', 'intereses registrados']])('explains the float chart and delay table with its modeled payment assumption (%s)', async (locale, guide, assumption, interest) => {
+  document.cookie = `lang=${locale}; Path=/`;
+  const data = projection(); data.data = [{ period: '2026-01', avgDays: 25, gain: 63, recordedInterest: 0 }];
+  data.meta.controls = { title: 'float.title' };
+  mocks.get.mockResolvedValueOnce({ data }); report('/float');
+  await screen.findByRole('heading', { level: 1 });
+  await userEvent.setup().click(screen.getByText(guide));
+  const help = screen.getByText(guide).closest('details')!;
+  expect(help).toHaveTextContent(assumption); expect(help).toHaveTextContent(interest);
+  expect(help).not.toHaveTextContent(/third tile|tercer recuadro|dashed line|línea punteada/);
 });

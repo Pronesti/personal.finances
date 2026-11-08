@@ -11,6 +11,29 @@ let reportAccounts:Record<string,string>;
 async function login(page:Page,email=reportAccounts.a){await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password',{exact:true}).fill('Synthetic-Acceptance-Only-2026!');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Private ledger',exact:true})).toBeVisible();}
 test.beforeAll(()=>{execFileSync('php',['artisan','tarjetas:acceptance:references','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),stdio:'pipe'});reportAccounts=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:report-users','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));});
 test.beforeEach(resetSyntheticRateLimits);
+test('printed installment details and float guidance match the rebuilt presentation',async({page})=>{
+ const accounts=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:document-users','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));
+ await login(page,accounts.a);
+ await page.goto('/upload');await page.getByLabel('Actual card',{exact:true}).selectOption('synthetic-mp');
+ await page.getByLabel('Statement PDF (max. 10 MiB)',{exact:true}).setInputFiles('../docs/rebuild/fixtures/pdf/synthetic_mercadopago_2026_02.pdf');
+ const imported=page.waitForResponse(response=>response.url()===api+'/api/v1/statements'&&response.request().method()==='POST');
+ await page.getByRole('button',{name:'Import statement',exact:true}).click();const importedResponse=await imported;expect(importedResponse.status(),await importedResponse.text()).toBe(200);
+ for(const locale of ['en','es'] as const){
+  if(locale==='es')await page.getByRole('button',{name:'Cambiar a español',exact:true}).click();
+  const loaded=page.waitForResponse(response=>response.url().includes('/api/v1/reports/installments?value=nominal'));
+  await page.goto('/installments?value=nominal');const response=await loaded;expect(response.status()).toBe(200);
+  const projection=await response.json();expect(projection.data.plans.length).toBeGreaterThan(0);
+  for(const plan of projection.data.plans){
+   const row=page.getByRole('row').filter({has:page.getByRole('rowheader',{name:plan.merchant,exact:true})});
+   await expect(row).toContainText(projection.meta.cards.find((card:{id:string})=>card.id===plan.brand).displayName);
+   await expect(row.getByRole('cell',{name:`${plan.paid}/${plan.total}`,exact:true})).toBeVisible();
+   await expect(row.getByRole('cell',{name:String(plan.remainingMonths),exact:true})).toBeVisible();
+  }
+  await page.goto('/float');const help=page.locator('.page-guide').filter({has:page.locator('summary',{hasText:locale==='en'?'How to read this page':'Cómo leer esta página'})});
+  await help.locator('summary').click();await expect(help).toContainText(locale==='en'?'due date':'vencimiento');
+  await expect(help).toContainText(locale==='en'?'recorded interest':'intereses registrados');await expect(help).not.toContainText(/third tile|tercer recuadro|dashed line|línea punteada/);
+ }
+});
 test('all 23 analytical destinations use direct owned reports and the exact route control matrix',async({page})=>{
  test.setTimeout(120_000);const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await login(page);
  for(const path of reports){const report=path==='/'?'overview':path.slice(1).replaceAll('/','-');const response=page.waitForResponse(response=>response.url().startsWith(`${api}/api/v1/reports/${report}`)&&response.request().method()==='GET');await page.goto(path+'?value=nominal');const result=await response;expect(result.status(),`${path}: ${await result.text()}`).toBe(200);await expect(page.locator('#main h1')).toBeVisible();await expect(page.getByText('Page unavailable',{exact:true})).toHaveCount(0);const config=controls[path];

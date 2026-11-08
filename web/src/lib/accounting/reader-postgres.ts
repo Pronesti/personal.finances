@@ -1,4 +1,6 @@
 import { Pool, type PoolClient } from "pg";
+import { retainedReceiptItemAllocations } from "./linking";
+import type { ReceiptLinkDecision } from "./evidence-port";
 import { currentHistoricalAssociations, type HistoricalReceiptAssociation } from "./historical-links";
 import { historicalAcquisitionFacts, applyHistoricalClassifications, receiptBackedHistoricalAcquisitions } from "./historical-analytics";
 import { accountingSchema } from "./postgres";
@@ -192,7 +194,9 @@ async function readSnapshot(client:PoolClient):Promise<Snapshot> {
       }
     }
     receipts.receipts.sort((a,b)=>a.date.localeCompare(b.date)||(a.time??"").localeCompare(b.time??"")||a.id-b.id);
-    const links=(await client.query("SELECT d.receipt_revision_id,d.payload FROM receipt_link_decisions d WHERE d.action='link' AND NOT EXISTS(SELECT 1 FROM receipt_link_decisions child WHERE child.previous_decision_id=d.id) ORDER BY d.receipt_revision_id,d.id")).rows;
+    const decisions=(await client.query("SELECT receipt_revision_id,payload FROM receipt_link_decisions ORDER BY receipt_revision_id,id")).rows as {receipt_revision_id:string;payload:ReceiptLinkDecision}[];
+    const superseded=new Set(decisions.map(row=>row.payload.previousDecisionId));
+    const links=decisions.filter(row=>row.payload.action==='link'&&!superseded.has(row.payload.id));
     allocations=[];
     for(const fact of facts) fact.receiptIds=[...new Set(links.filter(link=>link.payload.purchaseId===fact.purchaseId).flatMap(link=>accepted.filter(r=>r.revision_id===link.receipt_revision_id).map(r=>reportMinor(r.receipt_id))))];
     for (const association of currentHistoricalAssociations(historicalAssociations)) {
@@ -208,7 +212,7 @@ async function readSnapshot(client:PoolClient):Promise<Snapshot> {
     }
     for(const link of links) {
       const receipt=accepted.find(r=>r.revision_id===link.receipt_revision_id);if(!receipt)continue;
-      const itemAllocations=link.payload.itemAllocations as import("./evidence-port").ReceiptLinkDecision["itemAllocations"]|undefined;
+      const itemAllocations=retainedReceiptItemAllocations(decisions.filter(row=>row.receipt_revision_id===link.receipt_revision_id).map(row=>row.payload),link.payload.purchaseId);
       if(!Array.isArray(itemAllocations)) {allocations=null;break;}
       for(const allocation of itemAllocations) {
         const line=sourceLines.find(l=>l.id===allocation.sourceLineId && l.revision_id===link.receipt_revision_id);

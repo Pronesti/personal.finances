@@ -18,6 +18,17 @@ const digest=(value:unknown):string=>createHash("sha256").update(JSON.stringify(
 export function latestReceiptDecision(decisions:ReceiptLinkDecision[]):ReceiptLinkDecision|null {
   return decisions.find(d=>!decisions.some(child=>child.previousDecisionId===d.id))??null;
 }
+/** Association changes do not undo the last explicit financial allocation. */
+export function retainedReceiptItemAllocations(decisions:ReceiptLinkDecision[],purchaseId:string|null):ReceiptLinkDecision['itemAllocations'] {
+  let current=latestReceiptDecision(decisions);const seen=new Set<string>();
+  while(current && purchaseId!==null && current.purchaseId===purchaseId && !seen.has(current.id)) {
+    seen.add(current.id);
+    if(!Array.isArray(current.itemAllocations)) throw new AccountingError('invalid_receipt_allocation');
+    if(current.allocation!==null || current.itemAllocations.length>0) return current.itemAllocations;
+    current=decisions.find(row=>row.id===current!.previousDecisionId)??null;
+  }
+  return [];
+}
 function currentLinks(decisions:ReceiptLinkDecision[]):ReceiptLinkDecision[] {
   return [...new Set(decisions.map(d=>d.receiptRevisionId))].map(id=>latestReceiptDecision(decisions.filter(d=>d.receiptRevisionId===id))).filter((d):d is ReceiptLinkDecision=>d!==null&&d.action==="link");
 }
@@ -98,7 +109,8 @@ export async function reconcileReceiptTx(tx:EvidenceLedgerTx,input:ReceiptReconc
     const row={code,params,sourceLineIds:[]};result.reviews.push(row);
     await tx.appendReviewEvent({...row,id:randomUUID(),subjectId:input.receiptRevisionId,priorDecisionId:null,state:"open",recordedAt:input.recordedAt});
   };
-  const previous=latestReceiptDecision(await tx.receiptLinkDecisions(input.receiptRevisionId));
+  const decisionHistory=await tx.receiptLinkDecisions(input.receiptRevisionId);
+  const previous=latestReceiptDecision(decisionHistory);
   const historicalLinks = currentHistoricalAssociations(await tx.historicalAssociations());
   const historicalReceiptLink = historicalLinks.find(link => link.receiptRevisionId === input.receiptRevisionId);
   let target=input.purchaseId?await tx.purchase(input.purchaseId):previous?.action==="link"&&previous.purchaseId?await tx.purchase(previous.purchaseId):await tx.purchase(`receipt-purchase:${receipt.receiptId}`);
@@ -159,7 +171,7 @@ export async function reconcileReceiptTx(tx:EvidenceLedgerTx,input:ReceiptReconc
       else if(corrected.status==="posted") result.postedJournalIds.push(...corrected.journalIds);
     }
     if(result.reviews.length===0) {
-      await tx.appendReceiptLinkDecision({id:randomUUID(),key:commandKey,receiptRevisionId:input.receiptRevisionId,purchaseId:target.purchaseId,cardId:target.cardId,paymentVerified:input.paymentVerified || previous?.purchaseId===target.purchaseId && previous.paymentVerified,action:"link",recordedAt:input.recordedAt,previousDecisionId:previous?.id??null,allocation:requestedAllocation,itemAllocations:input.itemAllocations??(input.allocation===null&&previous?.action==="link"&&previous.purchaseId===target.purchaseId?previous.itemAllocations:[])});
+      await tx.appendReceiptLinkDecision({id:randomUUID(),key:commandKey,receiptRevisionId:input.receiptRevisionId,purchaseId:target.purchaseId,cardId:target.cardId,paymentVerified:input.paymentVerified || previous?.purchaseId===target.purchaseId && previous.paymentVerified,action:"link",recordedAt:input.recordedAt,previousDecisionId:previous?.id??null,allocation:requestedAllocation,itemAllocations:input.itemAllocations??(input.allocation===null?retainedReceiptItemAllocations(decisionHistory,target.purchaseId):[])});
       if(!result.purchaseIds.includes(target.purchaseId)) result.purchaseIds.push(target.purchaseId);
       const reviewHistory=await tx.reviewEvents(input.receiptRevisionId),resolvedCodes=new Set(["receipt_payment_unresolved","multiple_receipt_candidates","receipt_amount_mismatch","purchase_already_linked","unknown_card","receipt_amount_or_card_mismatch","multiple_statement_candidates"]);
       for(const event of reviewHistory.filter(event=>event.state==="open"&&resolvedCodes.has(event.code)&&!reviewHistory.some(child=>child.priorDecisionId===event.id))) await tx.appendReviewEvent({...event,id:randomUUID(),priorDecisionId:event.id,state:"reviewed",recordedAt:input.recordedAt});
