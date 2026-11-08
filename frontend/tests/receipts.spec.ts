@@ -152,3 +152,29 @@ test('over-discounted item remains rejected and correctable while financial repo
  await page.reload();await expect(page.locator('summary').filter({hasText:/ · rejected$/})).toHaveCount(2);await expect(page.locator('summary').filter({hasText:/ · accepted$/})).toHaveCount(1);
  const report=page.waitForResponse(r=>r.url().includes('/api/v1/reports/super-categories')&&r.request().method()==='GET');await page.goto('/super/categories?value=nominal');const reports=await report;expect(reports.status(),await reports.text()).toBe(200);await expect(page.getByRole('heading',{name:'Supermarket categories',exact:true})).toBeVisible();await expect(page.getByRole('row').filter({has:page.locator(`a[href="/receipts/${retained.receiptId}"]`)})).toContainText('130,00');
 });
+
+
+test('fully discounted items retain product review without blocking paid item allocations',async({page})=>{
+ test.setTimeout(120000);
+ users=JSON.parse(execFileSync('php',['artisan','tarjetas:acceptance:receipt-rejection','--fresh','--env=browser-testing'],{cwd:fileURLToPath(new URL('../../backend/',import.meta.url)),encoding:'utf8'}));
+ await login(page,'b');await page.goto('/receipts');await page.getByRole('link',{name:'2026-01-15',exact:true}).first().click();
+ await page.locator('summary').filter({hasText:/ · rejected$/}).first().click();await page.getByRole('button',{name:'Original OCR transcript',exact:true}).click();
+ const rows=readFileSync('../docs/rebuild/fixtures/receipt-corrected.rows.txt','utf8').replaceAll('-20,00','-100,00').replaceAll('130,00','50,00');
+ await page.getByLabel('Editable transcript').fill(rows);
+ let response=page.waitForResponse(r=>r.url().endsWith('/api/v1/receipts/corrections')&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Verify correction',exact:true}).click();const corrected=await response;expect(corrected.status(),await corrected.text()).toBe(200);
+ await page.getByLabel('Actual card',{exact:true}).selectOption('synthetic-visa-a');await page.getByLabel('I verified that this receipt').check();
+ await page.getByRole('button',{name:'Record supported purchase',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Change recorded.'})).toBeVisible();
+ const items=page.locator('.receipt-item');await expect(items).toHaveCount(2);
+ for(let i=0;i<2;i++) {
+  const item=items.nth(i);await item.locator('summary').click();await item.getByRole('button',{name:'Confirm canonical product',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Change recorded.'})).toBeVisible();
+  await item.getByRole('button',{name:"Confirm this item's product",exact:true}).click();await expect(item.getByRole('button',{name:'Item confirmed',exact:true})).toBeDisabled();
+ }
+ await expect(items.nth(0).getByLabel('Account',{exact:true})).toBeDisabled();await expect(items.nth(0)).toContainText(/Net\s*\$\s*0,00/);
+ await items.nth(1).getByLabel('Account',{exact:true}).selectOption('expense:personal:hygiene');
+ response=page.waitForResponse(r=>/\/api\/v1\/receipts\/\d+\/reconciliation$/.test(r.url())&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Apply reviewed item allocations',exact:true}).click();const allocated=await response;expect(allocated.status(),await allocated.text()).toBe(200);
+ const allocations=allocated.request().postDataJSON().itemAllocations;expect(allocations).toHaveLength(1);expect(allocations[0]).toMatchObject({accountId:'expense:personal:hygiene',minor:5000});
+ await page.reload();await expect(items.nth(0).getByLabel('Account',{exact:true})).toBeDisabled();await expect(items.nth(0).getByLabel('Account',{exact:true})).toHaveValue('expense:unallocated');await expect(items.nth(1).getByLabel('Account',{exact:true})).toHaveValue('expense:personal:hygiene');
+ await expect(items.getByRole('button',{name:'Item confirmed',exact:true})).toHaveCount(2);
+});

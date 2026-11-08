@@ -14,11 +14,12 @@ vi.mock('../../auth/SessionProvider',()=>({useSession:()=>({session:{ledger:{id:
 vi.mock('./api',()=>({command:mocks.command}));
 beforeEach(()=>{mocks.get.mockReset();mocks.command.mockReset();document.cookie='lang=en; Path=/';});
 afterEach(cleanup);
-function receipt(action:'link'|'unlink',purchaseVersion:number,partial=false,invalidated=false,history:ReceiptDetail['history']=[]){
+function receipt(action:'link'|'unlink',purchaseVersion:number,partial=false,invalidated=false,history:ReceiptDetail['history']=[],fullyDiscounted=false){
  const item={sourceLineId:'line-1',accountId:'expense:food:groceries:pantry',purposeId:'food',minor:8000};
- const data={receiptId:1,revisionId:'revision-1',purchaseVersion,date:'2026-01-15',fiscalId:'synthetic',totalMinor:8000,documentHash:'synthetic',report:{ok:true,checks:[],errors:[],warnings:[]},parsed:{header:{paymentMethod:'Synthetic',paymentCents:8000}},items:[{id:'line-1',item:{descPrinted:'Synthetic rice',qtyMilli:1000,unit:'un',lineTotalCents:8000,discounts:[]},product:{id:'product-1',name:'Synthetic rice',category:'pantry',unit:'un',reviewed:true,seq:1},match:{seq:1,productId:'product-1',reviewed:true}}],link:{id:'decision-1',action,purchaseId:'purchase-1',cardId:'card-a',itemAllocations:[item]},history};
+ const data={receiptId:1,revisionId:'revision-1',purchaseVersion,date:'2026-01-15',fiscalId:'synthetic',totalMinor:8000,documentHash:'synthetic',report:{ok:true,checks:[],errors:[],warnings:[]},parsed:{header:{paymentMethod:'Synthetic',paymentCents:8000}},items:[{id:'line-1',item:{descPrinted:'Synthetic rice',qtyMilli:1000,unit:'un',lineTotalCents:8000,discounts:[] as {amountCents:number;label:string}[]},product:{id:'product-1',name:'Synthetic rice',category:'pantry',unit:'un',reviewed:true,seq:1},match:{seq:1,productId:'product-1',reviewed:true}}],link:{id:'decision-1',action,purchaseId:'purchase-1',cardId:'card-a',itemAllocations:[item]},history};
  if(invalidated)data.items[0].match.reviewed=false;
  if(partial){data.totalMinor=13000;data.items.push({...data.items[0],id:'line-2',item:{...data.items[0].item,descPrinted:'Unreviewed soap',lineTotalCents:5000},product:{...data.items[0].product,id:'product-2',reviewed:false},match:{...data.items[0].match,productId:'product-2',reviewed:false}});}
+ if(fullyDiscounted){data.totalMinor=5000;data.parsed.header.paymentCents=5000;data.items[0].item.lineTotalCents=10000;data.items[0].item.discounts=[{amountCents:-10000,label:'Full discount'}];data.items[1].product.reviewed=true;data.items[1].match.reviewed=true;data.link.itemAllocations=[];}
  mocks.get.mockImplementation((path:string)=>Promise.resolve({data:path.startsWith('/receipts/')?data:{cards:[{id:'card-a',display_name:'Synthetic card'}],catalog:[{id:item.accountId,type:'expense',posting:true,enabled:true,currency:null,primary_purpose_id:'food',custom_name:'Pantry'}]}}));
  render(<MemoryRouter initialEntries={['/receipts/1']}><LocaleProvider><Routes><Route path="/receipts/:id" element={<ReceiptPage/>}/></Routes></LocaleProvider></MemoryRouter>);
  return item;
@@ -129,4 +130,19 @@ it.each([
  await waitFor(()=>expect(screen.getByLabelText(editorLabel)).toHaveValue('Retained corrected evidence'));
  expect(mocks.get).toHaveBeenCalledWith('/documents/corrected-rows',expect.objectContaining({responseType:'text'}));
  expect(summary).toHaveTextContent(admission);
+});
+
+
+it('keeps fully discounted product review available and allocates only the paid item',async()=>{
+ mocks.command.mockRejectedValue(new Error('stop after submission'));
+ receipt('link',7,true,false,[],true);
+ const user=userEvent.setup();const accounts=await screen.findAllByRole('combobox',{name:'Account'});
+ expect(accounts[0]).toBeDisabled();expect(accounts[1]).toBeEnabled();
+ const freeItem=accounts[0].closest('article')!;
+ await user.click(within(freeItem).getByText(/Reviewed product/));
+ expect(within(freeItem).getByRole('button',{name:'Confirm canonical product'})).toBeEnabled();
+ await user.selectOptions(accounts[1],'expense:food:groceries:pantry');
+ await user.click(screen.getByRole('button',{name:'Apply reviewed item allocations'}));
+ await waitFor(()=>expect(mocks.command).toHaveBeenCalled());
+ expect(mocks.command.mock.calls[0][1]).toMatchObject({expectedPurchaseVersion:7,allocation:null,itemAllocations:[{sourceLineId:'line-2',accountId:'expense:food:groceries:pantry',purposeId:'food',minor:5000}]});
 });
